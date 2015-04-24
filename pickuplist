@@ -1,0 +1,4 @@
+# syntax: ('name','number_of_players,'ip','show_in_topic')
+[('bomb', 10, '84.200.38.161:44460;password pickupftw', True),
+('ctf', 8, '84.200.38.161:44460;password pickupftw', True),
+('tdm', 8, '84.200.38.161:44460;password pickupftw', True)]
