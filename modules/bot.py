@@ -5,10 +5,11 @@ import time, datetime, re, traceback, random
 import irc, config, console, stats2, scheduler
 
 def init():
-	global oldtopic, lastgame_cache, pickups, cfg, oldtime, highlight_time
+	global oldtopic, lastgame_cache, pickups, cfg, oldtime, highlight_time, highlight_blacklist
 
 	oldtime = 0
 	highlight_time = 0
+	highlight_blacklist = []
 
 	stats2.init()
 
@@ -98,6 +99,12 @@ def processmsg(msgtup): #parse PRIVMSG event
 
 	elif lower[3]==":!highlight":
 		highlight(nick)
+
+	elif lower[3] in [":!stfu", ":!nohighlight"]:
+		switch_highlight_blacklist(nick)
+
+	elif lower[3]==":!highlight_blacklist":
+		show_highlight_blacklist(nick)
 		
 	elif lower[3]==":!lastgame":
 		lastgame(nick,lower[4:msglen])
@@ -360,7 +367,7 @@ def highlight(nick):
 	global highlight_time
 	newtime = time.time()
 	if newtime - highlight_time > 3600:
-		blacklist = []
+		blacklist = highlight_blacklist
 		blacklist.append(cfg['NICK'].lower())
 		for pickup in pickups:
 			for player in pickup.players:
@@ -371,6 +378,18 @@ def highlight(nick):
 		irc.highlight(blacklist)
 	else:
 		irc.private_reply(nick, "04Only one highlight per hour! You have to wait 03{0} minutes.".format(int((3600-(newtime-highlight_time))/60)))
+
+def switch_highlight_blacklist(nick):
+	global highlight_blacklist
+	if nick in highlight_blacklist:
+		highlight_blacklist.remove(nick)
+		irc.reply(nick, "You have been removed from highlight blacklist.")
+	else:
+		highlight_blacklist.append(nick)
+		irc.reply(nick, "You have been added to highlight blacklist.")
+		
+def show_highlight_blacklist(nick):
+	irc.private_reply(nick, "Nicks in blacklist: {0}".format(' '.join(highlight_blacklist)))
 
 def expire(nick,timelist):
 	#set expire if time is specified
