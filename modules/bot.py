@@ -38,7 +38,7 @@ class Pickup():
 			update_topic()
 
 	def start(self):
-		global pickups, lastgame_cache
+		global pickups, lastgame_cache, highlight_time
 		#remove warnings
 		for i in self.players:
 			scheduler.cancel_task(i)
@@ -53,6 +53,7 @@ class Pickup():
 				pickup.players.remove(i)
 		stats2.register_pickup(self.name, players, caps)
 		lastgame_cache = stats2.lastgame()
+		highlight_time = 0
 		update_topic()
 
 def processmsg(msgtup): #parse PRIVMSG event
@@ -377,7 +378,7 @@ def highlight(nick):
 		highlight_time = newtime
 		irc.highlight(blacklist)
 	else:
-		irc.private_reply(nick, "04Only one highlight per hour! You have to wait 03{0} minutes.".format(int((3600-(newtime-highlight_time))/60)))
+		irc.private_reply(nick, "04Only one highlight per hour or pickup! You have to wait 03{0} minutes.".format(int((3600-(newtime-highlight_time))/60)))
 
 def switch_highlight_blacklist(nick):
 	global highlight_blacklist
