@@ -5,9 +5,10 @@ import time, datetime, re, traceback, random
 import irc, config, console, stats2, scheduler
 
 def init():
-	global oldtopic, lastgame_cache, pickups, cfg, oldtime
+	global oldtopic, lastgame_cache, pickups, cfg, oldtime, highlight_time
 
 	oldtime = 0
+	highlight_time = 0
 
 	stats2.init()
 
@@ -95,6 +96,9 @@ def processmsg(msgtup): #parse PRIVMSG event
 	elif lower[3]==":!promote":
 		promote_pickup(nick,lower[4:5])
 
+	elif lower[3]==":!highlight":
+		highlight(nick)
+		
 	elif lower[3]==":!lastgame":
 		lastgame(nick,lower[4:msglen])
 
@@ -351,6 +355,22 @@ def promote_pickup(nick,arg):
 		oldtime=newtime
 	else:
 		irc.private_reply(nick,"04Only one promote per minute! You have to wait 03{0} secs.".format(int(60-(newtime-oldtime))))
+
+def highlight(nick):
+	global highlight_time
+	newtime = time.time()
+	if newtime - highlight_time > 3600:
+		blacklist = []
+		blacklist.append(cfg['NICK'].lower())
+		for pickup in pickups:
+			for player in pickup.players:
+				if player not in blacklist:
+					blacklist.append(player)
+					
+		highlight_time = newtime
+		irc.highlight(blacklist)
+	else:
+		irc.private_reply(nick, "04Only one highlight per hour! You have to wait 03{0} minutes.".format(int((3600-(newtime-highlight_time))/60)))
 
 def expire(nick,timelist):
 	#set expire if time is specified

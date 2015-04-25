@@ -162,15 +162,18 @@ def parse_names(nameslist):
 		if i[0] in ['+', '@']:
 			usermod = i[0]
 			nick = i.lstrip(usermod)
-			
-			change = False
-			for op in ops:
-				if op[0] == nick:
-					op[1] == usermod
-					change = True
-					
-			if not change:
-				ops.append([nick, usermod])
+		else:
+			usermod = ''
+			nick = i
+
+		change = False
+		for op in ops:
+			if op[0] == nick:
+				op[1] == usermod
+				change = True
+	
+		if not change:
+			ops.append([nick, usermod])
 
 def update_op_mode(mode, nick):
 	if mode[0] == "-":
@@ -254,6 +257,12 @@ def reply(nick, msg):
 		
 def notice(msg):
 	send_queue.append('PRIVMSG {0} :{1}\r\n'.format(cfg['HOME'],msg))
+	
+def highlight(blacklist):
+	nicks = [i[0] for i in ops if i[0] not in blacklist]
+	if nicks != []:
+		send_queue.append('PRIVMSG {0} :{1}\r\n'.format(cfg['HOME'], ' '.join(nicks)))
+	send_queue.append('PRIVMSG {0} :Please !add to pickups!\r\n'.format(cfg['HOME']))
 		
 def promote(msg):
 	for i in cfg['SPAMCHANS']:
