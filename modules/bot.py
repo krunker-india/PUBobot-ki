@@ -119,13 +119,13 @@ def processmsg(msgtup): #parse PRIVMSG event
 	elif lower[3]==":!top":
 		gettop(nick, lower[4:msglen])
 
-	elif lower[3]==":!add_games":
+	elif lower[3]==":!add_pickups":
 		add_games(nick,lower[4:msglen])
 
-	elif lower[3]==":!remove_games":
+	elif lower[3]==":!remove_pickups":
 		remove_games(nick, lower[4:msglen])
 
-	elif lower[3]==":!default_games":
+	elif lower[3]==":!default_pickups":
 		default_games(nick, lower[4:msglen])
 
 	elif lower[3]==":!motd":

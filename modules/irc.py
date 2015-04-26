@@ -283,7 +283,7 @@ def add_spam_channel(nick, c):
 		private_reply(nick, 'Added {0} channel to the spam list.'.format(c))
 			
 def remove_spam_channel(c, nick=False):
-	if c in cfg['SPAMCHANS']:
+	if c in cfg['SPAMCHANS'] and c != cfg['HOME']:
 		send_queue.append('PART {0}\r\n'.format(c))
 		cfg['SPAMCHANS'].remove(c)
 		if nick:
