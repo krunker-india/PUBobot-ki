@@ -635,9 +635,9 @@ def noadd(nick, args):
 		if args != []:
 			targetnick = args[0]
 			if len(args) > 1:
-				args[1] = duratation
+				duratation = args[1]
 				if len(args) > 2:
-					args[2] = reason
+					reason = args[2] 
 		else:
 			irc.reply(nick, "You must specify target nick!")
 			return
@@ -679,9 +679,9 @@ def chanban(nick,args):
 		if args != []:
 			targetnick = args[0]
 			if len(args) > 1:
-				args[1] = duratation
+				duratation = args[1]
 				if len(args) > 2:
-					args[2] = reason
+					reason = args[2]
 		else:
 			irc.reply(nick, "You must specify target nick!")
 
