@@ -1,0 +1,47 @@
+Avaible commands:
+
+ACTIONS:
+	'!add' or '++' - adds you to default pickups.
+	'!add game[ game ..]]' or '+game[ game ..]]' - adds you to specified pickups.
+	'!remove' or '--' - removes you from all pickups.
+	'!remove game[ game ...]' or '-[game[ game ..]]' - removes you given pickups.
+	'!expire time' - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.
+	'!sub' - request sub for last game.
+	'!promote [game]' - promotes pickup on channels. Can be used only once in a minut.
+	'!highlight' - highlights not added and not blacklisted users on pickup channel. Can be used once in a hour after each pickup.
+	'!stfu' or '!nohighlight' - puts your nick in highlight blacklist or removes your nick from it.
+	'!lock' - locks your current nick to a Q account. You must be logged in and have +x mode on connect to be able to lock your nick.
+	'!unlock' - unlock your current nick.
+	
+INFO:
+	'!who [game[ game ...]]' - list of people who added to the pickups.
+	'!expire' - shows you how much time left before you will be removed from all pickups.
+	'!pickups' or '!games' - complete pickups list.
+	'!noadds' - show list of users who are disallowed to play pickups.
+	'!lastgame [nick or pickup]' - show last pickup played, or last pickup by specified argument.
+	'!top [weekly or monthly or yearly]' - shows you most active players.
+	'!stats [nick or pickup]' - shows you overall stats or stats for specified argument.
+	'!ip [pickup or 'default']' - shows you ip of last pickup or specified pickup. Shows ip for new created pickups if argument is 'default'.
+	'!spamchans' - list of channels to promote pickups on.
+	'!highlight_blacklist' - shows nicks in highlight blacklist.
+	
+ADMINISTRATION:
+	'!motd' - sets the channel topic message.
+	'!noadd nick[ hours[ reason]] - disallow user to play pickups.
+	'!forgive nick' - allow user from noadds list to play pickups.
+	'!chanban nick[ hours]' - kick and ban specified user from channel. Command is made to allow +v users to ban for short amount of time (12 hours max).
+	'!phrase nick text' - set specified reply for specified nick after !add command.
+	'!lock nick[ ip] - forcefully lock specified user nick on his ip or specified ip.
+	'!unlock nick' - forcefully unlock specified nick.
+	'!remove_players nick[ nick ...]' - remove specified players from all pickups.
+	'!reset' - removes all players from all pickups.
+	'!add_pickups name:players[ name:players ...]' - creates new pickups.
+	'!remove_pickups name[ name ...]' - removes specified pickups.
+	'!default_pickups name[ name ...]' - sets default pickups.
+	'!topiclimit number' - sets maximum amount of pickups to be displayed in topic.
+	'!ip game[ game ...] : ip' - set server to be played for game. Use 'default' value for game to set server for games with default server value
+	'!autoremove_time minutes' - set default !expire time.
+	'!spam channel' - add channel to list of channels to promote pickups on.
+	'!nospam channel' - remove channel from list of channels to promote pickups on.
+	'!silent [botnick]' - enable silent mode, bot will listen to all commands but will remain silent.
+	'!puquit [botnick]' - terminate the bot.
