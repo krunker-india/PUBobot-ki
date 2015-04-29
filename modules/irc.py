@@ -127,6 +127,10 @@ def run(frametime):
 						bot.remove_player(nick, [], False, False)
 						remove_op(nick)
 
+					elif l[1]=="JOIN" and l[2]==cfg['HOME']:
+						nick = l[0].lstrip(":").split("!")[0].lower()
+						update_op_mode(nick, "")
+
 					elif l[1]=="/": #someone left or kicked us from a channel
 						if l[2]==cfg['HOME']:
 							if l[3]==cfg['NICK']:
@@ -183,13 +187,15 @@ def parse_names(nameslist):
 def update_op_mode(mode, nick):
 	if mode[0] == "-":
 		mode = ""
-	else: #mode[0] = "+"
+	elif mode[0] == "+":
 		if mode[1] == "v":
 			mode = "+"
 		elif mode[1] == "o":
 			mode = "@"
 		else:
 			mode = ""
+	else:
+		mode = ""
 			
 	for i in ops:
 		if i[0] == nick:
