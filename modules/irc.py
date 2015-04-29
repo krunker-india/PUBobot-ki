@@ -129,7 +129,7 @@ def run(frametime):
 
 					elif l[1]=="JOIN" and l[2]==cfg['HOME']:
 						nick = l[0].lstrip(":").split("!")[0].lower()
-						update_op_mode(nick, "")
+						update_op_mode("", nick)
 
 					elif l[1]=="/": #someone left or kicked us from a channel
 						if l[2]==cfg['HOME']:
