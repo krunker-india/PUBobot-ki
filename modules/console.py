@@ -48,6 +48,7 @@ def display(text):
 
 def terminate():
 	irc.terminate()
+	bot.terminate()
 	config.save()
 	log.close()
 	print("QUIT NOW.")

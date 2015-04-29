@@ -21,28 +21,28 @@ def init():
 	ops = []
 		
 def connect():
-	global Socket, connected
+	global conn, connected
 	try:
 		console.display("Connecting to {0}...".format(cfg['HOST']))
-		Socket = socket.socket()
-		Socket.connect((cfg['HOST'], cfg['PORT']))
-		fcntl.fcntl(Socket, fcntl.F_SETFL, os.O_NONBLOCK)
+		conn = socket.socket()
+		conn.connect((cfg['HOST'], cfg['PORT']))
+		fcntl.fcntl(conn, fcntl.F_SETFL, os.O_NONBLOCK)
 		connected = True
-		#Socket.send("NICK {0}\r\n".format(cfg['NICK']))
-		#Socket.send("USER {0} {1} {2} :{3}\r\n".format(cfg['IDENT'], cfg['HOST'], cfg['SERVERNAME'], cfg['REALNAME']))
+		#conn.send("NICK {0}\r\n".format(cfg['NICK']))
+		#conn.send("USER {0} {1} {2} :{3}\r\n".format(cfg['IDENT'], cfg['HOST'], cfg['SERVERNAME'], cfg['REALNAME']))
 	except Exception,e:
 		console.display(str(e)+", reconnect in 5 seconds...")
-		Socket.close()
+		conn.close()
 				
 def reconnect():
 	global disconnect_time
 	disconnect_time = time.time()-15
-	Socket.close()
+	conn.close()
 	connect()
 	
 def recive():
 	try:
-		data = Socket.recv(2048)
+		data = conn.recv(2048)
 		return data
 	except Exception,e:
 		if not e.args[0] in [errno.EAGAIN, errno.EWOULDBLOCK]:
@@ -57,7 +57,7 @@ def send(frametime):
 		console.display(('>/'+data))
 		#only display messages in silent mode
 		if not silent or data[0:5] in ["NAMES", "PONG ", "JOIN ", "QUIT ", "AUTH "]:
-			Socket.send(data)
+			conn.send(data)
 			
 		lastsend = frametime
 				
@@ -122,6 +122,11 @@ def run(frametime):
 						bot.remove_player(nick, [], False, True)
 						remove_op(nick)
 
+					elif l[1]=="KICK" and l[2]==cfg['HOME']:
+						nick = l[3].lower()
+						bot.remove_player(nick, [], False, False)
+						remove_op(nick)
+
 					elif l[1]=="/": #someone left or kicked us from a channel
 						if l[2]==cfg['HOME']:
 							if l[3]==cfg['NICK']:
@@ -148,7 +153,7 @@ def run(frametime):
 def terminate():
 	console.display("Closing connection")
 	try:
-		Socket.send(":QUIT Quit\r\n")
+		conn.send(":QUIT Quit\r\n")
 	except: pass
 		
 
@@ -216,7 +221,7 @@ def get_ip(nick):
 	for i in ("WHOIS","WHOWAS"):
 		data = "{0} {1}\r\n".format(i,nick)
 		console.display(('>/'+data))
-		Socket.send(data)
+		conn.send(data)
 		
 		#oldtime=time.time()
 		time.sleep(0.5)

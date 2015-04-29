@@ -756,8 +756,12 @@ def set_silent(nick, args):
 
 def refresh_ops(nick):
 	irc.refresh_ops()
+	
 def quit(nick, args):
 	if re.match("@|\+",irc.get_usermod(nick)):
 		console.terminate()
 	else:
 		irc.reply(nick, "You have no right for this!")
+		
+def terminate():
+	stats2.close()
