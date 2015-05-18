@@ -646,6 +646,7 @@ def noadd(nick, args):
 			duratation = int(duratation)
 		except:
 			irc.reply(nick,"Bad duratation argument.")
+			return
 
 		if abs(duratation) > 10000:
 			irc.reply(nick,"Max ban duratation is 10000 hours.")
@@ -689,6 +690,7 @@ def chanban(nick,args):
 			duratation = int(duratation)
 		except:
 			irc.reply(nick,"Bad duratation argument.")
+			return
 
 		if 0 < duratation > 12:
 			irc.reply(nick,"Max ban duratation is 12 hours.")
