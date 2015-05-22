@@ -404,10 +404,7 @@ def highlight_blacklist(nick = False):
 	else:
 		c.execute("SELECT nick FROM highlight_blacklist")
 		result = c.fetchall()
-		if len(result) > 0:
-			return result[0]
-		else:
-			return result
+		return [ i[0] for i in result ]
 
 def create_tables():
 	print "CREATING STATS DATABASE..."
