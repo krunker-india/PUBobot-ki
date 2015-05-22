@@ -151,7 +151,12 @@ def run(frametime):
 									bot.update_topic()
 								
 					elif l[1]=="PRIVMSG" and (l[2]==cfg['HOME'] or l[2] in cfg['SECRETSHANS']): #process user message on HOME channel with crash handling
-						bot.processmsg(l)
+						try:
+							bot.processmsg(l)
+						except Exception, e:
+							send_queue.insert("PRIVMSG {0} :Error while executing!\r\n".format(cfg['HOME']))
+							console.display("### Error while processing message. ###")
+							console.display("### Exception: {0} ###".format(e))
 						#pass
 						
 def terminate():
