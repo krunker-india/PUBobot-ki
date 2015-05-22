@@ -389,6 +389,26 @@ def votes_show(args):
   else:
     return(("Usage: !votes [option]."), )
     
+def highlight_blacklist(nick = False):
+	if nick:
+		c.execute("SELECT * FROM highlight_blacklist WHERE nick = ?", (nick, ))
+		result = c.fetchone()
+		if result != None:
+			c.execute("DELETE FROM highlight_blacklist WHERE nick = ?", (nick, ))
+			s = "You were removed from highlight blacklist."
+		else:
+			c.execute("INSERT INTO highlight_blacklist values ( ? )", (nick, ))
+			s = "You were added to highlight blacklist."
+		conn.commit()
+		return s
+	else:
+		c.execute("SELECT nick FROM highlight_blacklist")
+		result = c.fetchall()
+		if len(result) > 0:
+			return result[0]
+		else:
+			return result
+
 def create_tables():
 	print "CREATING STATS DATABASE..."
 	c.execute("""CREATE TABLE bans (id INTEGER, ip TEXT NOT NULL, nick TEXT NOT NULL, active INTEGER DEFAULT 0, time INTEGER, duratation INTEGER, reason TEXT, admin TEXT, unban_admin TEXT, PRIMARY KEY(id) );""")
@@ -401,6 +421,7 @@ def create_tables():
 	c.execute("""CREATE TABLE quotes (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT, text TEXT);""")
 	c.execute("""CREATE TABLE votes_topics (id INTEGER PRIMARY KEY AUTOINCREMENT, topic TEXT, author TEXT, active INTEGER, votes INTEGER);""")
 	c.execute("""CREATE TABLE votes_votes (id INTEGER PRIMARY KEY AUTOINCREMENT, topic_id INTEGER, nick TEXT, ip TEXT);""")
+	c.execute("""CREATE TABLE highlight_blacklist (nick TEXT PRIMARY KEY);""")
 
 	c.execute("""CREATE INDEX bans_active ON bans (active DESC)""")
 

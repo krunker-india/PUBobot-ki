@@ -9,7 +9,7 @@ from config import cfg
 # SOCKET AND SYSTEM FUNCTIONS #
 
 def init():
-	global readbuffer, send_queue, disconnect_time, silent, lastsend, lastconnect, connected, ops
+	global readbuffer, send_queue, disconnect_time, silent, lastsend, lastconnect, connected, users
 	
 	silent = False
 	readbuffer = ""
@@ -18,7 +18,7 @@ def init():
 	disconnect_time = False
 	lastsend = 0
 	lastconnect = 0
-	ops = []
+	users = []
 		
 def connect():
 	global conn, connected
@@ -115,21 +115,21 @@ def run(frametime):
 						newnick = l[2].lstrip(':').lower()
 						console.display("NICK: {0} | NEWNICK: {1}".format(nick, newnick))
 						bot.remove_player(nick, [], newnick)
-						update_op_nick(nick, newnick)
+						update_user_nick(nick, newnick)
 
 					elif l[1]=="PART" and l[2]==cfg['HOME'] or l[1]=="QUIT": #someone left, need to update added players
 						nick = l[0].lstrip(":").split("!")[0].lower()
 						bot.remove_player(nick, [], False, True)
-						remove_op(nick)
+						remove_user(nick)
 
 					elif l[1]=="KICK" and l[2]==cfg['HOME']:
 						nick = l[3].lower()
 						bot.remove_player(nick, [], False, False)
-						remove_op(nick)
+						remove_user(nick)
 
 					elif l[1]=="JOIN" and l[2]==cfg['HOME']:
 						nick = l[0].lstrip(":").split("!")[0].lower()
-						update_op_mode(" ", nick)
+						update_user_mode(" ", nick)
 
 					elif l[1]=="/": #someone left or kicked us from a channel
 						if l[2]==cfg['HOME']:
@@ -138,14 +138,14 @@ def run(frametime):
 							else:
 								nick = l[3].lower()
 								bot.remove_player(nick, [], False, True)
-								remove_op(nick)
+								remove_user(nick)
 						elif l[3]==cfg['NICK']:
 							remove_spam_channel([l[2]])
 				
 					elif l[1]=="MODE": #someone changed usermod, update names, update channel topic if we got +o
 						if len(l)>4:
 							if l[2] == cfg['HOME']:
-								update_op_mode(l[3], l[4].lower())
+								update_user_mode(l[3], l[4].lower())
 								
 							 	if l[3] == "+o" and l[4] == cfg['NICK']:
 									bot.update_topic()
@@ -176,48 +176,53 @@ def parse_names(nameslist):
 			nick = i
 
 		change = False
-		for op in ops:
-			if op[0] == nick:
-				op[1] == usermod
+		for user in users:
+			if user[0] == nick:
+				user[1] == usermod
 				change = True
 	
 		if not change:
-			ops.append([nick, usermod])
+			users.append([nick, usermod])
 
-def update_op_mode(mode, nick):
+def update_user_mode(mode, nick):
 	if mode[0] == "-":
-		mode = ""
+		if nick in users:
+			mode = ""
+		else:
+			return
 	elif mode[0] == "+":
 		if mode[1] == "v":
 			mode = "+"
 		elif mode[1] == "o":
 			mode = "@"
 		else:
-			mode = ""
-	else:
+			return
+	elif mode == " ":
 		mode = ""
+	else:
+		return
 			
-	for i in ops:
+	for i in users:
 		if i[0] == nick:
 			i[1] = mode
 			return
 	
-	ops.append([nick, mode])
+	users.append([nick, mode])
 	
-def update_op_nick(oldnick, newnick):
-	for i in ops:
+def update_user_nick(oldnick, newnick):
+	for i in users:
 		if i[0] == oldnick:
 			i[0] = newnick
 			
-def remove_op(nick):
-	for i in ops:
+def remove_user(nick):
+	for i in users:
 		if i[0] == nick:
-			ops.remove(i)
+			users.remove(i)
 			return
 	
-def refresh_ops():
-	global ops
-	ops = []
+def refresh_users():
+	global users
+	users = []
 	send_queue.append("NAMES {0}\r\n".format(cfg['HOME']))
 
 # IRC HELPER FUNCTIONS #
@@ -245,7 +250,7 @@ def get_ip(nick):
 	return False
 	
 def get_usermod(nick):
-	for i in ops:
+	for i in users:
 		if i[0] == nick:
 			return i[1]
 	return ""
@@ -270,7 +275,7 @@ def notice(msg):
 	send_queue.append('PRIVMSG {0} :{1}\r\n'.format(cfg['HOME'],msg))
 	
 def highlight(blacklist):
-	nicks = [i[0] for i in ops if i[0] not in blacklist]
+	nicks = [i[0] for i in users if i[0] not in blacklist]
 	if nicks != []:
 		send_queue.append('PRIVMSG {0} :{1}\r\n'.format(cfg['HOME'], ' '.join(nicks)))
 	send_queue.append('PRIVMSG {0} :Please !add to pickups!\r\n'.format(cfg['HOME']))
