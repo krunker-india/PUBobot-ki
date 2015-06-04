@@ -5,21 +5,27 @@ import time, datetime, re, traceback, random
 import irc, config, console, stats2, scheduler
 
 def init():
-	global oldtopic, lastgame_cache, pickups, cfg, oldtime, highlight_time
+	global oldtopic, lastgame_cache, cfg, oldtime, highlight_time
 
 	oldtime = 0
 	highlight_time = 0
 
 	stats2.init()
 
-	#init pickups
-	pickups = []
-	for i in config.pickups:
-		pickup = Pickup(i[0],i[1],i[2],i[3],False)
+	init_pickups()
 
 	cfg = config.cfg
 	lastgame_cache = stats2.lastgame()
 	oldtopic = ''
+	
+	scheduler.add_task("#backup#", cfg['BACKUP_TIME'] * 60 * 60, "bot.scheduler_backup()")
+	
+def init_pickups():
+	global pickups
+
+	pickups = []
+	for i in config.pickups:
+		pickup = Pickup(i[0],i[1],i[2],i[3],False)
 
 class Pickup():
 
@@ -160,9 +166,12 @@ def processmsg(msgtup): #parse PRIVMSG event
 	elif lower[3]==":!reset":
 		reset_players(nick, lower[4:msglen])
 
-	elif lower[3]==":!backup":
+	elif lower[3]==":!backup_save":
 		backup_save(nick)
 
+	elif lower[3]==":!backup_load":
+		backup_load(nick, lower[4:5])
+		
 	elif lower[3]==":!topiclimit" and msglen==5:
 		set_topic_limit(nick, lower[4])
 
@@ -626,34 +635,59 @@ def noadd(nick, args):
 	if re.match("@|\+",irc.get_usermod(nick)):
 		reason = ''
 		duratation = cfg['BANTIME']
+		ip = False
 
 		if args != []:
-			targetnick = args[0]
-			if len(args) > 1:
-				duratation = args[1]
-				if len(args) > 2:
-					reason = args[2] 
+			targetnick = args.pop(0)
+			i=0
+			while len(args):
+				i += 1
+				arg = args.pop(0)
+				
+				if i == 1 and arg.isdigit() == True:
+					duratation = int(arg)
+					
+				elif arg in ["-t", "--time"]:
+					try:
+						duratation = int(args.pop(0))
+					except:
+						irc.reply(nick,"Bad duratation argument.")
+						return
+					
+				elif arg in ["-r", "--reason"]:
+					l=[]
+					while len(args):
+						if args[0][0:1] != '-':
+							l.append(args.pop(0))
+						else:
+							break
+					reason = " ".join(l)
+						
+				elif arg in ["-m", "--ip-mask"]:
+					try:
+						ip = args.pop(0)
+						re.compile("^{0}$".format(re.escape(ip).replace("\*",".*")))	
+					except:
+						irc.reply(nick,"Bad ip mask argument.")
+						return
+				else:
+					irc.reply(nick, "Bad argument @ '{0}'. Usage !noadd $nick [$time] [--time|-t $time] [--reason|-r $reason] [--ip-mask|-m $ip_mask]".format(arg))
+					return
+					
 		else:
 			irc.reply(nick, "You must specify target nick!")
-			return
-
-		try:
-			duratation = int(duratation)
-		except:
-			irc.reply(nick,"Bad duratation argument.")
 			return
 
 		if abs(duratation) > 10000:
 			irc.reply(nick,"Max ban duratation is 10000 hours.")
 			return
 
-		ip = irc.get_ip(targetnick)
-		if (ip==False):
-			irc.reply(nick,"No such nick on server.")
-		else:
-			remove_player(targetnick,[])
-			s = stats2.noadd(ip, targetnick, duratation, nick, reason)
-			irc.notice(s)
+		if not ip:
+			ip = irc.get_ip(targetnick)
+			
+		remove_player(targetnick,[])
+		s = stats2.noadd(ip, targetnick, duratation, nick, reason)
+		irc.notice(s)
 	else:
 		irc.reply(nick, "You have no right for this!")
 
@@ -712,8 +746,8 @@ def remove_spam_channel(nick, arg):
 	else:
 		irc.reply(nick, "You have no right for this!")
 
-def reset_players(nick, args):
-	if re.match("@|\+",irc.get_usermod(nick)):
+def reset_players(nick=False, args=[]):
+	if nick == False or re.match("@|\+",irc.get_usermod(nick)):
 		removed = []
 		for pickup in pickups:
 			if pickup.name in args or args == []:
@@ -740,9 +774,26 @@ def reset_players(nick, args):
 
 def backup_save(nick):
 	if re.match("@|\+",irc.get_usermod(nick)):
-		config.save()
+		dirname = nick + datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
+		config.backup(dirname)
+		irc.reply(nick, "Backup saved to backups/{0}. Use !backup_load {0} to restore.".format(dirname))
 	else:
 		irc.reply(nick, "You have no right for this!")
+
+def backup_load(nick, args):
+	if re.match("@|\+", irc.get_usermod(nick)):
+		if len(args) > 0:
+			reply = config.backup_load(args[0])
+		else:
+			reply = config.backup_load()
+		irc.reply(nick, reply)
+	else:
+		irc.reply(nick, "You have no right for this!")
+
+def scheduler_backup():
+	dirname = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
+	config.backup(dirname)
+	scheduler.add_task("#backup#", cfg['BACKUP_TIME'] * 60 * 60, "bot.scheduler_backup()")
 
 def set_silent(nick, args):
 	if re.match("@|\+",irc.get_usermod(nick)):

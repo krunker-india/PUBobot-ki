@@ -2,11 +2,12 @@
 import sqlite3, operator
 from datetime import timedelta
 from time import time
+import re
 
 #INIT
-def init():
+def init(filename="stats.sql"):
 	global conn, c
-	conn = sqlite3.connect('stats.sql')
+	conn = sqlite3.connect(filename)
 	c = conn.cursor()
 
 	#check if we have tables, create if needed
@@ -134,22 +135,30 @@ def top(timegap=False):
 def noadd(ip, nick, duratation, admin, reason=''):
   c.execute("SELECT * FROM bans WHERE active = 1 AND nick = ?", (nick, ))
   ban = c.fetchone()
-  if ban != None:
-    c.execute("""UPDATE bans SET ip=?, time=?, duratation=?, reason=?, admin=? WHERE active = 1 AND NICK = ?""", (ip, int(time()), duratation*60*60, reason, admin, nick))
-    conn.commit()
-    return("Updated {0}'s noadd to {1} hours from now.".format(nick, duratation))
+  if ip == False:
+    if ban != None:
+      c.execute("""UPDATE bans SET time=?, duratation=?, reason=?, admin=? WHERE active = 1 AND NICK = ?""", (int(time()), duratation*60*60, reason, admin, nick))
+      conn.commit()
+      return("Updated {0}'s noadd to {1} hours from now.".format(nick, duratation))
+    else:
+      return("Couldnt find the nick on the IRC server nor in active noadds list.")
 
-  #add new ban
-  c.execute("UPDATE overall_stats SET bans = bans+1")
-  c.execute("INSERT OR IGNORE INTO players VALUES (?, 0, 0, 0, 0, 'False', 'False')", (nick, ))
-  c.execute("UPDATE players SET bans = bans+1 WHERE nick = ?", (nick, ))
-  c.execute("INSERT INTO bans (ip, nick, active, time, duratation, reason, admin) VALUES (?, ?, 1, ?, ?, ?, ?)", (ip, nick, int(time()), duratation*60*60, reason, admin))
-  conn.commit()
-  #return("Banned {0} for {1} hours".format(nick, duratation))
-  #Get a quote!
-  c.execute("SELECT * FROM nukem_quotes ORDER BY RANDOM() LIMIT 1")
-  quote = c.fetchone()
-  return(quote[0])
+  else:
+    if ban != None:
+      c.execute("""UPDATE bans SET ip=?, time=?, duratation=?, reason=?, admin=? WHERE active = 1 AND NICK = ?""", (ip, int(time()), duratation*60*60, reason, admin, nick))
+      conn.commit()
+      return("Updated {0}'s noadd to {1} hours from now.".format(nick, duratation))
+    #add new ban
+    c.execute("UPDATE overall_stats SET bans = bans+1")
+    c.execute("INSERT OR IGNORE INTO players VALUES (?, 0, 0, 0, 0, 'False', 'False')", (nick, ))
+    c.execute("UPDATE players SET bans = bans+1 WHERE nick = ?", (nick, ))
+    c.execute("INSERT INTO bans (ip, nick, active, time, duratation, reason, admin) VALUES (?, ?, 1, ?, ?, ?, ?)", (ip, nick, int(time()), duratation*60*60, reason, admin))
+    conn.commit()
+    #return("Banned {0} for {1} hours".format(nick, duratation))
+    #Get a quote!
+    c.execute("SELECT * FROM nukem_quotes ORDER BY RANDOM() LIMIT 1")
+    quote = c.fetchone()
+    return(quote[0])
 
 def forgive(nick, admin):
   c.execute("SELECT * FROM bans WHERE active = 1 and nick = ?", (nick, ))
@@ -214,21 +223,22 @@ def check_ip(ip, nick): #check on bans and phrases
 
   #check if he is banned
   unbanned=False
-  c.execute("SELECT * FROM bans WHERE active = 1 and ( nick = ? OR ip = ? )", (nick, ip))
+  c.execute("SELECT * FROM bans WHERE active = 1")
   bans = c.fetchall()
   for ban in bans:
-    if ban[4]+ban[5] > time():
-      timeleft=timedelta( seconds=int(ban[5]-(time()-ban[4])) )
-      if ban[2] == nick:
-        return((True, "04You have been banned. {0} time left.".format(timeleft)))
-      else:
-        return((True, "04You have been banned, mr. {0}. {1} time left.".format(ban[2],timeleft)))
-    else: #ban time ran out, disable ban
-      c.execute("UPDATE bans SET active = 0, unban_admin = ? WHERE id = ? ", ("time", ban[0]))
-      unbanned=True
-  if unbanned:
-    conn.commit()
-    return((False, "03Be nice next time, please."))
+    if ban[2] == nick or re.match("^{0}$".format(re.escape(ban[1]).replace("\*",".*")), ip):
+      if ban[4]+ban[5] > time():
+        timeleft=timedelta( seconds=int(ban[5]-(time()-ban[4])) )
+        if ban[2] == nick:
+          return((True, "04You have been banned. {0} time left.".format(timeleft)))
+        else:
+          return((True, "04You have been banned, mr. {0}. {1} time left.".format(ban[2],timeleft)))
+      else: #ban time ran out, disable ban
+        c.execute("UPDATE bans SET active = 0, unban_admin = ? WHERE id = ? ", ("time", ban[0]))
+        unbanned=True
+    if unbanned:
+      conn.commit()
+      return((False, "03Be nice next time, please."))
 
   #no bans, find phrases!
   c.execute("SELECT phrase FROM players WHERE nick = ? AND phrase != 'False'", (nick, ))

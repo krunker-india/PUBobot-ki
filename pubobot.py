@@ -8,9 +8,9 @@ from modules import console, config, bot, irc, scheduler
 
 #start the bot
 config.init()
+scheduler.init()
 irc.init()
 bot.init()
-scheduler.init()
 console.init()
 
 while 1:

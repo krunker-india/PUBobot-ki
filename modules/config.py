@@ -1,13 +1,13 @@
 #!/usr/bin/python2
 # encoding: utf-8
 
-import console, bot
+import console, bot, datetime, shutil, os
 
-def init():
+def init(dirname=""):
 	global pickups
 	
 	#load config
-	f = open('config.cfg', 'r')
+	f = open(dirname + 'config.cfg', 'r')
 	for line in f.readlines():
 		try:
 			a = line.split('=')
@@ -20,21 +20,24 @@ def init():
 	
 	#load games list
 	try:
-		f = open('pickuplist','r')
+		f = open(dirname + 'pickuplist','r')
 		pickups = eval(f.read())
 		f.close
 	except:
 		console.display("Pickups list import failed!")
 		pickups = []
+		
+	if not os.path.exists("backups"):
+		os.makedirs("backups")
 
-def save():
+def save(directory=""):
 	global pickups
 	# write gameslist
 	console.display('Writing pickuplist file.')
 	pickups=[]
 	for i in bot.pickups:
 		pickups.append((i.name,i.maxplayers,i.ip,i.default))
-	f = open('pickuplist', 'w')
+	f = open(directory + 'pickuplist', 'w')
 	syntax="# syntax: ('name','number_of_players,'ip','show_in_topic')\n"
 	f.write(syntax + str(pickups).replace("), (", "),\n("))
 	f.close()
@@ -50,9 +53,41 @@ def save():
 				else:
 					cfglines[cfglines.index(line)] =  i + " = " + str(cfg[i]) + "\n"
   	cfgfile.close()
-  	cfgfile = open("config.cfg", "w")
+  	cfgfile = open(directory + "config.cfg", "w")
   	cfgfile.write("".join(cfglines))
   	cfgfile.close()
+  	
+def backup(dirname):
+	os.makedirs("backups/" + dirname)
+	shutil.copyfile("stats.sql", "backups/{0}/stats.sql".format(dirname))
+	save("backups/{0}/".format(dirname))
+	console.display("Backup saved.")
+	
+	#delete old backups
+	dirs = [i for i in os.listdir("backups") if i[0].isdigit()]
+	delete_num = len(dirs) - cfg['KEEP_BACKUPS']
+	if delete_num > 0:
+		to_delete = sorted(dirs)[0:delete_num]
+		for i in to_delete:
+			shutil.rmtree('backups/{0}'.format(i))
+	
+def backup_load(dirname=False):
+	if not dirname:
+		try:
+			dirs = [i for i in os.listdir("backups") if i[0].isdigit()]
+			dirname = sorted(dirs, reverse=True)[0]
+		except:
+			return "No backups found"
+	if os.path.exists("backups/" + dirname):
+		bot.reset_players()
+		bot.stats2.close()
+		bot.stats2.init("backups/{0}/stats.sql".format(dirname))
+		init("backups/{0}/".format(dirname))
+		bot.init_pickups()
+		return("Loaded backup {0}".format(dirname))
+	else:
+		return "Backup '{0}' not found!".format(dirname)
+	
 
 # DEFAULT SETTINGS #
 cfg = {
@@ -72,6 +107,7 @@ cfg = {
 	'BANTIME': 2,
 	'PICKUPS_IN_TOPIC': 6,
 	'BACKUP_TIME': 6,
+	'KEEP_BACKUPS': 10,
 	'AUTOREMOVE_TIME': 180
 }
 gameslist = [('bomb', 10, '77.72.150.21:44400;password pickupftw', True)]

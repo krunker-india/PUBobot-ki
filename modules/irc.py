@@ -154,7 +154,7 @@ def run(frametime):
 						try:
 							bot.processmsg(l)
 						except Exception, e:
-							send_queue.insert("PRIVMSG {0} :Error while executing!\r\n".format(cfg['HOME']))
+							send_queue.insert(0, "PRIVMSG {0} :Error while executing!\r\n".format(cfg['HOME']))
 							console.display("### Error while processing message. ###")
 							console.display("### Exception: {0} ###".format(e))
 						#pass
