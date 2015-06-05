@@ -13,6 +13,9 @@ irc.init()
 bot.init()
 console.init()
 
+os.environ['TZ'] = config.cfg['TIMEZONE']
+time.tzset()
+
 while 1:
 	frametime = time.time()
 	

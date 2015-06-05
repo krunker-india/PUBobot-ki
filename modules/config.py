@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 # encoding: utf-8
 
-import console, bot, datetime, shutil, os
+import console, bot, shutil, os
 
 def init(dirname=""):
 	global pickups
@@ -108,6 +108,7 @@ cfg = {
 	'PICKUPS_IN_TOPIC': 6,
 	'BACKUP_TIME': 6,
 	'KEEP_BACKUPS': 10,
-	'AUTOREMOVE_TIME': 180
+	'AUTOREMOVE_TIME': 180,
+	'TIMEZONE': 'Europe/Warsaw'
 }
 gameslist = [('bomb', 10, '77.72.150.21:44400;password pickupftw', True)]
