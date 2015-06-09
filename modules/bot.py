@@ -18,7 +18,7 @@ def init():
 	lastgame_cache = stats2.lastgame()
 	oldtopic = ''
 	
-	scheduler.add_task("#backup#", cfg['BACKUP_TIME'] * 60 * 60, "bot.scheduler_backup()")
+	scheduler.add_task("#backup#", cfg['BACKUP_TIME'] * 60 * 60, scheduler_backup, ())
 	
 def init_pickups():
 	global pickups
@@ -225,7 +225,7 @@ def add_player(nick, ip, target_pickups):
 		if nick in scheduler.tasks:
 			scheduler.cancel_task(nick)
 		delay = (cfg['AUTOREMOVE_TIME']*60)-(5*60)
-		scheduler.add_task(nick, delay, "bot.scheduler_warning('{0}')".format(nick))
+		scheduler.add_task(nick, delay, scheduler_warning, (nick,))
 
 	#reply a phrase and update topic
 	if changes:
@@ -266,15 +266,14 @@ def remove_player(nick,args,newnick=False,quit=False,from_scheduler=False):
 				delay_left = scheduler.tasks[nick][0] - time.time()
 				task_name = scheduler.tasks[nick][1][10:16]
 				if task_name == "remove":
-					new_task = "bot.scheduler_remove('{0}')".format(newnick)
+					scheduler.add_task(newnick, delay_left, scheduler_remove, (newnick, ))
 				else:
-					new_task = "bot.scheduler_warning('{0}')".format(newnick)
+					scheduler.add_task(newnick, delay_left, scheduler_warning, (newnick, ))
 				scheduler.cancel_task(nick)
-				scheduler.add_task(newnick, delay_left, new_task)
-
+				
 def scheduler_warning(nick): #SEND WARNING MESSAGE
 	irc.private_reply(nick,'AFK check...Please use !add command...You have 5 minutes')
-	scheduler.add_task(nick, 5*60, "bot.scheduler_remove('{0}')".format(nick))
+	scheduler.add_task(nick, 5*60, scheduler_remove, (nick, ))
 
 def scheduler_remove(nick):
 	remove_player(nick, [], False, False, True)
@@ -423,7 +422,7 @@ def expire(nick,timelist):
 		#apply given time
 		if timeint>0 and timeint<115200: #restart the scheduler task, no afk check task for this guy
 			scheduler.cancel_task(nick)
-			scheduler.add_task(nick, timeint, "bot.scheduler_remove('{0}')".format(nick))
+			scheduler.add_task(nick, timeint, scheduler_remove, (nick, ))
 			irc.private_reply(nick, "You will be removed at {0} {1}".format(datetime.datetime.fromtimestamp(time.time()+timeint).strftime("%H:%M:%S"), time.tzname[0]))
 		else:
 			irc.private_reply(nick, "Invalid time amount")
@@ -793,7 +792,7 @@ def backup_load(nick, args):
 def scheduler_backup():
 	dirname = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
 	config.backup(dirname)
-	scheduler.add_task("#backup#", cfg['BACKUP_TIME'] * 60 * 60, "bot.scheduler_backup()")
+	scheduler.add_task("#backup#", cfg['BACKUP_TIME'] * 60 * 60, scheduler_backup, ())
 
 def set_silent(nick, args):
 	if re.match("@|\+",irc.get_usermod(nick)):
