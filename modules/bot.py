@@ -195,10 +195,21 @@ def processmsg(msgtup): #parse PRIVMSG event
 
 	elif lower[3]==":!refresh_ops":
 		refresh_ops(nick)
+		
+	elif lower[3]==":!help":
+		show_help(nick, lower[4:msglen])
+	
+	elif lower[3]==":!commands":
+		irc.private_reply(nick, stats2.show_commands())
 
 # COMMANDS #
 
 def add_player(nick, ip, target_pickups):
+	#check delay between last pickup
+	if lastgame_cache:
+		if time.time() - lastgame_cache[1] < cfg['NEXT_PU_ADD_DELAY'] * 60 and nick in lastgame_cache[4]:
+			irc.reply(nick, "Get off me! Your pickup already started!")
+	
 	#check noadds and phrases
 	l = stats2.check_ip(ip, nick)
 	if l[0] == True: # if banned or faker
@@ -301,18 +312,20 @@ def who(nick, args):
 		irc.private_reply(nick,'sleepsow...06ZzZz')
 
 def lastgame(nick, args):
-  if args != []:
-    l = stats2.lastgame(args[0]) # number, ago, gametype, players, caps
-    if l:
-      irc.private_reply(nick, "Pickup #{0}, {1} ago [{2}]: {3}. Caps: {4}".format(l[0], l[1], l[2], l[3], l[4]))
-    else:
-      irc.private_reply(nick, "No pickups found")
-  else:
-    l = stats2.lastgame()
-    if l:
-      irc.private_reply(nick, "Pickup #{0}, {1} ago [{2}]: {3}. Caps: {4}".format(l[0], l[1], l[2], l[3], l[4]))
-    else:
-      irc.private_reply(nick, "No pickups played yet.")
+	if args != []:
+		l = stats2.lastgame(args[0]) # number, ago, gametype, players, caps
+	else:
+		l = lastgame_cache
+	if l:
+		n = l[0]
+		ago = datetime.timedelta(seconds=int(time.time() - int(l[1])))
+		gt = l[2]
+		caps = ", ".join(l[3])
+		players = ", ".join(l[4])
+		irc.private_reply(nick, "Pickup #{0}, {1} ago [{2}]: {3}. Caps: {4}".format(n, ago, gt, players, caps))
+	else:
+		irc.private_reply(nick, "No pickups found.")
+      
 
 def sub_request(nick):
 	global oldtime
@@ -321,7 +334,6 @@ def sub_request(nick):
 	if lastgame_cache:
 		newtime=time.time()
 		if newtime-oldtime>60:
-			print lastgame_cache[0], lastgame_cache[1], lastgame_cache[2]
 			for i in ( i for i in pickups if i.name == lastgame_cache[2]):
 				ip = i.ip
 				irc.promote("SUB NEEDED for {0} pickup! Please connect {1} !".format(lastgame_cache[2],ip))
@@ -558,7 +570,7 @@ def getip(nick,args): #GET IP FOR GAME
 	if args != []:
 		pickup_or_ip = args[0]
 	else:
-		l = stats2.lastgame()
+		l = lastgame_cache
 		if l:
 			pickup_or_ip = l[2]
 		else:
@@ -803,6 +815,13 @@ def set_silent(nick, args):
 
 def refresh_ops(nick):
 	irc.refresh_ops()
+	
+def show_help(nick, args):
+	if len(args) == 0:
+		irc.private_reply(nick, cfg['HELPINFO'])
+	else:
+		reply = stats2.show_help(args[0].lstrip("!"))
+		irc.private_reply(nick, reply)
 	
 def quit(nick, args):
 	if re.match("@|\+",irc.get_usermod(nick)):

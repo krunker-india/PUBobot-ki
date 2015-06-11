@@ -105,10 +105,12 @@ cfg = {
 	'DEFAULTIP': "77.72.150.21:44400;password pickupftw",
 	'MOTD': "do !help or !games | HOROSH duel cup 18.01 http://wswhorosh.tourney.cc/sign-ups/",
 	'BANTIME': 2,
+	'NEXT_PU_ADD_DELAY': 1,
 	'PICKUPS_IN_TOPIC': 6,
 	'BACKUP_TIME': 6,
 	'KEEP_BACKUPS': 10,
 	'AUTOREMOVE_TIME': 180,
-	'TIMEZONE': 'Europe/Warsaw'
+	'TIMEZONE': 'Europe/Warsaw',
+	'HELPINFO': "General info can be found at http://www.autistici.org/gamers/pickup/ . Use '!commands' to show complete commands list or '!help command' to view specified command usage."
 }
 gameslist = [('bomb', 10, '77.72.150.21:44400;password pickupftw', True)]

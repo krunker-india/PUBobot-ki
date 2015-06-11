@@ -11,10 +11,7 @@ def init(filename="stats.sql"):
 	c = conn.cursor()
 
 	#check if we have tables, create if needed
-	c.execute("""SELECT name FROM sqlite_master WHERE type='table' AND name='bans'""")
-	t = c.fetchone()
-	if t == None:
-		create_tables()
+	check_tables()
 
 def register_pickup(gametype, players, caps,):
   playersstr = " " + " ".join(players) + " "
@@ -59,9 +56,10 @@ def lastgame(text=False): #[id, gametype, ago, [players], [caps]]
   if result != None:
     #players = result[5].strip().replace(" ",", ")
     #caps = "{0}, {1}".format(result[3],result[4])
-    ago = timedelta(seconds=int(time() - int(result[1])))
-    #return "Pickup #{0}, {1}, {2} ago. Players: {3}. Caps: {4}".format(result[0],result[2],ago,players,caps)
-    return result[0], ago, result[2], ", ".join(result[5].strip().split()), ", ".join([result[3], result[4]]) 
+    #ago = timedelta(seconds=int(time() - int(result[1])))
+    
+    #return id, time, gametype, caps, players
+    return result[0], result[1], result[2], [result[3],result[4]], result[5].strip().split()
   else:
     return False
 
@@ -415,51 +413,119 @@ def highlight_blacklist(nick = False):
 		c.execute("SELECT nick FROM highlight_blacklist")
 		result = c.fetchall()
 		return [ i[0] for i in result ]
-
-def create_tables():
-	print "CREATING STATS DATABASE..."
-	c.execute("""CREATE TABLE bans (id INTEGER, ip TEXT NOT NULL, nick TEXT NOT NULL, active INTEGER DEFAULT 0, time INTEGER, duratation INTEGER, reason TEXT, admin TEXT, unban_admin TEXT, PRIMARY KEY(id) );""")
-	c.execute("""CREATE TABLE gametypes ( gametype TEXT, played INTEGER DEFAULT 0, lastgame INTEGER, PRIMARY KEY(gametype));""")
-	c.execute("""CREATE TABLE nukem_quotes (quote TEXT);""")
-	c.execute("""CREATE TABLE overall_stats (pickups INTEGER, bans INTEGER, quotes INTEGER, votes INTEGER);""")
-	c.execute("""CREATE TABLE pickups (id INTEGER PRIMARY KEY AUTOINCREMENT, time INTEGER, gametype TEXT, cap1 TEXT, cap2 TEXT, players TEXT);""")
-	c.execute("""CREATE TABLE player_games (id INTEGER PRIMARY KEY AUTOINCREMENT, pickup_id INTEGER, nick TEXT, time INTEGER, gametype TEXT);""")
-	c.execute("""CREATE TABLE players (nick TEXT, played INTEGER, caps INTEGER, bans INTEGER, lastgame INTEGER, locked TEXT, phrase TEXT, PRIMARY KEY(nick));""")
-	c.execute("""CREATE TABLE quotes (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT, text TEXT);""")
-	c.execute("""CREATE TABLE votes_topics (id INTEGER PRIMARY KEY AUTOINCREMENT, topic TEXT, author TEXT, active INTEGER, votes INTEGER);""")
-	c.execute("""CREATE TABLE votes_votes (id INTEGER PRIMARY KEY AUTOINCREMENT, topic_id INTEGER, nick TEXT, ip TEXT);""")
-	c.execute("""CREATE TABLE highlight_blacklist (nick TEXT PRIMARY KEY);""")
-
-	c.execute("""CREATE INDEX bans_active ON bans (active DESC)""")
-
-	c.execute("""CREATE VIEW player_stats AS SELECT pgs.nick, pus.gametype FROM player_games pgs, pickups pus WHERE pgs.pickup_id = pus.id""")
-	c.execute("""CREATE VIEW player_votes AS SELECT p.nick, v.topic FROM votes_votes p, votes_topics v WHERE p.topic_id = v.id""")
 	
-	c.executescript("""
-		INSERT INTO nukem_quotes VALUES ("AAhhh... much better!");
-		INSERT INTO nukem_quotes VALUES ("Bitchin'!");
-		INSERT INTO nukem_quotes VALUES ("Come get some!");
-		INSERT INTO nukem_quotes VALUES ("Do, or do not, there is no try.");
-		INSERT INTO nukem_quotes VALUES ("Eat shit and die.");
-		INSERT INTO nukem_quotes VALUES ("Get that crap outta here!");
-		INSERT INTO nukem_quotes VALUES ("Go ahead, make my day.");
-		INSERT INTO nukem_quotes VALUES ("Hail to the king, baby!");
-		INSERT INTO nukem_quotes VALUES ("Heh, heh, heh... what a mess!");
-		INSERT INTO nukem_quotes VALUES ("Holy cow!");
-		INSERT INTO nukem_quotes VALUES ("Holy shit!");
-		INSERT INTO nukem_quotes VALUES ("I'm gonna get medieval on your asses!");
-		INSERT INTO nukem_quotes VALUES ("I'm gonna kick your ass, bitch!");
-		INSERT INTO nukem_quotes VALUES ("Let God sort 'em out!");
-		INSERT INTO nukem_quotes VALUES ("Ooh, that's gotta hurt.");
-		INSERT INTO nukem_quotes VALUES ("See you in Hell!");
-		INSERT INTO nukem_quotes VALUES ("Piece of Cake.");
-		INSERT INTO nukem_quotes VALUES ("Suck it down!");
-		INSERT INTO nukem_quotes VALUES ("Terminated!");
-		INSERT INTO nukem_quotes VALUES ("Your face, your ass - what's the difference?");
-		INSERT INTO nukem_quotes VALUES ("Nobody fucks up our pickups... and lives!");
-		INSERT INTO nukem_quotes VALUES ("My boot, your face; the perfect couple.")
-	""")
-	
+def show_help(command):
+	c.execute("SELECT text FROM help WHERE command = ?", (command, ))
+	result = c.fetchone()
+	if result != None:
+		return result[0]
+	else:
+		return "Command not found! See '!commands'."
+def show_commands():
+	c.execute("SELECT command FROM help")
+	result = c.fetchall()
+	commands = [x[0] for x in result]
+	return " ".join(commands)
+
+def check_tables():
+	c.execute("""SELECT name FROM sqlite_master WHERE type='table' OR type='view';""")
+	t = c.fetchall()
+	tables = [ x[0] for x in t ]
+	if not 'bans' in tables:
+		c.execute("""CREATE TABLE bans (id INTEGER, ip TEXT NOT NULL, nick TEXT NOT NULL, active INTEGER DEFAULT 0, time INTEGER, duratation INTEGER, reason TEXT, admin TEXT, unban_admin TEXT, PRIMARY KEY(id) );""")
+		c.execute("""CREATE INDEX bans_active ON bans (active DESC)""")
+	if not 'gametypes' in tables:
+		c.execute("""CREATE TABLE gametypes ( gametype TEXT, played INTEGER DEFAULT 0, lastgame INTEGER, PRIMARY KEY(gametype));""")
+	if not 'overall_stats' in tables:
+		c.execute("""CREATE TABLE overall_stats (pickups INTEGER, bans INTEGER, quotes INTEGER, votes INTEGER);""")
+		c.execute("""INSERT INTO overall_stats VALUES (0, 0, 0, 0);""")
+	if not 'pickups' in tables:
+		c.execute("""CREATE TABLE pickups (id INTEGER PRIMARY KEY AUTOINCREMENT, time INTEGER, gametype TEXT, cap1 TEXT, cap2 TEXT, players TEXT);""")
+	if not 'player_games' in tables:
+		c.execute("""CREATE TABLE player_games (id INTEGER PRIMARY KEY AUTOINCREMENT, pickup_id INTEGER, nick TEXT, time INTEGER, gametype TEXT);""")
+	if not 'players' in tables:
+		c.execute("""CREATE TABLE players (nick TEXT, played INTEGER, caps INTEGER, bans INTEGER, lastgame INTEGER, locked TEXT, phrase TEXT, PRIMARY KEY(nick));""")
+	if not 'quotes' in tables:
+		c.execute("""CREATE TABLE quotes (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT, text TEXT);""")
+	if not 'votes_topics' in tables:
+		c.execute("""CREATE TABLE votes_topics (id INTEGER PRIMARY KEY AUTOINCREMENT, topic TEXT, author TEXT, active INTEGER, votes INTEGER);""")
+	if not 'votes_votes' in tables:
+		c.execute("""CREATE TABLE votes_votes (id INTEGER PRIMARY KEY AUTOINCREMENT, topic_id INTEGER, nick TEXT, ip TEXT);""")
+	if not 'highlight_blacklist' in tables:
+		c.execute("""CREATE TABLE highlight_blacklist (nick TEXT PRIMARY KEY);""")
+	if not 'player_stats' in tables:
+		c.execute("""CREATE VIEW player_stats AS SELECT pgs.nick, pus.gametype FROM player_games pgs, pickups pus WHERE pgs.pickup_id = pus.id""")
+	if not 'player_votes' in tables:
+		c.execute("""CREATE VIEW player_votes AS SELECT p.nick, v.topic FROM votes_votes p, votes_topics v WHERE p.topic_id = v.id""")
+	if not 'help' in tables:
+		c.execute("""CREATE TABLE help (command TEXT, text TEXT);""")
+		c.executescript("""
+			INSERT INTO help VALUES ("add", "'!add' or '++' - adds you to default pickups. '!add game[ game ..]]' or '+game[ game ..]]' - adds you to specified pickups.");
+			INSERT INTO help VALUES ("remove", "'!remove' or '--' - removes you from all pickups. '!remove game[ game ...]' or '-[game[ game ..]]' - removes you from specified pickups.");
+			INSERT INTO help VALUES ("expire", "'!expire time' - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.");
+			INSERT INTO help VALUES ("sub", "'!sub' - request sub for last game.");
+			INSERT INTO help VALUES ("promote", "'!promote [game]' - promotes pickup on channels. Can be used only once in a minut.");
+			INSERT INTO help VALUES ("highlight", "'!highlight' - highlights not added and not blacklisted users on pickup channel. Can be used once in a hour after each pickup.");
+			INSERT INTO help VALUES ("nohighlight", "'!stfu' or '!nohighlight' - puts your nick in highlight blacklist or removes your nick from it.");
+			INSERT INTO help VALUES ("stfu", "'!stfu' or '!nohighlight' - puts your nick in highlight blacklist or removes your nick from it. Use '!highlight_blacklist' to view blacklist.");
+			INSERT INTO help VALUES ("lock", "'!lock' - locks your current nick to a Q account. You must be logged in and have +x mode on connect to be able to lock your nick. '!lock nick[ ip] - admins can forcefully lock nick on current nick's owner or specified ip.");
+			INSERT INTO help VALUES ("unlock", "'!unlock' - unlock your current nick. '!unlock nick' - admins can forcefully unlock specified nick.");
+			INSERT INTO help VALUES ("who", "'!who [game[ game ...]]' - list of people who added to the pickups.");
+			INSERT INTO help VALUES ("expire", "'!expire' - shows you how much time left before you will be removed from all pickups.");
+			INSERT INTO help VALUES ("pickups", "'!pickups' or '!games' - complete pickups list.");
+			INSERT INTO help VALUES ("games", "'!pickups' or '!games' - complete pickups list.");
+			INSERT INTO help VALUES ("noadds", "'!noadds' - show list of users who are disallowed to play pickups.");
+			INSERT INTO help VALUES ("lastgame", "'!lastgame [nick or pickup]' - show last pickup, or last pickup by specified argument.");
+			INSERT INTO help VALUES ("top", "'!top [weekly or monthly or yearly]' - shows you most active players.");
+			INSERT INTO help VALUES ("stats", "'!stats [nick or pickup]' - shows you overall stats or stats for specified argument.");
+			INSERT INTO help VALUES ("ip", "'!ip [pickup or 'default']' - shows you ip of last pickup or specified pickup. Shows pickups with default ip if argument is 'default'. '!ip pickup[ pickup...] or 'default' : ip' - sets ip for specified pickups. Changes default ip and pickups ip with old default ip if argument if 'default'");
+			INSERT INTO help VALUES ("spamchans", "'!spamchans' - list of channels to promote pickups on.");
+			INSERT INTO help VALUES ("highlight_blacklist", "'!highlight_blacklist' - shows nicks in highlight blacklist. Users in this list wont be highlighted on !highlight command. Use '!stfu' or '!nohighlight' to join or leave the list.");
+			INSERT INTO help VALUES ("motd", "'!motd text' - sets the channel topic message.");
+			INSERT INTO help VALUES ("noadd", "'!noadd nick [hours] [-t hours] [-r reason] [-m ip_address_mask] - disallow user to play pickups. Ip address will be detected automaticly if '-m' argument is not specified.");
+			INSERT INTO help VALUES ("forgive", "'!forgive nick' - allow user from noadds list to play pickups.");
+			INSERT INTO help VALUES ("chanban", "'!chanban nick[ hours]' - kick and ban specified user from channel. Command is made to allow +v users to ban for short amount of time (12 hours max).");
+			INSERT INTO help VALUES ("phrase", "'!phrase nick text' - set specified reply for specified nick after !add command.");
+			INSERT INTO help VALUES ("remove_players", "'!remove_players nick[ nick ...]' - remove specified players from all pickups.");
+			INSERT INTO help VALUES ("reset", "'!reset' - removes all players from all pickups.");
+			INSERT INTO help VALUES ("add_pickups", "'!add_pickups name:players[ name:players ...]' - creates new pickups.");
+			INSERT INTO help VALUES ("remove_pickups", "'!remove_pickups name[ name ...]' - removes specified pickups.");
+			INSERT INTO help VALUES ("default_pickups", "'!default_pickups name[ name ...]' - sets default pickups.");
+			INSERT INTO help VALUES ("topiclimit", "'!topiclimit number' - sets maximum amount of pickups to be displayed in topic.");
+			INSERT INTO help VALUES ("autoremove_time", "'!autoremove_time minutes' - set default !expire time.");
+			INSERT INTO help VALUES ("spam", "'!spam channel' - add channel to list of channels to promote pickups on.");
+			INSERT INTO help VALUES ("nospam", "'!nospam channel' - remove channel from list of channels to promote pickups on.");
+			INSERT INTO help VALUES ("silent", "'!silent [botnick]' - enable silent mode, bot will listen to all commands but will remain silent.");
+			INSERT INTO help VALUES ("backup_save", "'!backup_save' - save backup.");
+			INSERT INTO help VALUES ("backup_load", "'!backup_load [name] - load last or specified backup.");
+			INSERT INTO help VALUES ("puquit", "'!puquit [botnick]' - terminate the bot.")
+		""")
+	if not 'nukem_quotes' in tables:
+		c.execute("""CREATE TABLE nukem_quotes (quote TEXT);""")
+		c.executescript("""
+			INSERT INTO nukem_quotes VALUES ("AAhhh... much better!");
+			INSERT INTO nukem_quotes VALUES ("Bitchin'!");
+			INSERT INTO nukem_quotes VALUES ("Come get some!");
+			INSERT INTO nukem_quotes VALUES ("Do, or do not, there is no try.");
+			INSERT INTO nukem_quotes VALUES ("Eat shit and die.");
+			INSERT INTO nukem_quotes VALUES ("Get that crap outta here!");
+			INSERT INTO nukem_quotes VALUES ("Go ahead, make my day.");
+			INSERT INTO nukem_quotes VALUES ("Hail to the king, baby!");
+			INSERT INTO nukem_quotes VALUES ("Heh, heh, heh... what a mess!");
+			INSERT INTO nukem_quotes VALUES ("Holy cow!");
+			INSERT INTO nukem_quotes VALUES ("Holy shit!");
+			INSERT INTO nukem_quotes VALUES ("I'm gonna get medieval on your asses!");
+			INSERT INTO nukem_quotes VALUES ("I'm gonna kick your ass, bitch!");
+			INSERT INTO nukem_quotes VALUES ("Let God sort 'em out!");
+			INSERT INTO nukem_quotes VALUES ("Ooh, that's gotta hurt.");
+			INSERT INTO nukem_quotes VALUES ("See you in Hell!");
+			INSERT INTO nukem_quotes VALUES ("Piece of Cake.");
+			INSERT INTO nukem_quotes VALUES ("Suck it down!");
+			INSERT INTO nukem_quotes VALUES ("Terminated!");
+			INSERT INTO nukem_quotes VALUES ("Your face, your ass - what's the difference?");
+			INSERT INTO nukem_quotes VALUES ("Nobody fucks up our pickups... and lives!");
+			INSERT INTO nukem_quotes VALUES ("My boot, your face; the perfect couple.")
+		""")
 	conn.commit()
 
 def close():

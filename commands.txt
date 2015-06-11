@@ -4,7 +4,7 @@ ACTIONS:
 	'!add' or '++' - adds you to default pickups.
 	'!add game[ game ..]]' or '+game[ game ..]]' - adds you to specified pickups.
 	'!remove' or '--' - removes you from all pickups.
-	'!remove game[ game ...]' or '-[game[ game ..]]' - removes you given pickups.
+	'!remove game[ game ...]' or '-[game[ game ..]]' - removes you from specified pickups.
 	'!expire time' - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.
 	'!sub' - request sub for last game.
 	'!promote [game]' - promotes pickup on channels. Can be used only once in a minut.
@@ -18,7 +18,7 @@ INFO:
 	'!expire' - shows you how much time left before you will be removed from all pickups.
 	'!pickups' or '!games' - complete pickups list.
 	'!noadds' - show list of users who are disallowed to play pickups.
-	'!lastgame [nick or pickup]' - show last pickup played, or last pickup by specified argument.
+	'!lastgame [nick or pickup]' - show last pickup, or last pickup by specified argument.
 	'!top [weekly or monthly or yearly]' - shows you most active players.
 	'!stats [nick or pickup]' - shows you overall stats or stats for specified argument.
 	'!ip [pickup or 'default']' - shows you ip of last pickup or specified pickup. Shows ip for new created pickups if argument is 'default'.
@@ -44,4 +44,6 @@ ADMINISTRATION:
 	'!spam channel' - add channel to list of channels to promote pickups on.
 	'!nospam channel' - remove channel from list of channels to promote pickups on.
 	'!silent [botnick]' - enable silent mode, bot will listen to all commands but will remain silent.
+	'!backup_save' - save backup.
+	'!backup_load [name] - load last or specified backup.
 	'!puquit [botnick]' - terminate the bot.

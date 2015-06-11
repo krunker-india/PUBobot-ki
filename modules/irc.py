@@ -293,6 +293,12 @@ def private_reply(nick, msg):
 	send_queue.append('NOTICE {0} :{1}\r\n'.format(nick,msg))
 	
 def set_topic(topic):
+	#replace if another topic command already in queue
+	for n,i in enumerate(send_queue):
+		if i[0:5] == "TOPIC":
+			send_queue[n] = 'TOPIC {0} :{1}\r\n'.format(cfg['HOME'],topic)
+			return
+	
 	send_queue.append('TOPIC {0} :{1}\r\n'.format(cfg['HOME'],topic))
 
 def add_spam_channel(nick, c):
