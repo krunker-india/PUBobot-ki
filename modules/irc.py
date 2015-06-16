@@ -21,13 +21,14 @@ def init():
 	users = []
 		
 def connect():
-	global conn, connected
+	global conn, connected, send_queue
 	try:
 		console.display("Connecting to {0}...".format(cfg['HOST']))
 		conn = socket.socket()
 		conn.connect((cfg['HOST'], cfg['PORT']))
 		fcntl.fcntl(conn, fcntl.F_SETFL, os.O_NONBLOCK)
 		connected = True
+		send_queue = []
 		#conn.send("NICK {0}\r\n".format(cfg['NICK']))
 		#conn.send("USER {0} {1} {2} :{3}\r\n".format(cfg['IDENT'], cfg['HOST'], cfg['SERVERNAME'], cfg['REALNAME']))
 	except Exception,e:
