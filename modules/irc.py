@@ -51,13 +51,17 @@ def recive():
 		return False
 
 def send(frametime):
-	global lastsend
+	global lastsend, connected
 	if len(send_queue) > 0 and frametime - lastsend > 2:
 		data = send_queue.pop(0)
 		console.display(('>/'+data))
 		#only display messages in silent mode
 		if not silent or data[0:5] in ["NAMES", "PONG ", "JOIN ", "QUIT ", "AUTH "]:
-			conn.send(data)
+			try:
+				conn.send(data)
+			except Exception, e:
+				console.display("Socket exception at send(): {0}, reconnecting...".format(e))
+				connected = False
 			
 		lastsend = frametime
 				
@@ -102,6 +106,7 @@ def run(frametime):
 							send_queue.append("JOIN {0}\r\n".format(channel))
 						if disconnect_time: #warn players if we had a disconnect
 							dtime=time.time()-disconnect_time
+							disconnect_time = 0
 							notice("Having net problems. Was disconnected for ~{0} minutes.".format(str(int(dtime/60))))
 							bot.reset_players()
 							
