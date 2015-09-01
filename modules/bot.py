@@ -275,8 +275,8 @@ def remove_player(nick,args,newnick=False,quit=False,from_scheduler=False):
 			#UPDATE SCHEDULER IF PLAYER CHANGED HIS NICK
 			if newnick:
 				delay_left = scheduler.tasks[nick][0] - time.time()
-				task_name = scheduler.tasks[nick][1][10:16]
-				if task_name == "remove":
+				task_name = scheduler.tasks[nick][1].__name__
+				if task_name == "scheduler_remove":
 					scheduler.add_task(newnick, delay_left, scheduler_remove, (newnick, ))
 				else:
 					scheduler.add_task(newnick, delay_left, scheduler_warning, (newnick, ))
@@ -445,7 +445,7 @@ def expire(nick,timelist):
 			irc.private_reply(nick, "You are not added!")
 			return
 
-		if scheduler.tasks[nick][1][10:16] == "remove": #+5m if its a warning
+		if scheduler.tasks[nick][1].__name__ == "scheduler_remove": #+5m if its a warning
 			timeint=scheduler.tasks[nick][0]
 		else:
 			timeint=scheduler.tasks[nick][0]+300
