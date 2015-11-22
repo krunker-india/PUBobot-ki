@@ -276,12 +276,12 @@ def remove_player(nick,args,newnick=False,quit=False,from_scheduler=False):
 			if newnick:
 				delay_left = scheduler.tasks[nick][0] - time.time()
 				task_name = scheduler.tasks[nick][1].__name__
+				scheduler.cancel_task(nick)
 				if task_name == "scheduler_remove":
 					scheduler.add_task(newnick, delay_left, scheduler_remove, (newnick, ))
 				else:
 					scheduler.add_task(newnick, delay_left, scheduler_warning, (newnick, ))
-				scheduler.cancel_task(nick)
-				
+
 def scheduler_warning(nick): #SEND WARNING MESSAGE
 	irc.private_reply(nick,'AFK check...Please use !add command...You have 5 minutes')
 	scheduler.add_task(nick, 5*60, scheduler_remove, (nick, ))
@@ -558,6 +558,8 @@ def setip(nick, args):
 
 		if "default" in pickupnames:
 			cfg['DEFAULTIP']=gameip
+			n=1
+
 		if n:
 			irc.private_reply(nick, "Changed ip to {0} for {1}".format(gameip,str(pickupnames)))
 		else:
