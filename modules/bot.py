@@ -811,7 +811,7 @@ def scheduler_backup():
 def set_silent(nick, args):
 	if re.match("@|\+",irc.get_usermod(nick)):
 		if (cfg['NICK'] in args) or (args == []):
-			silent = not silent
+			irc.silent = not irc.silent
 	else:
 		irc.reply(nick, "You have no right for this!")
 
