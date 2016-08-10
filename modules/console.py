@@ -5,7 +5,7 @@ from threading import Thread
 from multiprocessing import Queue
 import sys, os, datetime, readline
 
-import bot, irc, config
+from modules import bot, client, config
 
 def init():
 	global thread, log, userinput_queue
@@ -25,7 +25,7 @@ def init():
 def userinput():
 	readline.parse_and_bind("tab: complete")
 	while 1:
-		inputcmd=raw_input()
+		inputcmd=input()
 		userinput_queue.put(inputcmd)
 
 def run():
@@ -33,8 +33,8 @@ def run():
 		cmd = userinput_queue.get(False)
 		display(">"+cmd)
 		try:
-			exec cmd
-		except Exception,e:
+			exec(cmd)
+		except Exception as e:
 			display(str(e))
 	except:
 		pass
@@ -47,9 +47,8 @@ def display(text):
 	log.write(str(text)+'\r\n')
 
 def terminate():
-	irc.terminate()
 	bot.terminate()
-	config.save()
 	log.close()
+	client.terminate()
 	print("QUIT NOW.")
 	os._exit(0)
