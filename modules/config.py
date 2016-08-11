@@ -45,4 +45,20 @@ def delete_channel(channel):
 			shutil.move(oldpath, newpath)
 			return True
 	return False
-			
+
+def backup_channel(channel, name):
+	path = "channels/{0}/stats.sql".format(channel.id)
+	backup_path = "channels/{0}/backup_{1}.sql".format(channel.id, name)
+	shutil.copy(path, backup_path)
+
+def load_backup_channel(channel, name):
+	backup_path = "channels/{0}/backup_{1}.sql".format(channel.id, name)
+	path = "channels/{0}/stats.sql".format(channel.id)
+	if os.path.exists(backup_path):
+		channel.reset_players()
+		channel.stats.close()
+		shutil.copy(backup_path, path)
+		channel.__init__(channel.channel)
+		return True
+	else:
+		return False

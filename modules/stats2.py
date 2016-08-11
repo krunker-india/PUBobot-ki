@@ -14,7 +14,6 @@ class Stats():
 		self.c.execute("SELECT * from config")
 		config_table = self.c.fetchall()
 		for i in config_table:
-			print("type of {0} is {1}".format(str(i[1]), type(i[1])))
 			channel.cfg[i[0]] = i[1]
 
 		#check if we have tables, create if needed
@@ -269,7 +268,7 @@ class Stats():
 		
 	def save_config(self, cfg, pickups):
 		for var in cfg.keys():
-			self.c.execute("UPDATE config SET value = ? WHERE variable = ?", (var, cfg[var]))
+			self.c.execute("UPDATE config SET value = ? WHERE variable = ?", (cfg[var], var))
 			pickup_list = []
 			for i in pickups:
 				pickup_list.append([i.name, i.maxplayers, i.ip])
