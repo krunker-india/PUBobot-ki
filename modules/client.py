@@ -19,8 +19,6 @@ def process_connection():
 	console.display('Id: '+Client.user.id)
 	console.display('------')
 
-	username = Client.user.name
-	print("wdqwdq "+username)
 	for channelid in bot.channels_list:
 		channel = Client.get_channel(channelid)
 		if channel == None:

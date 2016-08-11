@@ -712,7 +712,7 @@ class Channel():
 	
 	def show_help(self, member, args):
 		if len(args) == 0:
-			client.notice(self.channel, config.cfg['HELPINFO'])
+			client.notice(self.channel, config.cfg.HELPINFO)
 		else:
 			reply = self.stats.show_help(args[0].lstrip("!"))
 			client.notice(self.channel, reply)

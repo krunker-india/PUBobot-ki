@@ -1,25 +1,19 @@
 #!/usr/bin/python2
 # encoding: utf-8
 
-import shutil, os
+import shutil, os, imp
 from modules import console, bot
 
 def init(dirname=""):
-	global cfg, channels
+	global cfg
 	
 	#load config
-	cfg = dict()
 	f = open(dirname + 'config.cfg', 'r')
-	for line in f.readlines():
-		try:
-			if line[0] != '#':
-				a = line.split('=')
-				var = a[0].strip();
-				val = a[1].strip()
-				cfg[var] = eval(val)
-		except Exception as e:
-			console.display("ERROR IN CONFIG FILE @ \"{0}\". Exception: {1}".format(line, str(e)))
-			console.terminate()
+	try:
+		cfg = imp.load_source('data', '', f)
+	except Exception as e:
+		console.display("ERROR PARSING config.cfg FILE!!! {0}".format(str(e)))
+		console.terminate()
 	
 	#search for channels
 	for i in os.listdir('channels'):
