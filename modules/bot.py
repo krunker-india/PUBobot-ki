@@ -34,6 +34,10 @@ class Channel():
 		print(self.cfg['TOPIC'])
 		self.lastgame_cache = self.stats.lastgame()
 		self.oldtopic = 'no pickups'
+
+		if self.cfg['FIRST_INIT'] == 'True':
+			client.notice(self.channel, self.cfg['FIRST_INIT_MESSAGE'])
+			self.cfg['FIRST_INIT'] = 'False'
 		#self.scheduler.add_task("#backup#", config.cfg['BACKUP_TIME'])
 		
 	def init_pickups(self):
@@ -156,8 +160,8 @@ class Channel():
 		elif lower[0]=="!backup_save":
 			self.backup_save(member, isadmin)
 
-		elif lower[0]=="!backup_load":
-			self.backup_load(member, lower[1:2], isadmin)
+		elif lower[0]=="!backup_load" and msglen==2:
+			self.backup_load(member, msgtup[1], isadmin)
 
 		elif lower[0]=="!silent":
 			self.set_silent(member, lower[1:msglen], isadmin)
@@ -179,6 +183,9 @@ class Channel():
 		
 		elif lower[0]=="!topic":
 			self.set_topic(member, msgtup[1:msglen], isadmin)
+
+		elif lower[0]=="!set" and msglen>2:
+			self.configure(member, lower[1], ' '.join(msgtup[2:msglen]), isadmin)
 			
 	### COMMANDS ###
 
@@ -245,6 +252,11 @@ class Channel():
 				client.private_reply(self.channel, member, "You have been removed from all pickups as you went offline...")
 			elif status == 'banned':
 				client.private_reply(self.channel, member, "You have been removed from all pickups as you've been banned...")
+			elif status == 'reset':
+				if allpickups:
+					client.private_reply(self.channel, member, "You have been removed from all pickups, pickups has been reset.")
+				else:
+					client.private_reply(self.channel, member, "You have been removed from {0} - pickups has been reset.".format(", ".join(changes)))
 			elif status == 'admin':
 				if allpickups:
 					client.private_reply(self.channel, member, "You have been removed from all pickups by an admin.")
@@ -464,7 +476,7 @@ class Channel():
 					console.display(targs[i]+"!")
 					name,players = targs[i].split(":")
 					if int(players) > 1:
-						if name not in [i for i.name in self.pickups]:
+						if name not in [i.name for i in self.pickups]:
 							newpickups.append([name, int(players)])
 						else:
 							client.reply(self.channel, member, "Pickup with name '{0}' allready exists!".format(name))
@@ -671,19 +683,18 @@ class Channel():
 
 	def backup_save(self, member, isadmin):
 		if isadmin:
-			dirname = member.name + datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
-			config.backup(self.channel, dirname)
-			client.reply(self.channel, member, "Backup saved to backups/{0}. Use !backup_load {0} to restore.".format(dirname))
+			name = member.name + datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
+			config.backup_channel(self, name)
+			client.reply(self.channel, member, "Backup saved to backups/{0}. Use !backup_load {0} to restore.".format(name))
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
-	def backup_load(self, member, args, isadmin):
+	def backup_load(self, member, name, isadmin):
 		if isadmin:
-			if len(args) > 0:
-				reply = config.backup_load(self.channel, args[0])
+			if config.load_backup_channel(self, name):
+				client.reply(self.channel, member, "Backup successfully loaded! All pickups has been reset!")
 			else:
-				reply = config.backup_load(self.channel)
-			client.reply(self.channel, member, reply)
+				client.reply(self.channel, member, "specified backup not found!")
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -715,6 +726,50 @@ class Channel():
 	def updatemember(self, member):
 		print(member.id)
 		self.remove_player(member,[],member.status.name)
+
+	def configure(self, member, var, value, isadmin):
+		if isadmin:
+			if var == "adminrole":
+				self.cfg["ADMINROLE"] = value
+				client.reply(self.channel, member, "done.")
+
+			elif var == "pickup_password":
+				self.cfg["PICKUP_PASSWORD"] = value
+				client.reply(self.channel, member, "done.")
+
+			elif var == "ip_pattern":
+				self.cfg["IP_PATTERN"] = value
+				client.reply(self.channel, member, "done.")
+
+			elif var == "change_topic":
+				if value in ['0', '1']:
+					self.cfg["CHANGE_TOPIC"] = value
+					client.reply(self.channel, member, "done.")
+				else:
+					client.reply(self.channel, member, "value for CHANGE_TOPIC should be 0 or 1.")
+
+			elif var == "bantime":
+				try:
+					x = int(value)
+					if x > 0:
+						if x <= 10000:
+							self.cfg["BANTIME"] = value
+							client.reply(self.channel, member, "done.")
+						else:
+							client.reply(self.channel, member, "maximum BANTIME value is 10000.")
+					else:
+						client.reply(self.channel, member, "BANTIME value should be higher than 0.")
+				except:
+					client.reply(self.channel, member, "BANTIME value should be integrer.")
+
+			elif var == "timezone":
+				pass
+
+			else:
+				client.reply(self.channel, member, "variable \'{0}\' is not configurable.".format(var))
+					
+		else:
+			client.reply(self.channel, member, "You have no right for this!")
 
 def run(frametime):
 	for channel in channels:
