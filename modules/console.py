@@ -106,8 +106,8 @@ def display(data):
 
 def terminate():
 	bot.terminate()
-	log.close()
 	client.terminate()
+	log.close()
 	print("QUIT NOW.")
 	os._exit(0)
 	

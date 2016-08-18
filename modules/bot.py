@@ -28,7 +28,6 @@ class Channel():
 		self.cfg['CHANNEL_NAME'] = channel.name
 		self.oldtime = 0
 		self.highlight_time = 0
-		self.scheduler = scheduler.Scheduler()
 		self.pickups = []
 		self.init_pickups()
 		print(self.cfg['TOPIC'])
@@ -38,7 +37,7 @@ class Channel():
 		if self.cfg['FIRST_INIT'] == 'True':
 			client.notice(self.channel, self.cfg['FIRST_INIT_MESSAGE'])
 			self.cfg['FIRST_INIT'] = 'False'
-		#self.scheduler.add_task("#backup#", config.cfg['BACKUP_TIME'])
+		#scheduler.add_task(self.id+"#backup#", config.cfg['BACKUP_TIME'])
 		
 	def init_pickups(self):
 		for i in eval(self.cfg["PICKUP_LIST"]):
@@ -49,7 +48,7 @@ class Channel():
 			
 	def start_pickup(self, pickup):
 		for i in pickup.players:
-			self.scheduler.cancel_task(i.id)
+			scheduler.cancel_task(self.id+i.id)
 
 		players=tuple(pickup.players) #just to save the value
 		if pickup.maxplayers > 2:
@@ -217,10 +216,10 @@ class Channel():
 
 		#ADD WARNING MESSAGE
 		if update_autoremove:
-			if member.id in self.scheduler.tasks:
-				self.scheduler.cancel_task(member.id)
+			if member.id in scheduler.tasks:
+				scheduler.cancel_task(self.id+member.id)
 			delay = (int(self.cfg['AUTOREMOVE_TIME'])*60)-(5*60)
-			self.scheduler.add_task(member.id, delay, self.scheduler_warning, (member,))
+			scheduler.add_task(self.id+member.id, delay, self.scheduler_warning, (member,))
 
 		#reply a phrase and update topic
 		if changes:
@@ -245,7 +244,7 @@ class Channel():
 		#update topic and warn player
 		if changes != []:
 			self.update_topic()
-			if status == 'afk':
+			if status == 'idle':
 				client.private_reply(self.channel, member, "You have been removed from all pickups as your status went AFK...")
 			elif status == 'offline':
 				client.private_reply(self.channel, member, "You have been removed from all pickups as you went offline...")
@@ -270,11 +269,11 @@ class Channel():
 			if not from_scheduler:
 				#REMOVE AFK WARNING MESSAGE IF HE IS REMOVED FROM ALL GAMES
 				if allpickups:
-					self.scheduler.cancel_task(member.id)
+					scheduler.cancel_task(self.id+member.id)
 
 	def scheduler_warning(self, member): #SEND WARNING MESSAGE
 		client.private_reply(self.channel, member,'AFK check...Please use !add command...You have 5 minutes')
-		self.scheduler.add_task(member.id, 5*60, self.scheduler_remove, (member, ))
+		scheduler.add_task(self.id+member.id, 5*60, self.scheduler_remove, (member, ))
 
 	def scheduler_remove(self, member):
 		self.remove_player(member, [], 'online', True)
@@ -379,7 +378,7 @@ class Channel():
 	def expire(self, member,timelist):
 		#set expire if time is specified
 		if timelist != []:
-			if not (member.id in self.scheduler.tasks):
+			if not (self.id+member.id in scheduler.tasks):
 				client.reply(self.channel, member, "You must be added first!")
 				return
 
@@ -402,22 +401,22 @@ class Channel():
 
 			#apply given time
 			if timeint>0 and timeint<115200: #restart the scheduler task, no afk check task for this guy
-				self.scheduler.cancel_task(member.id)
-				self.scheduler.add_task(member.id, timeint, self.scheduler_remove, (member, ))
+				scheduler.cancel_task(self.id+member.id)
+				scheduler.add_task(self.id+member.id, timeint, self.scheduler_remove, (member, ))
 				client.reply(self.channel, member, "You will be removed at {0} {1}".format(datetime.datetime.fromtimestamp(time.time()+timeint).strftime("%H:%M:%S"), time.tzname[0]))
 			else:
 				client.reply(self.channel, member, "Invalid time amount")
 
 		#return expire time	if no time specified
 		else:
-			if not (member.id in self.scheduler.tasks):
+			if not (self.id+member.id in scheduler.tasks):
 				client.reply(self.channel, member, "You are not added!")
 				return
 
-			if self.scheduler.tasks[member.id][1].__name__ == "self.scheduler_remove": #+5m if its a warning
-				timeint=self.scheduler.tasks[member.id][0]
+			if scheduler.tasks[self.id+member.id][1].__name__ == "self.scheduler_remove": #+5m if its a warning
+				timeint=scheduler.tasks[self.id+member.id][0]
 			else:
-				timeint=self.scheduler.tasks[member.id][0]+300
+				timeint=scheduler.tasks[self.id+member.id][0]+300
 
 			dtime=datetime.datetime.fromtimestamp(timeint)
 			client.reply(self.channel, member, "You will be removed in {0}, at {1} {2}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),dtime.strftime("%H:%M:%S"), time.tzname[0]))
@@ -670,7 +669,7 @@ class Channel():
 						if player in pickup.players:
 							allpickups = False
 					if allpickups:
-						self.scheduler.cancel_task(player.id)
+						scheduler.cancel_task(self.id+player.id)
 				if args == []:
 					client.notice(self.channel, "{0} was removed from all pickups!".format('<@'+', <@'.join([i.id+'>' for i in removed])))
 				elif len(args) == 1:
@@ -700,7 +699,7 @@ class Channel():
 	def scheduler_backup(self):
 		dirname = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
 		config.backup(self.channel, dirname)
-		self.scheduler.add_task("#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
+		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
 
 	def set_silent(self, member, args, isadmin):
 		if isadmin:
@@ -759,7 +758,7 @@ class Channel():
 					else:
 						client.reply(self.channel, member, "BANTIME value should be higher than 0.")
 				except:
-					client.reply(self.channel, member, "BANTIME value should be integrer.")
+					client.reply(self.channel, member, "BANTIME value should be an integrer.")
 
 			elif var == "timezone":
 				pass
@@ -771,8 +770,7 @@ class Channel():
 			client.reply(self.channel, member, "You have no right for this!")
 
 def run(frametime):
-	for channel in channels:
-		channel.scheduler.run(frametime)
+	pass
 
 def terminate():
 	for channel in channels:

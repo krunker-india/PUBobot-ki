@@ -11,6 +11,7 @@ except:
 from modules import console, config, bot, client, scheduler
 
 console.init()
+scheduler.init()
 bot.init()
 config.init()
 
@@ -26,6 +27,7 @@ def bot_run():
 	while not c.is_closed:
 		frametime = time.time()
 		bot.run(frametime)
+		scheduler.run(frametime)
 		console.run()
 		if len(client.send_queue) > 0:
 			data = client.send_queue.pop(0)
@@ -89,7 +91,7 @@ def on_message(message):
 def on_member_update(before, after):
 	print("-{0}-".format(after.status))
 	print(type(after.status.name))
-	if after.status.name in ['afk', 'offline']:
+	if after.status.name in ['idle', 'offline']:
 		for channel in bot.channels:
 			channel.remove_player(after,[],after.status.name)
 
