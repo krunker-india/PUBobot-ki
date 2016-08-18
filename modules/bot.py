@@ -59,13 +59,12 @@ class Channel():
 			caps=False
 			capsstr=''
 
-		ipstr = self.cfg['DEFAULT_IP_STR'].replace("%ip%", pickup.ip).replace("%password%", self.cfg['PICKUP_PASSWORD'])
+		ipstr = self.cfg['IP_FORMAT'].replace("%ip%", pickup.ip).replace("%password%", self.cfg['PICKUP_PASSWORD'])
 		noticestr="{0}, {1}.{2}".format('<@'+'>, <@'.join([i.id for i in players])+'>', ipstr, capsstr)
-		client.notice(pickup.name+' pickup has been started!')
-		client.notice(noticestr)
+		client.notice(self.channel, pickup.name+' pickup has been started!\r\n'+noticestr)
 
 		for i in players:
-			client.private_reply(i,"**{0}** pickup has been started, {1}.{2}".format(pickup.name, ipstr, capsstr))
+			client.private_reply(self, i,"**{0}** pickup has been started, {1}.{2}".format(pickup.name, ipstr, capsstr))
 			for pickup in ( pickup for pickup in self.pickups if i.id in [x.id for x in pickup.players]):
 				pickup.players.remove(i)
 
@@ -192,7 +191,7 @@ class Channel():
 	def add_player(self, member, target_pickups):
 	#check delay between last pickup
 		if self.lastgame_cache:
-			if time.time() - self.lastgame_cache[1] < self.cfg['NEXT_PU_ADD_DELAY'] * 60 and member.name in self.lastgame_cache[4]:
+			if time.time() - self.lastgame_cache[1] < 60 and member.name in self.lastgame_cache[4]:
 				client.reply(self.channel, member, "Get off me! Your pickup already started!")
 	
 		#check noadds and phrases
@@ -667,7 +666,7 @@ class Channel():
 			if removed != []:
 				for player in removed:
 					allpickups = True
-					for pickup in pickups:
+					for pickup in self.pickups:
 						if player in pickup.players:
 							allpickups = False
 					if allpickups:
@@ -737,8 +736,8 @@ class Channel():
 				self.cfg["PICKUP_PASSWORD"] = value
 				client.reply(self.channel, member, "done.")
 
-			elif var == "ip_pattern":
-				self.cfg["IP_PATTERN"] = value
+			elif var == "ip_format":
+				self.cfg["IP_FORMAT"] = value
 				client.reply(self.channel, member, "done.")
 
 			elif var == "change_topic":
