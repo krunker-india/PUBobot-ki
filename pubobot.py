@@ -83,12 +83,12 @@ def on_message(message):
 				try:
 					channel.processmsg(message.content, message.author)
 				except:
-					print(sys.exc_info())
+					console.display("ERROR| Error processing message: "+str(sys.exc_info()))
 	
 @c.event
 @asyncio.coroutine
 def on_member_update(before, after):
-	display("DEBUG| {0} changed status to -{0}-".format(after.name, after.status))
+	console.display("DEBUG| {0} changed status to -{0}-".format(after.name, after.status))
 	if after.status.name in ['idle', 'offline']:
 		for channel in bot.channels:
 			channel.update_member(after)
@@ -104,8 +104,8 @@ try:
 		console.display("SYSTEM| logging in with username and password...")
 		loop.run_until_complete(c.login(config.cfg.USERNAME, config.cfg.PASSWORD))
 	loop.run_until_complete(c.connect())
-except Exception:
-	console.display("ERROR| Disconnected from the server")
+except Exception as e:
+	console.display("ERROR| Disconnected from the server: "+str(e))
 	loop.run_until_complete(c.close())
 finally:
 	loop.close()

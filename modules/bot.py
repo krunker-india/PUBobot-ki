@@ -167,7 +167,7 @@ class Channel():
 			self.show_help(member, lower[1:msglen])
 	
 		elif lower[0]=="!commands":
-			self.client.reply(member, stats2.show_commands())
+			client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
 		
 		elif lower[0]=="!topic":
 			self.set_topic(member, msgtup[1:msglen], isadmin)
@@ -615,8 +615,6 @@ class Channel():
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
-######## UNFINISHED
-
 	def reset_players(self, member=False, args=[], isadmin=False):
 		if member == False or isadmin:
 			removed = []
@@ -666,11 +664,7 @@ class Channel():
 		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
 	
 	def show_help(self, member, args):
-		if len(args) == 0:
-			client.notice(self.channel, config.cfg.HELPINFO)
-		else:
-			reply = self.stats.show_help(args[0].lstrip("!"))
-			client.notice(self.channel, reply)
+		client.notice(self.channel, config.cfg.HELPINFO)
 			
 	def update_member(self, member):
 		if member.status.name == 'offline':
