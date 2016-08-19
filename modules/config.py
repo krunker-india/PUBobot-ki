@@ -12,7 +12,7 @@ def init(dirname=""):
 	try:
 		cfg = imp.load_source('data', '', f)
 	except Exception as e:
-		console.display("ERROR PARSING config.cfg FILE!!! {0}".format(str(e)))
+		console.display("ERROR| ERROR PARSING config.cfg FILE!!! {0}".format(str(e)))
 		console.terminate()
 	
 	#search for channels

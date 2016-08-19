@@ -14,25 +14,25 @@ def init(c):
 def process_connection():
 	global username, state
 
-	console.display('Logged in as:')
-	console.display('Name: '+Client.user.name)
-	console.display('Id: '+Client.user.id)
+	console.display('SYSTEM| Logged in as:')
+	console.display('SYSTEM| Name: '+Client.user.name)
+	console.display('SYSTEM| Id: '+Client.user.id)
 	console.display('------')
 
 	for channelid in bot.channels_list:
 		channel = Client.get_channel(channelid)
 		if channel == None:
-			console.display('Could not found channel {0} with given CHANNELID...'.format(channel.name))
+			console.display('SYSTEM| Could not found channel {0} with given CHANNELID...'.format(channel.name))
 		else:
 			c = bot.Channel(channel)
 			bot.channels.append(c)
-			console.display("\"{0}\" channel init successfull".format(c.name))
+			console.display("SYSTEM| \"{0}\" channel init successfull".format(c.name))
 
 def send(frametime):
 	global lastsend, connected
 	if len(send_queue) > 0 and frametime - lastsend > 2:
 		destination, data = send_queue.pop(0)
-		console.display('>/{0}: {1}'.format(destination, data))
+		console.display('SEND| /{0}: {1}'.format(destination, data))
 		#only display messages in silent mode
 		if not silent:
 			Client.send_message(destination, data)
@@ -40,7 +40,7 @@ def send(frametime):
 		lastsend = frametime
 						
 def terminate():
-	console.display("Closing connection")
+	console.display("SYSTEM| Closing connection")
 	yield from Client.logout()
 
 ### api for bot.py ###

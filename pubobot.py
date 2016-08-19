@@ -21,9 +21,9 @@ c = discord.Client()
 @asyncio.coroutine
 def bot_run():
 	yield from c.wait_until_ready()
-	console.display("Setting status message...")
-	yield from c.change_status(game=discord.Game(name='pm !help'))
 	client.init(c)
+	console.display("SYSTEM| Setting status message...")
+	yield from c.change_status(game=discord.Game(name='pm !help'))
 	while not c.is_closed:
 		frametime = time.time()
 		bot.run(frametime)
@@ -37,16 +37,14 @@ def bot_run():
 				try:
 					yield from c.send_message(destination, content)
 				except:
-					print("ERROR: Could not send the message.")
-					print(sys.exc_info())
+					console.display("ERROR| Could not send the message. "+str(sys.exc_info()))
 			elif data[0] == 'topic':
 				content = data[1]
 				if not client.silent:
 					try:
 						yield from c.edit_channel(client.channel, topic=content)
 					except:
-						print("ERROR: Could not change topic.")
-						print(sys.exc_info())
+						console.display("ERROR| Could not change topic."+str(sys.exc_info()))
 						
 		yield from asyncio.sleep(0.5) # task runs every 0.5 seconds
 	console.terminate()
@@ -59,7 +57,7 @@ def on_ready():
 @c.event
 @asyncio.coroutine
 def on_message(message):
-	console.display("{0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
+	console.display("CHAT| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 	if message.channel.is_private and message.author.id != c.user.id:
 		client.send_queue.append(['msg', message.channel, config.cfg.HELPINFO])
 	elif message.content == '!enable_pickups':
@@ -89,8 +87,7 @@ def on_message(message):
 @c.event
 @asyncio.coroutine
 def on_member_update(before, after):
-	print("-{0}-".format(after.status))
-	print(type(after.status.name))
+	display("DEBUG| {0} changed status to -{0}-".format(after.name, after.status))
 	if after.status.name in ['idle', 'offline']:
 		for channel in bot.channels:
 			channel.update_member(after)
@@ -100,14 +97,14 @@ loop = asyncio.get_event_loop()
 try:
 	loop.create_task(bot_run())
 	if config.cfg.DISCORD_TOKEN != "":
-		console.display("logging in with token...")
+		console.display("SYSTEM| logging in with token...")
 		loop.run_until_complete(c.login(config.cfg.DISCORD_TOKEN))
 	else:
-		console.display("logging in with username and password...")
+		console.display("SYSTEM| logging in with username and password...")
 		loop.run_until_complete(c.login(config.cfg.USERNAME, config.cfg.PASSWORD))
 	loop.run_until_complete(c.connect())
 except Exception:
-	console.display("ERROR: Disconnected from the server")
+	console.display("ERROR| Disconnected from the server")
 	loop.run_until_complete(c.close())
 finally:
 	loop.close()

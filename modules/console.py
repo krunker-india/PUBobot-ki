@@ -63,11 +63,11 @@ def userinput():
 def run():
 	try:
 		cmd = userinput_queue.get(False)
-		display(">"+cmd)
+		display("CONSOLE| /"+cmd)
 		try:
 			l = cmd.split(" ", 1)
 			if l[0] == "help":
-				display(help)
+				display("CONSOLE| "+help)
 			elif l[0] == "notice":
 				for i in bot.channels:
 					client.notice(i.channel, l[1])
@@ -82,9 +82,9 @@ def run():
 					if i.name == l[1]:
 						config.delete_channel(i.channel)
 			elif l[0] == "status":
-				display("Total pickup channels: {0}. {1} messages to send waiting in queue.".format(len(bot.channels), len(client.send_queue)))
+				display("CONSOLE| Total pickup channels: {0}. {1} messages to send waiting in queue.".format(len(bot.channels), len(client.send_queue)))
 			elif l[0] == "channels":
-				display("Pickup channels: {0}".format(" ".join([i.name for i in bot.channels])))
+				display("CONSOLE| Pickup channels: {0}".format(" ".join([i.name for i in bot.channels])))
 			elif l[0] == "exec":
 				exec(l[1])
 			elif l[0] == "reset_players":
@@ -93,7 +93,7 @@ def run():
 			elif l[0] == "quit":
 				terminate()
 		except Exception as e:
-			display(str(e))
+			display("CONSOLE| ERROR: "+str(e))
 	except:
 		pass
 			

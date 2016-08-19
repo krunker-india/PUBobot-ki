@@ -30,7 +30,6 @@ class Channel():
 		self.highlight_time = 0
 		self.pickups = []
 		self.init_pickups()
-		print(self.cfg['TOPIC'])
 		self.lastgame_cache = self.stats.lastgame()
 		self.oldtopic = 'no pickups'
 
@@ -44,7 +43,7 @@ class Channel():
 			try:
 				self.pickups.append(Pickup(i[0],i[1],i[2]))
 			except:
-				console.display("ERROR>Failed to parse a pickup of channel {0} @ {1}.".format(self.id, str(i)))
+				console.display("ERROR| Failed to parse a pickup of channel {0} @ {1}.".format(self.id, str(i)))
 			
 	def start_pickup(self, pickup):
 		for i in pickup.players:
@@ -459,7 +458,6 @@ class Channel():
 			newpickups = []
 			for i in range(0,len(targs)):
 				try:
-					console.display(targs[i]+"!")
 					name,players = targs[i].split(":")
 					if int(players) > 1:
 						if name not in [i.name for i in self.pickups]:
@@ -745,6 +743,6 @@ def run(frametime):
 
 def terminate():
 	for channel in channels:
-		console.display("Saving channel \"{0}\"...".format(channel.name))
+		console.display("SYSTEM| Saving channel \"{0}\"...".format(channel.name))
 		channel.stats.save_config(channel.cfg, channel.pickups)
 		channel.stats.close()
