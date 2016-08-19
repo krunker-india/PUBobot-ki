@@ -169,9 +169,6 @@ class Channel():
 
 		elif lower[0]=="!phrase":
 			self.set_phrase(member, msgtup[1:msglen], isadmin)
-
-		elif lower[0]=="!autoremove_time" and msglen==2:
-			self.set_autoremove_time(member, lower[1], isadmin)
 		
 		elif lower[0]=="!help":
 			self.show_help(member, lower[1:msglen])
@@ -199,12 +196,9 @@ class Channel():
 			client.reply(self.channel, member, l[1])
 			return
 
-		update_autoremove = False
 		changes = False
-
 		#ADD GUY TO TEH GAMES
 		for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0) or pickup.name.lower() in target_pickups)):
-			update_autoremove=True
 			if not member.id in [i.id for i in pickup.players]:
 				changes = True
 				pickup.players.append(member)
@@ -214,20 +208,15 @@ class Channel():
 				elif len(pickup.players)==pickup.maxplayers-1 and pickup.maxplayers>2:
 					client.notice(self.channel, "Only 1 player left for {0} pickup. Hurry up!".format(pickup.name))
 
-		#ADD WARNING MESSAGE
-		if update_autoremove:
-			if member.id in scheduler.tasks:
-				scheduler.cancel_task(self.id+member.id)
-			delay = (int(self.cfg['AUTOREMOVE_TIME'])*60)-(5*60)
-			scheduler.add_task(self.id+member.id, delay, self.scheduler_warning, (member,))
-
-		#reply a phrase and update topic
+		#update scheduler, reply a phrase and update topic
 		if changes:
+			if self.id+member.id in scheduler.tasks.keys():
+					scheduler.cancel_task(self.id+member.id)
 			if l[1] != False: # if have phrase
 				client.reply(self.channel, member, l[1])
 			self.update_topic()
 			
-	def remove_player(self, member,args,status='online',from_scheduler=False):
+	def remove_player(self, member,args,status='online'):
 		changes = []
 		allpickups = True
 
@@ -244,7 +233,9 @@ class Channel():
 		#update topic and warn player
 		if changes != []:
 			self.update_topic()
-			if status == 'idle':
+			if status == 'scheduler':
+				client.private_reply(self.channel, member, "You have been removed from all pickups as your !expire time ran off...")
+			elif status == 'idle':
 				client.private_reply(self.channel, member, "You have been removed from all pickups as your status went AFK...")
 			elif status == 'offline':
 				client.private_reply(self.channel, member, "You have been removed from all pickups as you went offline...")
@@ -266,17 +257,12 @@ class Channel():
 			#else:
 			#	client.private_reply(self.channel, member, "You have been removed from {0}.".format(", ".join(changes)))
 
-			if not from_scheduler:
-				#REMOVE AFK WARNING MESSAGE IF HE IS REMOVED FROM ALL GAMES
-				if allpickups:
-					scheduler.cancel_task(self.id+member.id)
-
-	def scheduler_warning(self, member): #SEND WARNING MESSAGE
-		client.private_reply(self.channel, member,'AFK check...Please use !add command...You have 5 minutes')
-		scheduler.add_task(self.id+member.id, 5*60, self.scheduler_remove, (member, ))
+			#REMOVE !expire AUTOREMOVE IF HE IS REMOVED FROM ALL GAMES
+			if allpickups and self.id+member.id in scheduler.tasks.keys():
+				scheduler.cancel_task(self.id+member.id)
 
 	def scheduler_remove(self, member):
-		self.remove_player(member, [], 'online', True)
+		self.remove_player(member, [], 'scheduler')
 
 	def remove_players(self, member, arg, isadmin):
 		if isadmin:
@@ -376,12 +362,17 @@ class Channel():
 			client.reply(self.channel, member,"Only one promote per minute! You have to wait {0} secs.".format(int(60-(self.newtime-self.oldtime))))
 
 	def expire(self, member,timelist):
+		added = False
+		for players in [i.players for i in self.pickups]:
+			if member.id in [i.id for i in players]:
+				added = True;
+				break
+		if not added:
+			client.reply(self.channel, member, "You must be added first!")
+			return
+			
 		#set expire if time is specified
 		if timelist != []:
-			if not (self.id+member.id in scheduler.tasks):
-				client.reply(self.channel, member, "You must be added first!")
-				return
-
 			#calculate the time
 			timeint=0
 			for i in timelist: #convert given time to float
@@ -401,7 +392,8 @@ class Channel():
 
 			#apply given time
 			if timeint>0 and timeint<115200: #restart the scheduler task, no afk check task for this guy
-				scheduler.cancel_task(self.id+member.id)
+				if self.id+member.id in scheduler.tasks.keys():
+					scheduler.cancel_task(self.id+member.id)
 				scheduler.add_task(self.id+member.id, timeint, self.scheduler_remove, (member, ))
 				client.reply(self.channel, member, "You will be removed in {0}".format(str(datetime.timedelta(seconds=int(timeint)))))
 			else:
@@ -409,15 +401,12 @@ class Channel():
 
 		#return expire time	if no time specified
 		else:
-			if not (self.id+member.id in scheduler.tasks):
-				client.reply(self.channel, member, "You are not added!")
+			if not self.id+member.id in scheduler.tasks.keys():
+				client.reply(self.channel, member, "No !expire time is set. You will be removed on your AFK status.")
 				return
 
-			if scheduler.tasks[self.id+member.id][1].__name__ == "self.scheduler_remove": #+5m if its a warning
-				timeint=scheduler.tasks[self.id+member.id][0]
-			else:
-				timeint=scheduler.tasks[self.id+member.id][0]+300
-
+			timeint=scheduler.tasks[self.id+member.id][0]
+			
 			client.reply(self.channel, member, "You will be removed in {0}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),))
 
 	def getstats(self, member,target):
@@ -494,22 +483,6 @@ class Channel():
 			for i in toremove:
 				self.pickups.remove(i)
 			update_topic()
-		else:
-			client.reply(self.channel, member, "You have no right for this!")
-
-	def set_autoremove_time(self, member, arg, isadmin):
-		if isadmin:
-			try:
-				minutes = int(arg)
-			except:
-				client.reply(self.channel, member, "Argument must be number of minutes.")
-				return
-
-			if minutes>5:
-				self.cfg['AUTOREMOVE_TIME'] = str(minutes)
-				client.notice(self.channel, 'AUTOREMOVE_TIME is set to {0} minutes. Needs re!add to affect'.format(minutes))
-			else:
-				client.reply(self.channel, member, 'AUTOREMOVE_TIME must be more than 5 minutes.')
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -720,9 +693,11 @@ class Channel():
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 			
-	def updatemember(self, member):
-		print(member.id)
-		self.remove_player(member,[],member.status.name)
+	def update_member(self, member):
+		if member.status.name == 'offline':
+			self.remove_player(member,[],'offline')
+		elif member.status.name == 'idle' and not self.id+member.id in scheduler.tasks.keys():
+			self.remove_player(member,[],'idle')
 
 	def configure(self, member, var, value, isadmin):
 		if isadmin:

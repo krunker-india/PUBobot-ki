@@ -93,7 +93,7 @@ def on_member_update(before, after):
 	print(type(after.status.name))
 	if after.status.name in ['idle', 'offline']:
 		for channel in bot.channels:
-			channel.remove_player(after,[],after.status.name)
+			channel.update_member(after)
 
 loop = asyncio.get_event_loop()
 
