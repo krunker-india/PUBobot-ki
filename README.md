@@ -6,12 +6,10 @@ Bot keeps statistic database, have features to automatically remove AFK users, d
 Python 3.5+, sqlite3 module for python, discord api v0.10+.
 
 # Running
-1. Fill the 'config.cfg' file.
+1. Fill your discord bot token or username and password in the 'config.cfg' file.
 2. Run './pubobot.py' to launch the program.
-3. Send invite to your pickup channel to the bot via discord.
-4. Type 'accept %CHANNELID%'.
-You may also confugure default channel values before launching the bot: for that open 'channels/default' folder and edit 'config.cfg' and 'pickuplist' files. You can also configure these setting for a specified server in corresponding folder or right in the discord channel.
-See commands.txt for detailed info.
+3. Invite your bot to the desired server.
+4. Type '!enable_pickups' on the desired channel.
 
 # Credits
 Developer: Leshka. You can contact me via XMPP/Jabber leshkajm@ya.ru, send e-mail to leshkajm@ya.ru, or find me on irc.quakenet.org server.
