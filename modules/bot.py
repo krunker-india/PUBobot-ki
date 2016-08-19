@@ -403,7 +403,7 @@ class Channel():
 			if timeint>0 and timeint<115200: #restart the scheduler task, no afk check task for this guy
 				scheduler.cancel_task(self.id+member.id)
 				scheduler.add_task(self.id+member.id, timeint, self.scheduler_remove, (member, ))
-				client.reply(self.channel, member, "You will be removed at {0} {1}".format(datetime.datetime.fromtimestamp(time.time()+timeint).strftime("%H:%M:%S"), time.tzname[0]))
+				client.reply(self.channel, member, "You will be removed in {0}".format(str(datetime.timedelta(seconds=int(timeint)))))
 			else:
 				client.reply(self.channel, member, "Invalid time amount")
 
@@ -418,8 +418,7 @@ class Channel():
 			else:
 				timeint=scheduler.tasks[self.id+member.id][0]+300
 
-			dtime=datetime.datetime.fromtimestamp(timeint)
-			client.reply(self.channel, member, "You will be removed in {0}, at {1} {2}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),dtime.strftime("%H:%M:%S"), time.tzname[0]))
+			client.reply(self.channel, member, "You will be removed in {0}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),))
 
 	def getstats(self, member,target):
 		if target == []:
@@ -759,9 +758,6 @@ class Channel():
 						client.reply(self.channel, member, "BANTIME value should be higher than 0.")
 				except:
 					client.reply(self.channel, member, "BANTIME value should be an integrer.")
-
-			elif var == "timezone":
-				pass
 
 			else:
 				client.reply(self.channel, member, "variable \'{0}\' is not configurable.".format(var))
