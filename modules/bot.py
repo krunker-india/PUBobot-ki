@@ -671,7 +671,7 @@ class Channel():
 
 			elif var == "ip_format":
 				self.cfg["IP_FORMAT"] = value
-				client.reply(self.channel, member, "done.")
+				client.reply(self.channel, member, "done, now message will look like: **example** pickup has been started, {0}".format(self.cfg['IP_FORMAT'].replace("%ip%", self.cfg['DEFAULT_IP']).replace("%password%", self.cfg['PICKUP_PASSWORD'])))
 
 			elif var == "change_topic":
 				if value in ['0', '1']:
