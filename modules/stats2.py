@@ -113,8 +113,8 @@ class Stats():
 			if result != None:
 				played = result[1]
 				self.c.execute("SELECT pickups FROM overall_stats")
-				percent = int((float(played) / c.fetchone()[0]) * 100)
-				return "Stats for {0} gt. Played {1}, {2}% of all games.".format(text, played, percent)
+				percent = int((float(played) / self.c.fetchone()[0]) * 100)
+				return "Stats for {0} pickups. Played {1}, {2}% of all games.".format(text, played, percent)
 			return "No pickups found for " + text
 
 	def top(self, timegap=False):
@@ -147,7 +147,7 @@ class Stats():
 		if ban != None:
 			self.c.execute("""UPDATE bans SET time=?, duratation=?, reason=?, admin=? WHERE active = 1 AND memberid = ?""", (int(time()), duratation*60*60, reason, admin, member.id))
 			self.conn.commit()
-			return("Updated {0}'s noadd to {1} hours from now.".format(nick, duratation))
+			return("Updated {0}'s noadd to {1} hours from now.".format(member.name, duratation))
 		else:
 			#add new ban
 			self.c.execute("UPDATE overall_stats SET bans = bans+1")

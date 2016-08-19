@@ -27,11 +27,10 @@ class Channel():
 		self.stats = stats2.Stats(self)
 		self.cfg['CHANNEL_NAME'] = channel.name
 		self.oldtime = 0
-		self.highlight_time = 0
 		self.pickups = []
 		self.init_pickups()
 		self.lastgame_cache = self.stats.lastgame()
-		self.oldtopic = '[no pickups]'
+		self.oldtopic = '[**no pickups**]'
 
 		if self.cfg['FIRST_INIT'] == 'True':
 			client.notice(self.channel, self.cfg['FIRST_INIT_MESSAGE'])
@@ -68,7 +67,6 @@ class Channel():
 
 		self.stats.register_pickup(pickup.name, players, caps)
 		self.lastgame_cache = self.stats.lastgame()
-		self.highlight_time = 0
 		self.update_topic()
 
 	def processmsg(self, content, member): #parse PRIVMSG event
@@ -103,10 +101,10 @@ class Channel():
 		elif lower[0]=="!expire":
 			self.expire(member,lower[1:msglen])
 
-		elif lower[0]=="!remove_player":
-			self.remove_players(member, lower[2], isadmin)
+		elif lower[0]=="!remove_player" and msglen == 2:
+			self.remove_players(member, lower[1], isadmin)
 
-		elif lower[0]=="!who" or lower[0]==":??":
+		elif lower[0]=="!who":
 			self.who(member,lower[1:msglen])
 
 		elif lower[0] in ["!games", "!pickups"]:
@@ -114,9 +112,6 @@ class Channel():
 
 		elif lower[0]=="!promote":
 			self.promote_pickup(member,lower[1:2])
-
-		elif lower[0]=="!highlight":
-			self.highlight(member)
 		
 		elif lower[0]=="!lastgame":
 			self.lastgame(member,msgtup[1:msglen])
@@ -168,9 +163,6 @@ class Channel():
 	
 		elif lower[0]=="!commands":
 			client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
-		
-		elif lower[0]=="!topic":
-			self.set_topic(member, msgtup[1:msglen], isadmin)
 
 		elif lower[0]=="!set" and msglen>2:
 			self.configure(member, lower[1], ' '.join(msgtup[2:msglen]), isadmin)
@@ -319,17 +311,10 @@ class Channel():
 		newtopic="[{0}]".format(" | ".join(strlist))
 
 		if newtopic == "[]":
-			newtopic="[no pickups]"
+			newtopic="[**no pickups**]"
 		if newtopic != self.oldtopic:
 			client.notice(self.channel, newtopic)
 			self.oldtopic=newtopic
-
-	def set_topic(self, member, content, isadmin):
-		if isadmin:
-			self.cfg['TOPIC'] = ' '.join(content)
-			update_topic()
-		else:
-			client.reply(self.channel, member, "You have no right for this!")
 
 	def replypickups(self, member):
 		if self.pickups != []:
@@ -465,7 +450,7 @@ class Channel():
 			if newpickups != []:
 				for i in newpickups:
 					self.pickups.append(Pickup(i[0], i[1], self.cfg['DEFAULT_IP']))
-				self.update_topic()
+				self.replypickups(member)
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -474,7 +459,7 @@ class Channel():
 			toremove = [ pickup for pickup in self.pickups if pickup.name.lower() in args ]
 			for i in toremove:
 				self.pickups.remove(i)
-			update_topic()
+			self.replypickups(member)
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -482,24 +467,28 @@ class Channel():
 		if isadmin:
 			try:
 				pickupnames,gameip=' '.join(args).split(' : ',1)
+				pickupnames = pickupnames.split(" ")
 			except:
 				client.reply(self.channel, member, "Bad arguments")
 				return
-			n=0
+
+			affected_pickups = []
 			for pickup in ( pickup for pickup in self.pickups if ( 'default' in pickupnames and pickup.ip == self.cfg['DEFAULT_IP']) or pickup.name in pickupnames):
 				if gameip=='default':
 					gameip=self.cfg['DEFAULT_IP']
 				pickup.ip=gameip
-				n=1
+				affected_pickups.append(pickup.name)
 
 			if "default" in pickupnames:
 				self.cfg['DEFAULT_IP']=gameip
-				n=1
-
-			if n:
-				client.notice(self.channel, "Changed ip to {0} for {1}".format(gameip,str(pickupnames)))
+				if affected_pickups != []:
+					client.notice(self.channel, "Changed ip to '{0}' for {1}, and set it for default.".format(gameip, ' '.join(affected_pickups)))
+				else:
+					client.notice(self.channel, "Changed default ip to '{0}'.".format(gameip))
+			elif affected_pickups != []:
+				client.notice(self.channel, "Changed ip to '{0}' for {1}.".format(gameip, ' '.join(affected_pickups)))
 			else:
-				client.reply(self.channel, member, "No such pickup")
+				client.reply(self.channel, member, "No such pickups were found.")
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -551,7 +540,7 @@ class Channel():
 	def noadd(self, member, args, isadmin):
 		if isadmin:
 			reason = ''
-			duratation = self.cfg['BANTIME']
+			duratation = int(self.cfg['BANTIME'])
 
 			targetid = args.pop(0)
 			if re.match("^<@[0-9]+>$", targetid):
@@ -630,7 +619,7 @@ class Channel():
 					for pickup in self.pickups:
 						if player in pickup.players:
 							allpickups = False
-					if allpickups:
+					if allpickups and self.id+player.id in scheduler.tasks.keys():
 						scheduler.cancel_task(self.id+player.id)
 				if args == []:
 					client.notice(self.channel, "{0} was removed from all pickups!".format('<@'+', <@'.join([i.id+'>' for i in removed])))
@@ -638,6 +627,7 @@ class Channel():
 					client.notice(self.channel, "{0} was removed from {1} pickup!".format('<@'+', <@'.join([i.id+'>' for i in removed]), args[0]))
 				else:
 					client.notice(self.channel, "{0} was removed from {1} pickups!".format('<@'+', <@'.join([i.id+'>' for i in removed]), ', '.join(args)))
+				self.update_topic()
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 

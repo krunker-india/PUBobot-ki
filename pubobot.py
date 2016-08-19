@@ -31,7 +31,7 @@ def bot_run():
 				data = client.send_queue.pop(0)
 				if data[0] == 'msg':
 					destination, content = data[1], data[2]
-					console.display('>/{0}: {1}'.format(destination, content))
+					console.display('SEND| /{0}: {1}'.format(destination, content))
 					if not client.silent:
 						try:
 							yield from c.send_message(destination, content)
@@ -62,6 +62,7 @@ def on_ready():
 	client.process_connection()
 	console.display("SYSTEM| Setting status message...")
 	yield from c.change_status(game=discord.Game(name='pm !help'))
+	console.display("SYSTEM| Initialization complete!")
 	loop.create_task(bot_run())
 @c.event
 @asyncio.coroutine

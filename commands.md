@@ -32,3 +32,7 @@
 '!set pickup_password <i>password</i>' - specify password of your pickup servers.    
 '!set ip_format <i>format</i>' - set the format ip and password will be represented in. Default value: 'please connect to steam://connect/%ip%/%password%'.  
 '!set bantime <i>hours</i> - set default !noadd time.
+## 
+<b>Availible only for users with permission to manage channels:</b>     
+'!enable_pickups' - setup pickups on the channel.   
+'!disable_pickups' - remove pickups from the channel. <b>Warning, this action is irreversible!</b>

@@ -14,10 +14,7 @@ def init(c):
 def process_connection():
 	global username, state
 
-	console.display('SYSTEM| Logged in as:')
-	console.display('SYSTEM| Name: '+Client.user.name)
-	console.display('SYSTEM| Id: '+Client.user.id)
-	console.display('SYSTEM| ------')
+	console.display('SYSTEM| Logged in as: {0}, ID: {1}'.format(Client.user.name, Client.user.id))
 
 	for channelid in bot.channels_list:
 		channel = Client.get_channel(channelid)
