@@ -164,7 +164,7 @@ class Channel():
 			self.set_phrase(member, msgtup[1:msglen], isadmin)
 		
 		elif lower[0]=="!help":
-			self.show_help(member, lower[1:msglen])
+			client.private_reply(self.channel, member, config.cfg.HELPINFO)
 	
 		elif lower[0]=="!commands":
 			client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
@@ -662,9 +662,6 @@ class Channel():
 		dirname = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
 		config.backup(self.channel, dirname)
 		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
-	
-	def show_help(self, member, args):
-		client.notice(self.channel, config.cfg.HELPINFO)
 			
 	def update_member(self, member):
 		if member.status.name == 'offline':
