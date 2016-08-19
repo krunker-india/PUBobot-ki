@@ -34,10 +34,11 @@ def bot_run():
 			if data[0] == 'msg':
 				destination, content = data[1], data[2]
 				console.display('>/{0}: {1}'.format(destination, content))
-				try:
-					yield from c.send_message(destination, content)
-				except:
-					console.display("ERROR| Could not send the message. "+str(sys.exc_info()))
+				if not client.silent:
+					try:
+						yield from c.send_message(destination, content)
+					except:
+						console.display("ERROR| Could not send the message. "+str(sys.exc_info()))
 			elif data[0] == 'topic':
 				content = data[1]
 				if not client.silent:

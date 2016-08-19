@@ -91,7 +91,7 @@ class Stats():
 			d=dict()
 			self.c.execute("SELECT * FROM players WHERE membername = ?", (text, ))
 			result = self.c.fetchone()
-			print(result)
+			#print(result)
 			if result != None:
 				memberid, played, wascap, bans = result[1], result[2], result[3], result[4]
 				self.c.execute("SELECT pickups FROM overall_stats")
@@ -176,7 +176,7 @@ class Stats():
 			self.c.execute("SELECT * FROM bans WHERE active = 1")
 			bans = self.c.fetchall()
 			for i in bans:
-				print(i)
+				#print(i)
 				if i[4]+i[5] > time(): # if time didnt ran out
 					number = i[0]
 					name = i[2]
@@ -208,7 +208,7 @@ class Stats():
 				if ban[8] != None:
 					unbanned_or_timeleft="unbanned by "+ban[8]
 				else:
-					print("time", ban[5] - (time()-ban[4]))
+					#print("time", ban[5] - (time()-ban[4]))
 					unbanned_or_timeleft=str(timedelta( seconds=int(ban[5]-(time()-ban[4])) ))+" time left"
 				s='#{0} {1}, {2}, by {3}, {4}.'.format(number,name,reason, admin, unbanned_or_timeleft)
 				return([s,])

@@ -31,7 +31,7 @@ class Channel():
 		self.pickups = []
 		self.init_pickups()
 		self.lastgame_cache = self.stats.lastgame()
-		self.oldtopic = 'no pickups'
+		self.oldtopic = '[no pickups]'
 
 		if self.cfg['FIRST_INIT'] == 'True':
 			client.notice(self.channel, self.cfg['FIRST_INIT_MESSAGE'])
@@ -136,7 +136,7 @@ class Channel():
 		elif lower[0]=="!remove_pickups":
 			self.remove_games(member, lower[1:msglen], isadmin)
 
-		elif lower[0]=="!ip" and msglen>2:
+		elif lower[0]=="!set_ip" and msglen>2:
 			self.setip(member, lower[1:msglen], isadmin)
 
 		elif msgtup[0]=="!ip":
@@ -159,12 +159,6 @@ class Channel():
 
 		elif lower[0]=="!backup_load" and msglen==2:
 			self.backup_load(member, msgtup[1], isadmin)
-
-		elif lower[0]=="!silent":
-			self.set_silent(member, lower[1:msglen], isadmin)
-
-		elif lower[0]=="!puquit":
-			self.quit(member, lower[1:msglen], isadmin)
 
 		elif lower[0]=="!phrase":
 			self.set_phrase(member, msgtup[1:msglen], isadmin)
@@ -322,10 +316,10 @@ class Channel():
 		strlist = []
 		for i in ( i for i in sort if i.players):
 			strlist.append("**{0}** ({1}/{2})".format(i.name,len(i.players),i.maxplayers))
-		newtopic=" | ".join(strlist)
+		newtopic="[{0}]".format(" | ".join(strlist))
 
-		if newtopic == "":
-			newtopic="no pickups"
+		if newtopic == "[]":
+			newtopic="[no pickups]"
 		if newtopic != self.oldtopic:
 			client.notice(self.channel, newtopic)
 			self.oldtopic=newtopic
@@ -670,13 +664,6 @@ class Channel():
 		dirname = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
 		config.backup(self.channel, dirname)
 		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
-
-	def set_silent(self, member, args, isadmin):
-		if isadmin:
-			if (client.username in args) or (args == []):
-				self.silent = not self.silent
-		else:
-			client.reply(self.channel, member, "You have no right for this!")
 	
 	def show_help(self, member, args):
 		if len(args) == 0:
@@ -684,12 +671,6 @@ class Channel():
 		else:
 			reply = self.stats.show_help(args[0].lstrip("!"))
 			client.notice(self.channel, reply)
-	
-	def quit(self, member, args, isadmin):
-		if isadmin:
-			console.terminate()
-		else:
-			client.reply(self.channel, member, "You have no right for this!")
 			
 	def update_member(self, member):
 		if member.status.name == 'offline':
