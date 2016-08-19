@@ -17,7 +17,7 @@ def process_connection():
 	console.display('SYSTEM| Logged in as:')
 	console.display('SYSTEM| Name: '+Client.user.name)
 	console.display('SYSTEM| Id: '+Client.user.id)
-	console.display('------')
+	console.display('SYSTEM| ------')
 
 	for channelid in bot.channels_list:
 		channel = Client.get_channel(channelid)
@@ -38,10 +38,6 @@ def send(frametime):
 			Client.send_message(destination, data)
 			
 		lastsend = frametime
-						
-def terminate():
-	console.display("SYSTEM| Closing connection")
-	yield from Client.logout()
 
 ### api for bot.py ###
 

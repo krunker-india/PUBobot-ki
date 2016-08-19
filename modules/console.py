@@ -36,8 +36,9 @@ class ConsoleCompleter(object):  # Custom completer
 			return None
 
 def init():
-	global thread, log, userinput_queue
+	global thread, log, userinput_queue, alive
 
+	alive = True
 	#init log file
 	if not os.path.exists(os.path.abspath("logs")):
 	  os.makedirs('logs')
@@ -105,11 +106,11 @@ def display(data):
 	log.write(text+'\r\n')
 
 def terminate():
+	global alive
 	bot.terminate()
-	client.terminate()
 	log.close()
-	print("QUIT NOW.")
-	os._exit(0)
+	print("Waiting for connection to close...")
+	alive = False
 	
 help = """Commands:
   help - display this message.
