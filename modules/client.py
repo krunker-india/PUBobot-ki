@@ -4,15 +4,16 @@ import discord
 from modules import console, config, bot
 
 def init(c):
-	global silent, lastsend, send_queue, Client
+	global silent, lastsend, send_queue, Client, ready
 	
 	silent = False
 	send_queue = [] # Queue for sending messages
 	lastsend = 0
 	Client = c
+	ready = False
 	
 def process_connection():
-	global username, state
+	global username, ready
 
 	console.display('SYSTEM| Logged in as: {0}, ID: {1}'.format(Client.user.name, Client.user.id))
 
@@ -24,6 +25,7 @@ def process_connection():
 			c = bot.Channel(channel)
 			bot.channels.append(c)
 			console.display("SYSTEM| \"{0}\" channel init successfull".format(c.name))
+	ready = True
 
 def send(frametime):
 	global lastsend, connected

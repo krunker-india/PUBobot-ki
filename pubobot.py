@@ -59,11 +59,14 @@ def bot_run():
 @c.event
 @asyncio.coroutine
 def on_ready():
-	client.process_connection()
-	console.display("SYSTEM| Setting status message...")
-	yield from c.change_status(game=discord.Game(name='pm !help'))
-	console.display("SYSTEM| Initialization complete!")
-	loop.create_task(bot_run())
+	if not client.ready:
+		client.process_connection()
+		console.display("SYSTEM| Setting status message...")
+		yield from c.change_status(game=discord.Game(name='pm !help'))
+		console.display("SYSTEM| Initialization complete!")
+		loop.create_task(bot_run())
+	else:
+		console.display("DEBUG| Unexpected on_ready event!")
 @c.event
 @asyncio.coroutine
 def on_message(message):
