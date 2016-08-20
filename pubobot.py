@@ -67,8 +67,8 @@ def on_ready():
 @c.event
 @asyncio.coroutine
 def on_message(message):
-	console.display("CHAT| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 	if message.channel.is_private and message.author.id != c.user.id:
+		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 		client.send_queue.append(['msg', message.channel, config.cfg.HELPINFO])
 	elif message.content == '!enable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
@@ -89,6 +89,7 @@ def on_message(message):
 	else:
 		for channel in bot.channels:
 			if message.channel.id == channel.id:
+				console.display("CHAT| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 				try:
 					channel.processmsg(message.content, message.author)
 				except:
@@ -97,7 +98,7 @@ def on_message(message):
 @c.event
 @asyncio.coroutine
 def on_member_update(before, after):
-	console.display("DEBUG| {0} changed status to -{1}-".format(after.name, after.status))
+	#console.display("DEBUG| {0} changed status to -{1}-".format(after.name, after.status))
 	if after.status.name in ['idle', 'offline']:
 		for channel in bot.channels:
 			channel.update_member(after)

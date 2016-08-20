@@ -26,6 +26,7 @@ def new_channel(channel, admin):
 	c = bot.Channel(channel)
 	c.cfg["ADMINID"] = admin.id
 	bot.channels.append(c)
+	console.display("SYSTEM| CREATED NEW PICKUP CHANNEL: {0}>{1}".format(channel.server.name, channel.name))
 
 def delete_channel(channel):
 	for i in bot.channels:
