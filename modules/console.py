@@ -28,7 +28,7 @@ class ConsoleCompleter(object):  # Custom completer
 						chans = [texttup[0]+" "+c for c in chans]
 						self.matches = chans[:]
 					else:
-						self.matches = [texttup[0]+" "+s for s in chans if s and s.startswith(texttup[1])]
+						self.matches = [texttup[0]+" "+s for s in chans if s and s.startswith(' '.join(texttup[1:len(texttup)]))]
 		# return match indexed by state
 		try:
 			return self.matches[state]
@@ -85,7 +85,7 @@ def run():
 			elif l[0] == "status":
 				display("CONSOLE| Total pickup channels: {0}. {1} messages to send waiting in queue.".format(len(bot.channels), len(client.send_queue)))
 			elif l[0] == "channels":
-				display("CONSOLE| Pickup channels: {0}".format(" ".join([i.name for i in bot.channels])))
+				display("CONSOLE| Pickup channels: {0}".format(" | ".join([i.name for i in bot.channels])))
 			elif l[0] == "exec":
 				exec(l[1])
 			elif l[0] == "reset_players":

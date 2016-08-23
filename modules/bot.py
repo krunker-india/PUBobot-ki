@@ -45,9 +45,6 @@ class Channel():
 				console.display("ERROR| Failed to parse a pickup of channel {0} @ {1}.".format(self.id, str(i)))
 			
 	def start_pickup(self, pickup):
-		for i in pickup.players:
-			scheduler.cancel_task(self.id+i.id)
-
 		players=tuple(pickup.players) #just to save the value
 		if pickup.maxplayers > 2:
 			caps=random.sample(players, 2)
@@ -61,9 +58,11 @@ class Channel():
 		client.notice(self.channel, pickup.name+' pickup has been started!\r\n'+noticestr)
 
 		for i in players:
+			if self.id+i.id in scheduler.tasks.keys():
+				scheduler.cancel_task(self.id+i.id)
 			client.private_reply(self, i,"**{0}** pickup has been started, {1}.{2}".format(pickup.name, ipstr, capsstr))
-			for pickup in ( pickup for pickup in self.pickups if i.id in [x.id for x in pickup.players]):
-				pickup.players.remove(i)
+			for pu in ( pu for pu in self.pickups if i.id in [x.id for x in pu.players]):
+				pu.players.remove(i)
 
 		self.stats.register_pickup(pickup.name, players, caps)
 		self.lastgame_cache = self.stats.lastgame()
