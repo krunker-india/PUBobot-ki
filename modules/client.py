@@ -20,7 +20,7 @@ def process_connection():
 	for channelid in bot.channels_list:
 		channel = Client.get_channel(channelid)
 		if channel == None:
-			console.display('SYSTEM| Could not found channel {0} with given CHANNELID...'.format(channel.name))
+			console.display("SYSTEM| Could not found channel with CHANNELID '{0}'...".format(channelid))
 		else:
 			c = bot.Channel(channel)
 			bot.channels.append(c)
