@@ -132,7 +132,7 @@ class Channel():
 			self.remove_games(member, lower[1:msglen], isadmin)
 
 		elif lower[0]=="!set_ip" and msglen>2:
-			self.setip(member, lower[1:msglen], isadmin)
+			self.setip(member, msgtup[1:msglen], isadmin)
 
 		elif msgtup[0]=="!ip":
 			self.getip(member,lower[1:2])
