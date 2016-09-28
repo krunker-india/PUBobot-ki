@@ -55,7 +55,10 @@ class Channel():
 
 		ipstr = self.cfg['IP_FORMAT'].replace("%ip%", pickup.ip).replace("%password%", self.cfg['PICKUP_PASSWORD'])
 		noticestr="{0}, {1}.{2}".format('<@'+'>, <@'.join([i.id for i in players])+'>', ipstr, capsstr)
-		client.notice(self.channel, pickup.name+' pickup has been started!\r\n'+noticestr)
+		if len(players) > 4:
+			client.notice(self.channel, pickup.name+' pickup has been started!\r\n'+noticestr)
+		else:
+			client.notice(self.channel, pickup.name+' pickup has been started! '+noticestr)
 
 		for i in players:
 			if self.id+i.id in scheduler.tasks.keys():
@@ -653,9 +656,9 @@ class Channel():
 		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
 			
 	def update_member(self, member):
-		if member.status.name == 'offline':
+		if member.status == 'offline':
 			self.remove_player(member,[],'offline')
-		elif member.status.name == 'idle' and not self.id+member.id in scheduler.tasks.keys():
+		elif member.status == 'idle' and not self.id+member.id in scheduler.tasks.keys():
 			self.remove_player(member,[],'idle')
 
 	def configure(self, member, var, value, isadmin):

@@ -101,8 +101,8 @@ def on_message(message):
 @c.event
 @asyncio.coroutine
 def on_member_update(before, after):
-	#console.display("DEBUG| {0} changed status to -{1}-".format(after.name, after.status))
-	if after.status.name in ['idle', 'offline']:
+	#console.display("DEBUG| {0} changed status from {1}  to -{2}-".format(after.name, before.status, after.status))
+	if after.status in ['idle', 'offline']:
 		for channel in bot.channels:
 			channel.update_member(after)
 
