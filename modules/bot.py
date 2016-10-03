@@ -656,9 +656,9 @@ class Channel():
 		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
 			
 	def update_member(self, member):
-		if member.status == 'offline':
+		if str(member.status) == 'offline':
 			self.remove_player(member,[],'offline')
-		elif member.status == 'idle' and not self.id+member.id in scheduler.tasks.keys():
+		elif str(member.status) == 'idle' and not self.id+member.id in scheduler.tasks.keys():
 			self.remove_player(member,[],'idle')
 
 	def configure(self, member, var, value, isadmin):
