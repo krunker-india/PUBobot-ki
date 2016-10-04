@@ -40,7 +40,7 @@ class Stats():
 		#update player_games and players
 		for player in players:
 			self.c.execute("INSERT OR IGNORE INTO players VALUES (?, ?, 0, 0, 0, 0, 'False')", (player.name, player.id ))
-			self.c.execute("UPDATE players SET played=played+1, lastgame = ? WHERE memberid = ?", (pickupid, player.id))
+			self.c.execute("UPDATE players SET played=played+1, lastgame = ?, membername = ? WHERE memberid = ?", (pickupid, player.name, player.id))
 			self.c.execute("INSERT INTO player_games (pickup_id, memberid, membername, time, gametype) VALUES (?, ?, ?, ?, ?)", (pickupid, player.id, player.name, int(time()), gametype))
 		if caps:
 			for player in caps:
