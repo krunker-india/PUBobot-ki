@@ -513,7 +513,7 @@ class Channel():
 
 		n=0
 		for pickup in self.pickups:
-			if pickup.name == pickup_or_ip:
+			if pickup.name.lower() == pickup_or_ip:
 				client.notice(self.channel, 'Ip for {0} is {1}'.format(pickup.name, pickup.ip))
 				n=1
 
