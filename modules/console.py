@@ -25,7 +25,7 @@ class ConsoleCompleter(object):  # Custom completer
 				if texttup[0] in ["say", "disable_pickups"]:
 					chans = sorted([c.name for c in bot.channels])
 					if texttup[1] == '':
-						chans = [texttup[0]+" "+c for c in chans]
+						chans = [texttup[0]+" "+c+"#" for c in chans]
 						self.matches = chans[:]
 					else:
 						self.matches = [texttup[0]+" "+s for s in chans if s and s.startswith(' '.join(texttup[1:len(texttup)]))]
@@ -73,7 +73,7 @@ def run():
 				for i in bot.channels:
 					client.notice(i.channel, l[1])
 			elif l[0] == "say":
-				channel, text = l[1].split(" ", 1)
+				channel, text = l[1].split("#", 1)
 				for i in bot.channels:
 					if i.name == channel:
 						client.notice(i.channel, text)
