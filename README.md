@@ -12,7 +12,7 @@ Python 3.5+, sqlite3 module for python, discord api v0.10+.
 4. Type '!enable_pickups' on the desired channel.
 
 # Credits
-Developer: Leshka. You can contact me via XMPP/Jabber leshkajm@ya.ru, send e-mail to leshkajm@ya.ru, or find me on irc.quakenet.org server.
+Developer: Leshka. You can contact me via e-mail leshkajm@ya.ru, or pm 'Leshaka' on irc.quakenet.org server.
 Help: #warsow.pickup admin team.
 Special thanks to Mute and Perrina.
 
