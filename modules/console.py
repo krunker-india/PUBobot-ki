@@ -10,7 +10,7 @@ from modules import bot, client, config
 class ConsoleCompleter(object):  # Custom completer
 
 	def __init__(self):
-		self.commands = sorted(["help", "say", "exec", "quit", "status", "notice", "reset_players", "disable_pickups"])
+		self.commands = sorted(["help", "say", "exec", "quit", "status", "notice", "reset_players", "disable_pickups", "pickups", "stats"])
 		self.modules = sorted(["bot", "client", "config"])
 
 	def complete(self, text, state):
@@ -79,11 +79,25 @@ def run():
 						client.notice(i.channel, text)
 						return
 			elif l[0] == "disable_pickups":
+				channel = rstrip("#")
 				for i in bot.channels:
-					if i.name == l[1]:
+					if i.name == channel:
 						config.delete_channel(i.channel)
 			elif l[0] == "status":
 				display("CONSOLE| Total pickup channels: {0}. {1} messages to send waiting in queue.".format(len(bot.channels), len(client.send_queue)))
+			elif l[0] == "pickups":
+				channels = []
+				for c in bot.channels:
+					pickups=[]
+					for p in c.pickups:
+						if p.players != []:
+							pickups.append('[{0} ({1}/{2})]'.format(p.name, len(p.players), p.maxplayers))
+					if pickups != []:
+						channels.append("{0} {1}".format(c.name, " ".join(pickups)))
+				display("All pickups: {0}".format(" | ".join(channels)))
+			elif l[0] == "stats":
+				for c in bot.channels:
+					display("STATS| {0}: {1}".format(c.name, c.stats.stats()))
 			elif l[0] == "channels":
 				display("CONSOLE| Pickup channels: {0}".format(" | ".join([i.name for i in bot.channels])))
 			elif l[0] == "exec":
@@ -119,6 +133,8 @@ help = """Commands:
   disable_pickups %channel% - disable pickups on %channel%.
   status - display overall status.
   channels - list of all pickup channels.
+  pickups - list of all active pickup queues.
+  stats - list of overall stats of all channels.
   exec %code% - exec a python code.
   reset_players - reset players on all channels and highlight them.
   quit - save and quit."""
