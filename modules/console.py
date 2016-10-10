@@ -107,7 +107,7 @@ def run():
 				if len(l)>1:
 					comment = l[1]
 				for i in bot.channels:
-					i.reset_players(comment=l[1])
+					i.reset_players(comment=comment)
 			elif l[0] == "quit":
 				terminate()
 		except Exception as e:
