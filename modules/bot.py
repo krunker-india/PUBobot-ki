@@ -115,6 +115,9 @@ class Channel():
 		elif lower[0] in ["!games", "!pickups"]:
 			self.replypickups(member)
 
+		elif lower[0]=="!pickups_list":
+			self.replypickups_list(member)
+
 		elif lower[0]=="!promote":
 			self.promote_pickup(member,lower[1:2])
 		
@@ -348,6 +351,13 @@ class Channel():
 			client.notice(self.channel, s)
 		else:
 			client.notice(self.channel, "No pickups configured on this channel")
+
+	def replypickups_list(self, member):
+		str="```name | players | ip | promotion role | blacklist role | whitelist role"
+		for i in self.pickups:
+			str+="\n{0} | {1} | {2} | {3} | {4} | {5}".format(i.name, i.maxplayers, i.ip, i.promotion_role, i.blacklist_role, i.whitelist_role)
+		str+="```"
+		client.private_reply(self.channel, member, str)
 
 	def promote_pickup(self, member,arg):
 		self.newtime=time.time()
