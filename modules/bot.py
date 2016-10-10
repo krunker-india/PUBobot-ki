@@ -363,7 +363,7 @@ class Channel():
 		self.newtime=time.time()
 		if self.newtime-self.oldtime>int(self.cfg['PROMOTION_DELAY']):
 			if arg != []:
-				for pickup in ( pickup for pickup in self.pickups if [pickup.name] == arg ):
+				for pickup in ( pickup for pickup in self.pickups if [pickup.name.lower()] == arg ):
 					if pickup.promotion_role != "none":
 						client.notice(self.channel, "{0} please !add {1}, {2} players to go!".format(pickup.promotion_role,pickup.name,pickup.maxplayers-len(pickup.players)))
 					else:
