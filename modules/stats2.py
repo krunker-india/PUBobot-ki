@@ -10,14 +10,18 @@ class Stats():
 	def __init__(self, channel):
 		self.conn = sqlite3.connect("channels/{0}/stats.sql".format(channel.id))
 		self.c = self.conn.cursor()
-		
+
+		#check if we have all tables we need, create if needed
+		self.update_tables()
+
 		self.c.execute("SELECT * from config")
 		config_table = self.c.fetchall()
 		for i in config_table:
 			channel.cfg[i[0]] = i[1]
 
-		#check if we have tables, create if needed
-		#self.check_tables()
+		self.c.execute("SELECT * from pickups_config")
+		pickup_table = self.c.fetchall()
+		channel.cfg["pickup_table"] = pickup_table
 
 	def register_pickup(self, gametype, players, caps):
 		playersstr = " " + " ".join([i.name for i in players]) + " "
@@ -268,13 +272,24 @@ class Stats():
 		
 	def save_config(self, cfg, pickups):
 		for var in cfg.keys():
-			self.c.execute("UPDATE config SET value = ? WHERE variable = ?", (cfg[var], var))
+			self.c.execute("UPDATE OR IGNORE config SET value = ? WHERE variable = ?", (cfg[var], var))
 			pickup_list = []
 			for i in pickups:
-				pickup_list.append([i.name, i.maxplayers, i.ip])
-			self.c.execute("UPDATE config SET value = ? WHERE variable = 'PICKUP_LIST'", (str(pickup_list),))
+				c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
 		self.conn.commit()
 
 	def close(self):
 		self.conn.commit()
 		self.conn.close()
+
+	def update_tables(self):
+		c.execute("""SELECT value FROM config WHERE variable='PICKUP_LIST';""")
+		old_pickups = c.fetchone()
+		if old_pickups != None:
+			c.execute("""CREATE OR IGNORE TABLE pickups_config (name TEXT, maxplayers INTEGER, ip TEXT, promotion_role TEXT, whitelist_role TEXT, blacklist_role TEXT, PRIMARY KEY(name);""")
+			for i in eval(old_pickups[0]):
+				c.execute("""INSERT OR IGNORE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i[0], i[1], i[2], 'none', 'none', 'none'))
+			c.execute("""DELETE FROM config WHERE variable = 'PICKUP_LIST';""")
+
+		c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_DELAY', '10');""")
+		c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_ROLE', 'none');""")
