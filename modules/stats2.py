@@ -20,8 +20,7 @@ class Stats():
 			channel.cfg[i[0]] = i[1]
 
 		self.c.execute("SELECT * from pickups_config")
-		pickup_table = self.c.fetchall()
-		channel.cfg["pickup_table"] = pickup_table
+		self.pickup_table = self.c.fetchall()
 
 	def register_pickup(self, gametype, players, caps):
 		playersstr = " " + " ".join([i.name for i in players]) + " "
@@ -275,7 +274,7 @@ class Stats():
 			self.c.execute("UPDATE OR IGNORE config SET value = ? WHERE variable = ?", (cfg[var], var))
 			pickup_list = []
 			for i in pickups:
-				c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
+				self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
 		self.conn.commit()
 
 	def close(self):
@@ -283,13 +282,13 @@ class Stats():
 		self.conn.close()
 
 	def update_tables(self):
-		c.execute("""SELECT value FROM config WHERE variable='PICKUP_LIST';""")
-		old_pickups = c.fetchone()
+		self.c.execute("""SELECT value FROM config WHERE variable='PICKUP_LIST';""")
+		old_pickups = self.c.fetchone()
 		if old_pickups != None:
-			c.execute("""CREATE OR IGNORE TABLE pickups_config (name TEXT, maxplayers INTEGER, ip TEXT, promotion_role TEXT, whitelist_role TEXT, blacklist_role TEXT, PRIMARY KEY(name);""")
+			self.c.execute("""CREATE TABLE IF NOT EXISTS pickups_config (name TEXT, maxplayers INTEGER, ip TEXT, promotion_role TEXT, whitelist_role TEXT, blacklist_role TEXT, PRIMARY KEY(name));""")
 			for i in eval(old_pickups[0]):
-				c.execute("""INSERT OR IGNORE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i[0], i[1], i[2], 'none', 'none', 'none'))
-			c.execute("""DELETE FROM config WHERE variable = 'PICKUP_LIST';""")
+				self.c.execute("""INSERT OR IGNORE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i[0], i[1], i[2], 'none', 'none', 'none'))
+			self.c.execute("""DELETE FROM config WHERE variable = 'PICKUP_LIST';""")
 
-		c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_DELAY', '10');""")
-		c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_ROLE', 'none');""")
+		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_DELAY', '10');""")
+		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_ROLE', 'none');""")

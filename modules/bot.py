@@ -41,7 +41,7 @@ class Channel():
 		#scheduler.add_task(self.id+"#backup#", config.cfg['BACKUP_TIME'])
 		
 	def init_pickups(self):
-		for i in pickup_table:
+		for i in self.stats.pickup_table:
 			try:
 				self.pickups.append(Pickup(*i))
 			except:
@@ -139,13 +139,13 @@ class Channel():
 		elif lower[0]=="!set_ip" and msglen>2:
 			self.setip(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!set_promotion_role" and msglen>2:
+		elif lower[0]=="!promotion_role" and msglen>2:
 			self.set_promotion_role(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!set_whitelist" and msglen>2:
+		elif lower[0]=="!whitelist_role" and msglen>2:
 			self.set_whitelist_role(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!set_blacklist" and msglen>2:
+		elif lower[0]=="!blacklist_role" and msglen>2:
 			self.set_blacklist_role(member, msgtup[1:msglen], isadmin)
 
 		elif msgtup[0]=="!ip":
@@ -200,9 +200,9 @@ class Channel():
 		for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0) or pickup.name.lower() in target_pickups)):
 			if not member.id in [i.id for i in pickup.players]:
 				#check if pickup have blacklist or whitelist
-				if i.blacklist_role in [r.name for r in member.roles]:
-					client.reply(self.channel, member, "You are not allowed to play {0} (blacklisted).".format(i.name))
-				elif i.whitelist_role == 'none' or i.whitelist_role in [r.id for r in member.roles]:
+				if pickup.blacklist_role in [r.name for r in member.roles]:
+					client.reply(self.channel, member, "You are not allowed to play {0} (blacklisted).".format(pickup.name))
+				elif pickup.whitelist_role == 'none' or pickup.whitelist_role in [r.name for r in member.roles]:
 					changes = True
 					pickup.players.append(member)
 					if len(pickup.players)==pickup.maxplayers:
@@ -211,7 +211,7 @@ class Channel():
 					elif len(pickup.players)==pickup.maxplayers-1 and pickup.maxplayers>2:
 						client.notice(self.channel, "Only 1 player left for {0} pickup. Hurry up!".format(pickup.name))
 				else:
-					client.reply(self.channel, member, "You are not allowed to play {0} (not in whitelist).".format(i.name))
+					client.reply(self.channel, member, "You are not allowed to play {0} (not in whitelist).".format(pickup.name))
 
 		#update scheduler, reply a phrase and update topic
 		if changes:
@@ -311,15 +311,15 @@ class Channel():
 
 		if self.lastgame_cache:
 			self.newtime=time.time()
-			if self.newtime-self.oldtime>cfg['PROMOTION_DELAY']:
+			if self.newtime-self.oldtime>int(self.cfg['PROMOTION_DELAY']):
 				for i in ( i for i in self.pickups if i.name == self.lastgame_cache[2]):
 					if i.promotion_role != 'none':
-						client.notice(self.channel, "{0} SUB NEEDED for {0} pickup! Please connect {1} !".format(i.promotion_role,i.name,i.ip))
+						client.notice(self.channel, "{0} SUB NEEDED for {1} pickup! Please connect {2} !".format(i.promotion_role,i.name,i.ip))
 					else:
 						client.notice(self.channel, "SUB NEEDED for {0} pickup! Please connect {1} !".format(i.name,i.ip))
 				self.oldtime=self.newtime
 			else:
-				client.reply(self.channel, member,"Only one promote per {0} minutes! You have to wait {0}.".format(cfg['PROMOTION_DELAY'] ,str(datetime.timedelta(seconds=int(cfg['PROMOTION_DELAY']-self.newtime+self.oldtime)))))
+				client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['PROMOTION_DELAY'])-self.newtime+self.oldtime)))))
 		else:
 			client.reply(self.channel, member, "No pickups played yet.")
 
@@ -351,7 +351,7 @@ class Channel():
 
 	def promote_pickup(self, member,arg):
 		self.newtime=time.time()
-		if self.newtime-self.oldtime>cfg['PROMOTION_DELAY']:
+		if self.newtime-self.oldtime>int(self.cfg['PROMOTION_DELAY']):
 			if arg != []:
 				for pickup in ( pickup for pickup in self.pickups if [pickup.name] == arg ):
 					if pickup.promotion_role != "none":
@@ -359,13 +359,13 @@ class Channel():
 					else:
 						client.notice(self.channel, "Please !add {0}, {1} players to go!".format(pickup.name,pickup.maxplayers-len(pickup.players)))
 			else:
-				if cfg['PROMOTION_ROLE'] != "none":
-					client.notice(self.channel, "{0} please !add to pickups!".format(cfg['PROMOTION_ROLE']))
+				if self.cfg['PROMOTION_ROLE'] != "none":
+					client.notice(self.channel, "{0} please !add to pickups!".format(self.cfg['PROMOTION_ROLE']))
 				else:
 					client.notice(self.channel, "Please !add to pickups!")
 			self.oldtime=self.newtime
 		else:
-			client.reply(self.channel, member,"Only one promote per {0} minutes! You have to wait {0}.".format(cfg['PROMOTION_DELAY'] ,str(datetime.timedelta(seconds=int(cfg['PROMOTION_DELAY']-self.newtime+self.oldtime)))))
+			client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['PROMOTION_DELAY'])-self.newtime+self.oldtime)))))
 
 	def expire(self, member,timelist):
 		added = False
@@ -495,13 +495,13 @@ class Channel():
 		if isadmin:
 			try:
 				pickupnames,gameip=' '.join(args).split(' : ',1)
-				pickupnames = pickupnames.split(" ")
+				pickupnames = pickupnames.lower().split(" ")
 			except:
 				client.reply(self.channel, member, "Bad arguments")
 				return
 
 			affected_pickups = []
-			for pickup in ( pickup for pickup in self.pickups if ( 'default' in pickupnames and pickup.ip == self.cfg['DEFAULT_IP']) or pickup.name in pickupnames):
+			for pickup in ( pickup for pickup in self.pickups if ( 'default' in pickupnames and pickup.ip == self.cfg['DEFAULT_IP']) or pickup.name.lower() in pickupnames):
 				if gameip=='default':
 					gameip=self.cfg['DEFAULT_IP']
 				pickup.ip=gameip
@@ -524,7 +524,7 @@ class Channel():
 		if isadmin:
 			try:
 				pickupnames,newrole=' '.join(args).split(' : ',1)
-				pickupnames = pickupnames.split(" ")
+				pickupnames = pickupnames.lower().split(" ")
 			except:
 				client.reply(self.channel, member, "Bad arguments")
 				return
@@ -535,11 +535,11 @@ class Channel():
 			else:
 				for i in self.channel.server.roles:
 					if newrole == i.name:
-						roleid == "<@&{0}>".format(i.id)
+						roleid = "<@&{0}>".format(i.id)
 
 			if roleid != False:
 				affected_pickups = []
-				for pickup in ( pickup for pickup in self.pickups if ( 'default' in pickupnames and pickup.promotion_role == self.cfg['PROMOTION_ROLE']) or pickup.name in pickupnames):
+				for pickup in ( pickup for pickup in self.pickups if ( 'default' in pickupnames and pickup.promotion_role == self.cfg['PROMOTION_ROLE']) or pickup.name.lower() in pickupnames):
 					pickup.promotion_role=roleid
 					affected_pickups.append(pickup.name)
 
@@ -554,7 +554,7 @@ class Channel():
 				else:
 					client.reply(self.channel, member, "No such pickups were found.")
 			else:
-				client.reply(self.channel, member, "role '{0}' not found on this server.")
+				client.reply(self.channel, member, "role '{0}' not found on this server.".format(newrole))
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -562,14 +562,14 @@ class Channel():
 		if isadmin:
 			try:
 				pickupnames,newrole=' '.join(args).split(' : ',1)
-				pickupnames = pickupnames.split(" ")
+				pickupnames = pickupnames.lower().split(" ")
 			except:
 				client.reply(self.channel, member, "Bad arguments")
 				return
 
 
 			affected_pickups = []
-			for pickup in ( pickup for pickup in self.pickups if pickup.name in pickupnames):
+			for pickup in ( pickup for pickup in self.pickups if pickup.name.lower() in pickupnames):
 				pickup.whitelist_role=newrole
 				affected_pickups.append(pickup.name)
 
@@ -584,13 +584,13 @@ class Channel():
 		if isadmin:
 			try:
 				pickupnames,newrole=' '.join(args).split(' : ',1)
-				pickupnames = pickupnames.split(" ")
+				pickupnames = pickupnames.lower().split(" ")
 			except:
 				client.reply(self.channel, member, "Bad arguments")
 				return
 
 			affected_pickups = []
-			for pickup in ( pickup for pickup in self.pickups if pickup.name in pickupnames):
+			for pickup in ( pickup for pickup in self.pickups if pickup.name.lower() in pickupnames):
 				pickup.blacklist_role=newrole
 				affected_pickups.append(pickup.name)
 
@@ -791,7 +791,7 @@ class Channel():
 
 			elif var == "promotion_delay":
 				try:
-					self.cfg["PROMOTION_DELAY"] = int(value)
+					self.cfg["PROMOTION_DELAY"] = int(value)*60
 					client.reply(self.channel, member, "done.")
 				except:
 					client.reply(self.channel, member, "value for promotion_delay must be a number of minutes.")
