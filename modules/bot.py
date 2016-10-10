@@ -221,23 +221,23 @@ class Channel():
 		if changes != []:
 			self.update_topic()
 			if status == 'scheduler':
-				client.private_reply(self.channel, member, "You have been removed from all pickups as your !expire time ran off...")
+				client.reply(self.channel, member, "you have been removed from all pickups as your !expire time ran off...")
 			elif status == 'idle':
-				client.private_reply(self.channel, member, "You have been removed from all pickups as your status went AFK...")
+				client.notice(self.channel, "<@{0}> went AFK and was removed from all pickups...".format(member.id))
 			elif status == 'offline':
-				client.private_reply(self.channel, member, "You have been removed from all pickups as you went offline...")
+				client.notice(self.channel, "{0} went offline and was removed from all pickups...".format(member.name))
 			elif status == 'banned':
-				client.private_reply(self.channel, member, "You have been removed from all pickups as you've been banned...")
-			elif status == 'reset':
-				if allpickups:
-					client.private_reply(self.channel, member, "You have been removed from all pickups, pickups has been reset.")
-				else:
-					client.private_reply(self.channel, member, "You have been removed from {0} - pickups has been reset.".format(", ".join(changes)))
+				client.notice(self.channel, "{0} have been removed from all pickups...".format(member.name))
+			#elif status == 'reset':
+			#	if allpickups:
+			#		client.reply(self.channel, member, "You have been removed from all pickups, pickups has been reset.")
+			#	else:
+			#		client.reply(self.channel, member, "You have been removed from {0} - pickups has been reset.".format(", ".join(changes)))
 			elif status == 'admin':
 				if allpickups:
-					client.private_reply(self.channel, member, "You have been removed from all pickups by an admin.")
+					client.reply(self.channel, member, "You have been removed from all pickups by an admin.")
 				else:
-					client.private_reply(self.channel, member, "You have been removed from {0} by an admin.".format(", ".join(changes)))
+					client.reply(self.channel, member, "You have been removed from {0} by an admin.".format(", ".join(changes)))
 			#if status == 'online':
 			#if allpickups:
 			#	client.private_reply(self.channel, member, "You have been removed from all pickups")
