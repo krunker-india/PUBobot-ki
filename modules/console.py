@@ -103,8 +103,11 @@ def run():
 			elif l[0] == "exec":
 				exec(l[1])
 			elif l[0] == "reset_players":
+				comment = False
+				if len(l)>1:
+					comment = l[1]
 				for i in bot.channels:
-					i.reset_players()
+					i.reset_players(comment=l[1])
 			elif l[0] == "quit":
 				terminate()
 		except Exception as e:
@@ -136,5 +139,5 @@ help = """Commands:
   pickups - list of all active pickup queues.
   stats - list of overall stats of all channels.
   exec %code% - exec a python code.
-  reset_players - reset players on all channels and highlight them.
+  reset_players [comment] - reset players on all channels and highlight them.
   quit - save and quit."""

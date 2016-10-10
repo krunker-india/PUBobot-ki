@@ -292,3 +292,4 @@ class Stats():
 
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_DELAY', '10');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_ROLE', 'none');""")
+		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PREFIX', '!');""")

@@ -723,7 +723,7 @@ class Channel():
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
-	def reset_players(self, member=False, args=[], isadmin=False):
+	def reset_players(self, member=False, args=[], isadmin=False, comment=False):
 		if member == False or isadmin:
 			removed = []
 			for pickup in self.pickups:
@@ -747,6 +747,8 @@ class Channel():
 				else:
 					client.notice(self.channel, "{0} was removed from {1} pickups!".format('<@'+', <@'.join([i.id+'>' for i in removed]), ', '.join(args)))
 				self.update_topic()
+				if comment:
+					client.notice(self.channel, comment)
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
