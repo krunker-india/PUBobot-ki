@@ -18,7 +18,7 @@
 '!ip [<i>pickup</i> or default]' - shows you ip of last pickup or specified pickup.  
 
 ### PICKUP MANAGEMENT:
-'!pickups_list' - list of pickups with detailed info.
+'!pickups_list' - list of pickups with detailed info.    
 '!add_pickups <i>name</i>:<i>players</i>[ <i>name</i>:<i>players</i> ...]' - create new pickups.    
 '!remove_pickups <i>pickup</i>[ <i>pickup</i> ...]' - delete specified pickups.   
 '!set_ip <i>pickup</i>[ <i>pickup</i> ...] : <i>ip</i>' - set server to be played for game. Use 'default' value for <i>pickup</i> to set server for pickups with default server value.   
