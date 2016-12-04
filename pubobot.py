@@ -62,7 +62,7 @@ def on_ready():
 	if not client.ready:
 		client.process_connection()
 		console.display("SYSTEM| Setting status message...")
-		yield from c.change_status(game=discord.Game(name='pm !help'))
+		yield from c.change_presence(game=discord.Game(name='pm !help'))
 		console.display("SYSTEM| Initialization complete!")
 		loop.create_task(bot_run())
 	else:
@@ -73,7 +73,7 @@ def on_message(message):
 	if message.channel.is_private and message.author.id != c.user.id:
 		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 		client.send_queue.append(['msg', message.channel, config.cfg.HELPINFO])
-	elif message.content == '!enable_pickups':
+	if message.content == '!enable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
 			if message.channel.id not in [x.id for x in bot.channels]:
 				config.new_channel(message.channel, message.author)

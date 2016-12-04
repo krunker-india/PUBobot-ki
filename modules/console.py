@@ -116,7 +116,7 @@ def run():
 		pass
 			
 def display(data):
-	text = str(data)
+	text = str(data).encode(sys.stdout.encoding, 'ignore').decode(sys.stdout.encoding) #have to do this encoding/decoding bullshit because python fails to encode some symbols by default
 	text=datetime.datetime.now().strftime("(%H:%M:%S)")+text # add date and time
 	linebuffer=readline.get_line_buffer()
 	sys.stdout.write("\r\n\033[F\033[K"+text+'\r\n>'+linebuffer)

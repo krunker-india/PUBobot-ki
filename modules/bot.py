@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 import time, datetime, re, traceback, random
-from modules import client, config, console, stats2, scheduler
+from modules import client, config, console, stats2, scheduler, utils
 
 def init():
 	global channels, channels_list
@@ -36,7 +36,7 @@ class Channel():
 		self.oldtopic = '[**no pickups**]'
 
 		if self.cfg['FIRST_INIT'] == 'True':
-			client.notice(self.channel, self.cfg['FIRST_INIT_MESSAGE'])
+			client.notice(self.channel, config.cfg.FIRST_INIT_MESSAGE)
 			self.cfg['FIRST_INIT'] = 'False'
 		#scheduler.add_task(self.id+"#backup#", config.cfg['BACKUP_TIME'])
 		
@@ -83,18 +83,12 @@ class Channel():
 		else:
 			isadmin = False
 
-		if lower[0]=="!add":
-			self.add_player(member, lower[1:msglen])
-
-		elif re.match("^\+..", lower[0]):
+		if re.match("^\+..", lower[0]):
 			lower[0]=lower[0].lstrip(":+")
 			self.add_player(member, lower[0:msglen])
 
 		elif lower[0]=="++":
 			self.add_player(member, [])
-
-		elif lower[0]=="!remove":
-			self.remove_player(member, lower[1:msglen])
 
 		elif re.match("^-..",lower[0]):
 			lower[0]=lower[0].lstrip(":-")
@@ -103,86 +97,100 @@ class Channel():
 		elif lower[0]=="--":
 			self.remove_player(member,[])
 
-		elif lower[0]=="!expire":
-			self.expire(member,lower[1:msglen])
+		prefix, lower[0] = lower[0][0], lower[0][1:]
+		if prefix == self.cfg["PREFIX"]:
+			if lower[0]=="add":
+				self.add_player(member, lower[1:msglen])
 
-		elif lower[0]=="!remove_player" and msglen == 2:
-			self.remove_players(member, lower[1], isadmin)
+			elif lower[0]=="remove":
+				self.remove_player(member, lower[1:msglen])
 
-		elif lower[0]=="!who":
-			self.who(member,lower[1:msglen])
+			elif lower[0]=="expire":
+				self.expire(member,lower[1:msglen])
 
-		elif lower[0] in ["!games", "!pickups"]:
-			self.replypickups(member)
+			elif lower[0]=="default_expire":
+				self.default_expire(member,lower[1:msglen])
 
-		elif lower[0]=="!pickups_list":
-			self.replypickups_list(member)
+			elif lower[0]=="remove_player" and msglen == 2:
+				self.remove_players(member, lower[1], isadmin)
 
-		elif lower[0]=="!promote":
-			self.promote_pickup(member,lower[1:2])
+			elif lower[0]=="who":
+				self.who(member,lower[1:msglen])
+
+			elif lower[0] in ["games", "pickups"]:
+				self.replypickups(member)
+
+			elif lower[0]=="pickups_list":
+				self.replypickups_list(member)
+
+			elif lower[0]=="promote":
+				self.promote_pickup(member,lower[1:2])
 		
-		elif lower[0]=="!lastgame":
-			self.lastgame(member,msgtup[1:msglen])
+			elif lower[0]=="lastgame":
+				self.lastgame(member,msgtup[1:msglen])
 
-		elif lower[0]=="!sub":
-			self.sub_request(member)
+			elif lower[0]=="sub":
+				self.sub_request(member)
 
-		elif lower[0]=="!stats":
-			self.getstats(member,msgtup[1:2])
+			elif lower[0]=="stats":
+				self.getstats(member,msgtup[1:2])
 
-		elif lower[0]=="!top":
-			self.gettop(member, lower[1:msglen])
+			elif lower[0]=="top":
+				self.gettop(member, lower[1:msglen])
 
-		elif lower[0]=="!add_pickups":
-			self.add_games(member, msgtup[1:msglen], isadmin)
+			elif lower[0]=="add_pickups":
+				self.add_games(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!remove_pickups":
-			self.remove_games(member, lower[1:msglen], isadmin)
+			elif lower[0]=="remove_pickups":
+				self.remove_games(member, lower[1:msglen], isadmin)
 
-		elif lower[0]=="!set_ip" and msglen>2:
-			self.setip(member, msgtup[1:msglen], isadmin)
+			elif lower[0]=="set_ip" and msglen>2:
+				self.setip(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!promotion_role" and msglen>2:
-			self.set_promotion_role(member, msgtup[1:msglen], isadmin)
+			elif lower[0]=="promotion_role" and msglen>2:
+				self.set_promotion_role(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!whitelist_role" and msglen>2:
-			self.set_whitelist_role(member, msgtup[1:msglen], isadmin)
+			elif lower[0]=="whitelist_role" and msglen>2:
+				self.set_whitelist_role(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!blacklist_role" and msglen>2:
-			self.set_blacklist_role(member, msgtup[1:msglen], isadmin)
+			elif lower[0]=="blacklist_role" and msglen>2:
+				self.set_blacklist_role(member, msgtup[1:msglen], isadmin)
 
-		elif msgtup[0]=="!ip":
-			self.getip(member,lower[1:2])
+			elif msgtup[0]=="ip":
+				self.getip(member,lower[1:2])
 
-		elif lower[0]=="!noadd" and msglen>1:
-			self.noadd(member, msgtup[1:msglen], isadmin)
+			elif lower[0]=="noadd" and msglen>1:
+				self.noadd(member, msgtup[1:msglen], isadmin)
 
-		elif lower[0]=="!forgive" and msglen==2:
-			self.forgive(member,msgtup[1], isadmin)
+			elif lower[0]=="forgive" and msglen==2:
+				self.forgive(member,msgtup[1], isadmin)
 
-		elif lower[0]=="!noadds":
-			self.getnoadds(member, msgtup[1:2])
+			elif lower[0]=="noadds":
+				self.getnoadds(member, msgtup[1:2])
 
-		elif lower[0]=="!reset":
-			self.reset_players(member, lower[1:msglen], isadmin)
+			elif lower[0]=="reset":
+				self.reset_players(member, lower[1:msglen], isadmin)
 
-		elif lower[0]=="!backup_save":
-			self.backup_save(member, isadmin)
+			elif lower[0]=="backup_save":
+				self.backup_save(member, isadmin)
 
-		elif lower[0]=="!backup_load" and msglen==2:
-			self.backup_load(member, msgtup[1], isadmin)
+			elif lower[0]=="backup_load" and msglen==2:
+				self.backup_load(member, msgtup[1], isadmin)
 
-		elif lower[0]=="!phrase":
-			self.set_phrase(member, msgtup[1:msglen], isadmin)
-		
-		elif lower[0]=="!help":
-			client.private_reply(self.channel, member, config.cfg.HELPINFO)
+			elif lower[0]=="phrase":
+				self.set_phrase(member, msgtup[1:msglen], isadmin)
+	#		
+	#		elif lower[0]=="help":
+	#			client.private_reply(self.channel, member, config.cfg.HELPINFO)
 	
-		elif lower[0]=="!commands":
-			client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
+			elif lower[0]=="commands":
+				client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
 
-		elif lower[0]=="!set" and msglen>2:
-			self.configure(member, lower[1], ' '.join(msgtup[2:msglen]), isadmin)
+			elif lower[0]=="set" and msglen>2:
+				self.configure(member, lower[1], ' '.join(msgtup[2:msglen]), isadmin)
+
+			elif lower[0]=="show_config":
+				self.show_config(member)
 			
 	### COMMANDS ###
 
@@ -218,8 +226,11 @@ class Channel():
 
 		#update scheduler, reply a phrase and update topic
 		if changes:
-			if self.id+member.id in scheduler.tasks.keys():
+			seconds = self.stats.get_expire(member.id)
+			if seconds != 0:
+				if self.id+member.id in scheduler.tasks.keys():
 					scheduler.cancel_task(self.id+member.id)
+				scheduler.add_task(self.id+member.id, seconds, self.scheduler_remove, (member, ))
 			if l[1] != False: # if have phrase
 				client.reply(self.channel, member, l[1])
 			self.update_topic()
@@ -353,11 +364,12 @@ class Channel():
 			client.notice(self.channel, "No pickups configured on this channel")
 
 	def replypickups_list(self, member):
-		str="```name | players | ip | promotion role | blacklist role | whitelist role"
+		str="name | players | ip | promotion role | blacklist role | whitelist role"
 		for i in self.pickups:
 			str+="\n{0} | {1} | {2} | {3} | {4} | {5}".format(i.name, i.maxplayers, i.ip, i.promotion_role, i.blacklist_role, i.whitelist_role)
-		str+="```"
-		client.private_reply(self.channel, member, str)
+		messages = utils.split_large_message(str)
+		for i in messages:
+			client.private_reply(self.channel, member, i)
 
 	def promote_pickup(self, member,arg):
 		self.newtime=time.time()
@@ -389,31 +401,20 @@ class Channel():
 			
 		#set expire if time is specified
 		if timelist != []:
-			#calculate the time
-			timeint=0
-			for i in timelist: #convert given time to float
-				try:
-					num=float(i[:-1]) #the number part
-					if i[-1]=='h':
-						timeint+=num*3600
-					elif i[-1]=='m':
-						timeint+=num*60
-					elif i[-1]=='s':
-						timeint+=num
-					else:
-						raise Exception("doh!")
-				except:
-					client.reply(self.channel, member, "Bad argument @ \"{0}\", format is: !expire 1h 2m 3s".format(i))
-					return
+			try:
+				timeint = utils.format_timestring(timelist)
+			except Exception as e:
+				client.reply(self.channel, member, str(e))
+				return
 
 			#apply given time
-			if timeint>0 and timeint<115200: #restart the scheduler task, no afk check task for this guy
+			if timeint>0 and timeint<=int(self.cfg['MAX_EXPIRE_TIME']): #restart the scheduler task, no afk check task for this guy
 				if self.id+member.id in scheduler.tasks.keys():
 					scheduler.cancel_task(self.id+member.id)
 				scheduler.add_task(self.id+member.id, timeint, self.scheduler_remove, (member, ))
 				client.reply(self.channel, member, "You will be removed in {0}".format(str(datetime.timedelta(seconds=int(timeint)))))
 			else:
-				client.reply(self.channel, member, "Invalid time amount")
+				client.reply(self.channel, member, "Invalid time amount. Maximum expire time on this channel is {0}".format(str(datetime.timedelta(seconds=int(int(self.cfg['MAX_EXPIRE_TIME'])))),))
 
 		#return expire time	if no time specified
 		else:
@@ -425,6 +426,34 @@ class Channel():
 			
 			client.reply(self.channel, member, "You will be removed in {0}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),))
 
+	def default_expire(self, member, timelist):
+		#print user default expire time
+		if timelist == []:
+			timeint = self.stats.get_expire(member.id)
+			if timeint != 0:
+				client.reply(self.channel, member, "Your default expire time is {0}".format(str(datetime.timedelta(seconds=int(timeint))),))
+			else:
+				client.reply(self.channel, member, "You will be removed on AFK status by default.")
+
+		#set expire time to afk
+		elif timelist[0] == 'afk':
+			self.stats.set_expire(member.name, member.id, 0)
+			client.reply(self.channel, member, "You will be removed on AFK status by default.")
+
+		#format time string and set new time amount
+		else:
+			try:
+				timeint = utils.format_timestring(timelist)
+			except Exception as e:
+				client.reply(self.channel, member, str(e))
+				return
+			if timeint>0 and timeint<=int(self.cfg['MAX_EXPIRE_TIME']):
+				self.stats.set_expire(member.name, member.id, timeint)
+				client.reply(self.channel, member, "set your default expire time to {0}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),))
+			else:
+				client.reply(self.channel, member, "Invalid time amount. Maximum expire time on this channel is {0}".format(str(datetime.timedelta(seconds=int(int(self.cfg['MAX_EXPIRE_TIME'])))),))
+				
+			
 	def getstats(self, member,target):
 		if target == []:
 			s = self.stats.stats()
@@ -777,8 +806,18 @@ class Channel():
 	def update_member(self, member):
 		if str(member.status) == 'offline':
 			self.remove_player(member,[],'offline')
-		elif str(member.status) == 'idle' and not self.id+member.id in scheduler.tasks.keys():
-			self.remove_player(member,[],'idle')
+		elif str(member.status) == 'idle':
+			#dont remove if user have expire time set!
+			if self.id+member.id not in scheduler.tasks.keys():
+				self.remove_player(member,[],'idle')
+
+	def show_config(self, member):
+		s=""
+		for i in self.cfg:
+			s += "{0} = \"{1}\"\n".format(i, self.cfg[i])
+		messages = utils.split_large_message(s)
+		for i in messages: 
+			client.private_reply(self.channel, member, i)
 
 	def configure(self, member, var, value, isadmin):
 		if isadmin:
@@ -793,13 +832,6 @@ class Channel():
 			elif var == "ip_format":
 				self.cfg["IP_FORMAT"] = value
 				client.reply(self.channel, member, "done, now message will look like: **example** pickup has been started, {0}".format(self.cfg['IP_FORMAT'].replace("%ip%", self.cfg['DEFAULT_IP']).replace("%password%", self.cfg['PICKUP_PASSWORD'])))
-
-			elif var == "change_topic":
-				if value in ['0', '1']:
-					self.cfg["CHANGE_TOPIC"] = value
-					client.reply(self.channel, member, "done.")
-				else:
-					client.reply(self.channel, member, "value for CHANGE_TOPIC should be 0 or 1.")
 
 			elif var == "promotion_delay":
 				try:
@@ -821,6 +853,29 @@ class Channel():
 						client.reply(self.channel, member, "BANTIME value should be higher than 0.")
 				except:
 					client.reply(self.channel, member, "BANTIME value should be an integrer.")
+
+			elif var == "max_expire_time":
+				try:
+					seconds = utils.format_timestring(value.split(" "))
+				except Exception as e:
+					client.reply(self.channel, member, e)
+					return
+				if seconds > 0:
+					if seconds < 86401:
+						self.cfg["MAX_EXPIRE_TIME"] = str(seconds)
+						self.stats.update_max_expire_time(seconds)
+						client.reply(self.channel, member, "done.")
+					else:
+						client.reply(self.channel, member, "max expire time cant be more than 24 hours!")
+				else:
+					client.reply(self.channel, member, "max expire time cant be in past!.")
+
+			elif var == "prefix":
+				if len(value) == 1:
+					self.cfg["PREFIX"] = value
+					client.reply(self.channel, member, "done.".format(self.cfg["PREFIX"]))
+				else:
+					client.reply(self.channel, member, "PREFIX value must be one character.")
 
 			else:
 				client.reply(self.channel, member, "variable \'{0}\' is not configurable.".format(var))

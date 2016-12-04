@@ -42,7 +42,7 @@ class Stats():
 
 		#update player_games and players
 		for player in players:
-			self.c.execute("INSERT OR IGNORE INTO players VALUES (?, ?, 0, 0, 0, 0, 'False')", (player.name, player.id ))
+			self.c.execute("INSERT OR IGNORE INTO players VALUES (?, ?, 0, 0, 0, 0, 'False', 0)", (player.name, player.id ))
 			self.c.execute("UPDATE players SET played=played+1, lastgame = ?, membername = ? WHERE memberid = ?", (pickupid, player.name, player.id))
 			self.c.execute("INSERT INTO player_games (pickup_id, memberid, membername, time, gametype) VALUES (?, ?, ?, ?, ?)", (pickupid, player.id, player.name, int(time()), gametype))
 		if caps:
@@ -154,7 +154,7 @@ class Stats():
 		else:
 			#add new ban
 			self.c.execute("UPDATE overall_stats SET bans = bans+1")
-			self.c.execute("INSERT OR IGNORE INTO players VALUES (?, ?, 0, 0, 0, 0, 'False')", (member.name, member.id ))
+			self.c.execute("INSERT OR IGNORE INTO players VALUES (?, ?, 0, 0, 0, 0, 'False', 0)", (member.name, member.id ))
 			self.c.execute("UPDATE players SET bans = bans+1 WHERE memberid = ?", (member.id, ))
 			self.c.execute("INSERT INTO bans (memberid, membername, active, time, duratation, reason, admin) VALUES (?, ?, 1, ?, ?, ?, ?)", (member.id, member.name, int(time()), duratation*60*60, reason, admin))
 			self.conn.commit()
@@ -246,6 +246,21 @@ class Stats():
 			return((False, phrase[0]))
 		return((False, False))
 
+	#get default user !expire time
+	def get_expire(self, memberid):
+		self.c.execute("SELECT expire FROM players WHERE memberid = ?", (memberid, ))
+		l = self.c.fetchone()
+		if l:
+			return(l[0])
+		else:
+			return(0)
+
+	#set default user !expire time
+	def set_expire(self, membername, memberid, seconds):
+		#create user if not exists
+		self.c.execute("INSERT OR IGNORE INTO players VALUES (?, ?, 0, 0, 0, 0, 'False', 0)", (membername, memberid ))
+		self.c.execute("UPDATE players SET expire = ? WHERE memberid = ?", (seconds, memberid ))
+
 	def set_phrase(self, member, phrase):
 		self.c.execute("SELECT phrase FROM players WHERE memberid = ?", (member.id, ))
 		sel = self.c.fetchone()
@@ -253,7 +268,7 @@ class Stats():
 			self.c.execute("""UPDATE players SET phrase = ? WHERE memberid = ?""", (phrase, member.id))
 			self.conn.commit()
 		else:
-			self.c.execute("INSERT INTO players VALUES (?, ?, 0, 0, 0, 0, ?)", (member.name, member.id, phrase))
+			self.c.execute("INSERT INTO players VALUES (?, ?, 0, 0, 0, 0, ?, 0)", (member.name, member.id, phrase))
 			self.conn.commit()
 	
 	def show_help(self, command):
@@ -268,6 +283,9 @@ class Stats():
 		result = self.c.fetchall()
 		commands = [x[0] for x in result]
 		return " ".join(commands)
+
+	def update_max_expire_time(self, seconds):
+		self.c.execute("UPDATE players SET expire = ? WHERE expire > ?", (seconds, seconds))
 		
 	def save_config(self, cfg, pickups):
 		for var in cfg.keys():
@@ -290,6 +308,14 @@ class Stats():
 				self.c.execute("""INSERT OR IGNORE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i[0], i[1], i[2], 'none', 'none', 'none'))
 			self.c.execute("""DELETE FROM config WHERE variable = 'PICKUP_LIST';""")
 
+		self.c.execute("PRAGMA table_info(players)")
+		if 'expire' not in [i[1] for i in self.c.fetchall()]:
+			self.c.execute("ALTER TABLE players ADD COLUMN expire INTEGER NOT NULL DEFAULT 0")
+
+		self.c.execute("""DELETE FROM config WHERE variable = 'FIRST_INIT_MESSAGE';""")
+		self.c.execute("""DELETE FROM config WHERE variable = 'CHANGE_TOPIC';""")
+		self.c.execute("""DELETE FROM config WHERE variable = 'TOPIC';""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_DELAY', '10');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_ROLE', 'none');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PREFIX', '!');""")
+		self.c.execute("""INSERT OR IGNORE INTO config VALUES('MAX_EXPIRE_TIME', '21600');""")

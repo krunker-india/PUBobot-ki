@@ -17,9 +17,9 @@ def run(frametime):
 				console.display("SCHEDULER| ERROR: Task function failed @ {0} {1}, Exception: {2}".format(current_task[1], current_task[2], e))
 			define_next_task()
 
-def add_task(name, delay, func, args):
+def add_task(name, delay, func, args, comment=None):
 	if name not in tasks:
-		tasks[name] = [time.time()+delay, func, args] #time to run task, func
+		tasks[name] = [time.time()+delay, func, args, comment] #time to run task, func
 		define_next_task()
 	else:
 		console.display("SCHEDULER| ERROR: Task with this name already exist!")
