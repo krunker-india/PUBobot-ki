@@ -859,6 +859,7 @@ class Channel():
 				try:
 					if int(value) >= 0:
 						self.update_config("++_REQ_PLAYERS", value)
+						client.reply(self.channel, member, "done.")
 					else:
 						raise("must be a positive number")
 				except:
