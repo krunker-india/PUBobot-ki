@@ -449,7 +449,7 @@ class Channel():
 				return
 			if timeint>0 and timeint<=int(self.cfg['MAX_EXPIRE_TIME']):
 				self.stats.set_expire(member.name, member.id, timeint)
-				client.reply(self.channel, member, "set your default expire time to {0}".format(str(datetime.timedelta(seconds=int(timeint-time.time()))),))
+				client.reply(self.channel, member, "set your default expire time to {0}".format(str(datetime.timedelta(seconds=int(timeint))),))
 			else:
 				client.reply(self.channel, member, "Invalid time amount. Maximum expire time on this channel is {0}".format(str(datetime.timedelta(seconds=int(int(self.cfg['MAX_EXPIRE_TIME'])))),))
 				
