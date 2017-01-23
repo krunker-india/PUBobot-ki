@@ -295,6 +295,15 @@ class Stats():
 				self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
 		self.conn.commit()
 
+	def update_config(self, variable, value):
+		self.c.execute("UPDATE OR IGNORE config SET value = ? WHERE variable = ?", (value, variable))
+		self.conn.commit()
+
+	def update_pickups(self, pickups):
+		for i in pickups:
+			self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
+		self.conn.commit()
+
 	def close(self):
 		self.conn.commit()
 		self.conn.close()
@@ -319,3 +328,4 @@ class Stats():
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PROMOTION_ROLE', 'none');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PREFIX', '!');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('MAX_EXPIRE_TIME', '21600');""")
+		self.c.execute("""INSERT OR IGNORE INTO config VALUES('++_REQ_PLAYERS', '5');""")

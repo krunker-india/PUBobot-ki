@@ -28,7 +28,7 @@ class Channel():
 		self.name = "{0}>{1}".format(channel.server.name,channel.name)
 		self.cfg = dict()
 		self.stats = stats2.Stats(self)
-		self.cfg['CHANNEL_NAME'] = channel.name
+		self.update_config('CHANNEL_NAME', channel.name)
 		self.oldtime = 0
 		self.pickups = []
 		self.init_pickups()
@@ -37,7 +37,7 @@ class Channel():
 
 		if self.cfg['FIRST_INIT'] == 'True':
 			client.notice(self.channel, config.cfg.FIRST_INIT_MESSAGE)
-			self.cfg['FIRST_INIT'] = 'False'
+			self.update_config('FIRST_INIT', 'False')
 		#scheduler.add_task(self.id+"#backup#", config.cfg['BACKUP_TIME'])
 		
 	def init_pickups(self):
@@ -208,7 +208,7 @@ class Channel():
 
 		changes = False
 		#ADD GUY TO TEH GAMES
-		for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0) or pickup.name.lower() in target_pickups)):
+		for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0 and int(self.cfg["++_REQ_PLAYERS"])<=pickup.maxplayers) or pickup.name.lower() in target_pickups)):
 			if not member.id in [i.id for i in pickup.players]:
 				#check if pickup have blacklist or whitelist
 				if pickup.blacklist_role in [r.name for r in member.roles]:
@@ -517,6 +517,7 @@ class Channel():
 			if newpickups != []:
 				for i in newpickups:
 					self.pickups.append(Pickup(i[0], i[1], self.cfg['DEFAULT_IP'], self.cfg['PROMOTION_ROLE'], 'none', 'none'))
+				self.stats.update_pickups(self.pickups)
 				self.replypickups(member)
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
@@ -524,9 +525,13 @@ class Channel():
 	def remove_games(self, member, args, isadmin):
 		if isadmin:
 			toremove = [ pickup for pickup in self.pickups if pickup.name.lower() in args ]
-			for i in toremove:
-				self.pickups.remove(i)
-			self.replypickups(member)
+			if len(toremove) > 0:
+				for i in toremove:
+					self.pickups.remove(i)
+				self.stats.update_pickups(self.pickups)
+				self.replypickups(member)
+			else:
+				client.reply(self.channel, member, "No such pickups found.")
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -547,12 +552,14 @@ class Channel():
 				affected_pickups.append(pickup.name)
 
 			if "default" in pickupnames:
-				self.cfg['DEFAULT_IP']=gameip
+				self.update_config('DEFAULT_IP', gameip)
 				if affected_pickups != []:
+					self.stats.update_pickups(self.pickups)
 					client.notice(self.channel, "Changed ip to '{0}' for {1}, and set it for default.".format(gameip, ' '.join(affected_pickups)))
 				else:
 					client.notice(self.channel, "Changed default ip to '{0}'.".format(gameip))
 			elif affected_pickups != []:
+				self.stats.update_pickups(self.pickups)
 				client.notice(self.channel, "Changed ip to '{0}' for {1}.".format(gameip, ' '.join(affected_pickups)))
 			else:
 				client.reply(self.channel, member, "No such pickups were found.")
@@ -583,12 +590,14 @@ class Channel():
 					affected_pickups.append(pickup.name)
 
 				if "default" in pickupnames:
-					self.cfg['PROMOTION_ROLE']=roleid
+					self.update_config('PROMOTION_ROLE', roleid)
 					if affected_pickups != []:
+						self.stats.update_pickups(self.pickups)
 						client.notice(self.channel, "Changed promotion role to '{0}' for {1}, and set it for default.".format(newrole, ' '.join(affected_pickups)))
 					else:
 						client.notice(self.channel, "Changed default promotion role to '{0}'.".format(newrole))
 				elif affected_pickups != []:
+					self.stats.update_pickups(self.pickups)
 					client.notice(self.channel, "Changed promotion role to '{0}' for {1}.".format(newrole, ' '.join(affected_pickups)))
 				else:
 					client.reply(self.channel, member, "No such pickups were found.")
@@ -613,6 +622,7 @@ class Channel():
 				affected_pickups.append(pickup.name)
 
 			if affected_pickups != []:
+				self.stats.update_pickups(self.pickups)
 				client.notice(self.channel, "Changed whitelist role to '{0}' for {1}.".format(newrole, ' '.join(affected_pickups)))
 			else:
 				client.reply(self.channel, member, "No such pickups were found.")
@@ -634,6 +644,7 @@ class Channel():
 				affected_pickups.append(pickup.name)
 
 			if affected_pickups != []:
+				self.stats.update_pickups(self.pickups)
 				client.notice(self.channel, "Changed blacklist role to '{0}' for {1}.".format(newrole, ' '.join(affected_pickups)))
 			else:
 				client.reply(self.channel, member, "No such pickups were found.")
@@ -811,6 +822,10 @@ class Channel():
 			if self.id+member.id not in scheduler.tasks.keys():
 				self.remove_player(member,[],'idle')
 
+	def update_config(self, variable, value):
+		self.cfg[variable] = value
+		self.stats.update_config(variable, value)
+
 	def show_config(self, member):
 		s=""
 		for i in self.cfg:
@@ -822,30 +837,39 @@ class Channel():
 	def configure(self, member, var, value, isadmin):
 		if isadmin:
 			if var == "adminrole":
-				self.cfg["ADMINROLE"] = value
+				self.update_config("ADMINROLE", value)
 				client.reply(self.channel, member, "done.")
 
 			elif var == "pickup_password":
-				self.cfg["PICKUP_PASSWORD"] = value
+				self.update_config("PICKUP_PASSWORD", value)
 				client.reply(self.channel, member, "done.")
 
 			elif var == "ip_format":
-				self.cfg["IP_FORMAT"] = value
+				self.update_config("IP_FORMAT", value)
 				client.reply(self.channel, member, "done, now message will look like: **example** pickup has been started, {0}".format(self.cfg['IP_FORMAT'].replace("%ip%", self.cfg['DEFAULT_IP']).replace("%password%", self.cfg['PICKUP_PASSWORD'])))
 
 			elif var == "promotion_delay":
 				try:
-					self.cfg["PROMOTION_DELAY"] = int(value)*60
+					self.update_config("PROMOTION_DELAY", str(int(value)*60))
 					client.reply(self.channel, member, "done.")
 				except:
 					client.reply(self.channel, member, "value for promotion_delay must be a number of minutes.")
+
+			elif var == "++_req_players":
+				try:
+					if int(value) >= 0:
+						self.update_config("++_REQ_PLAYERS", value)
+					else:
+						raise("must be a positive number")
+				except:
+					client.reply(self.channel, member, "value must be a positive number or 0.")
 
 			elif var == "bantime":
 				try:
 					x = int(value)
 					if x > 0:
 						if x <= 10000:
-							self.cfg["BANTIME"] = value
+							self.update_config("BANTIME", value)
 							client.reply(self.channel, member, "done.")
 						else:
 							client.reply(self.channel, member, "maximum BANTIME value is 10000.")
@@ -872,7 +896,7 @@ class Channel():
 
 			elif var == "prefix":
 				if len(value) == 1:
-					self.cfg["PREFIX"] = value
+					self.update_config("PREFIX", value)
 					client.reply(self.channel, member, "done.".format(self.cfg["PREFIX"]))
 				else:
 					client.reply(self.channel, member, "PREFIX value must be one character.")

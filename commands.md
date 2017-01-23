@@ -29,6 +29,7 @@
 !blacklist_role <i>pickup</i>[ <i>pickup</i> ...] : <i>role_name</i> - disallow specified <i>role</i> to play specified pickups, set 'none' as <i>role</i> to disable.   
 !set pickup_password <i>password</i> - specify password of your pickup servers.   
 !set ip_format <i>format</i> - set the format ip and password will be represented in. Default value: 'please connect to steam://connect/%ip%/%password%'.   
+!set ++_req_players <i>number</i> - set minimum pickup required players amount for '++' command or '!add' command without argument, so users wont add to 1v1/2v2 pickups unintentionally. Default value: 5.   
 !backup_save - save backup.   
 !backup_load <i>name</i> - load specified backup.   
 !show_config - show the config variables.   

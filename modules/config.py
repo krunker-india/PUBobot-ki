@@ -24,7 +24,7 @@ def new_channel(channel, admin):
 	path = "channels/"+channel.id
 	shutil.copytree("channels/default", path)
 	c = bot.Channel(channel)
-	c.cfg["ADMINID"] = admin.id
+	c.update_config("ADMINID", admin.id)
 	bot.channels.append(c)
 	console.display("SYSTEM| CREATED NEW PICKUP CHANNEL: {0}>{1}".format(channel.server.name, channel.name))
 
