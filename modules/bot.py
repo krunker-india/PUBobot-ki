@@ -513,7 +513,8 @@ class Channel():
 					else:
 						client.reply(self.channel, member, "Players number must be more than 1, dickhead")
 				except:
-					client.reply(self.channel, member, "Bad argument @ {0}".format(i))
+					client.reply(self.channel, member, "Bad argument @ {0}".format(targs[i]))
+					return()
 			if newpickups != []:
 				for i in newpickups:
 					self.pickups.append(Pickup(i[0], i[1], self.cfg['DEFAULT_IP'], self.cfg['PROMOTION_ROLE'], 'none', 'none'))
