@@ -156,7 +156,7 @@ class Channel():
 			elif lower[0]=="blacklist_role" and msglen>2:
 				self.set_blacklist_role(member, msgtup[1:msglen], isadmin)
 
-			elif msgtup[0]=="ip":
+			elif lower[0]=="ip":
 				self.getip(member,lower[1:2])
 
 			elif lower[0]=="noadd" and msglen>1:
@@ -655,28 +655,21 @@ class Channel():
 	def getip(self, member, args): #GET IP FOR GAME
 		# find desired parameter
 		if args != []:
-			pickup_or_ip = args[0]
+			pickup = args[0]
 		else:
 			l = self.lastgame_cache
 			if l:
-				pickup_or_ip = l[2]
+				pickup = l[2].lower()
 			else:
 				client.notice(self.channel, "No pickups played yet.")
 				return
 
-		# find desired info
-		if pickup_or_ip  == 'default':
-			client.notice(self.channel, 'Default ip is {0} and it is currently set for {1} pickups'.format(self.cfg['DEFAULT_IP'], str([x.name for x in self.pickups if x.ip == self.cfg['DEFAULT_IP']])))
-			return
+		for p in self.pickups:
+			if p.name.lower() == pickup:
+				client.notice(self.channel, 'Ip for {0} is {1}'.format(p.name, p.ip))
+				return
 
-		n=0
-		for pickup in self.pickups:
-			if pickup.name.lower() == pickup_or_ip:
-				client.notice(self.channel, 'Ip for {0} is {1}'.format(pickup.name, pickup.ip))
-				n=1
-
-		if not n:
-			client.reply(self.channel, member, 'No such game or ip')
+		client.reply(self.channel, member, 'No such pickup')
 
 	def set_phrase(self, member, args, isadmin):
 		if isadmin:
