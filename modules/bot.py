@@ -37,7 +37,7 @@ class Channel():
 
 		if self.cfg['FIRST_INIT'] == 'True':
 			client.notice(self.channel, config.cfg.FIRST_INIT_MESSAGE)
-			self.update_config('FIRST_INIT', 'False')
+			self.update_config('FIRST_INIT', str(int(time.time())))
 		#scheduler.add_task(self.id+"#backup#", config.cfg['BACKUP_TIME'])
 		
 	def init_pickups(self):

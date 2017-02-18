@@ -39,6 +39,16 @@ def send(frametime):
 			
 		lastsend = frametime
 
+def get_empty_servers():
+	for serv in Client.servers:
+		n=0
+		for chan in serv.channels:
+			if chan.id in [i.id for i in bot.channels]:
+				n=1
+				break
+		if not n:
+			console.display("server name: {0}, id: {1}".format(serv.name, serv.id))
+
 ### api for bot.py ###
 
 def notice(channel, msg):

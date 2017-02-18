@@ -317,6 +317,8 @@ class Stats():
 				self.c.execute("""INSERT OR IGNORE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i[0], i[1], i[2], 'none', 'none', 'none'))
 			self.c.execute("""DELETE FROM config WHERE variable = 'PICKUP_LIST';""")
 
+		self.c.execute("""UPDATE OR IGNORE config SET value = ? WHERE variable = ? AND value = ?""", (str(int(time())), "FIRST_INIT", "False"))
+
 		self.c.execute("PRAGMA table_info(players)")
 		if 'expire' not in [i[1] for i in self.c.fetchall()]:
 			self.c.execute("ALTER TABLE players ADD COLUMN expire INTEGER NOT NULL DEFAULT 0")

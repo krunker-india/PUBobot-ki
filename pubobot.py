@@ -44,6 +44,12 @@ def bot_run():
 							yield from c.edit_channel(client.channel, topic=content)
 						except:
 							console.display("ERROR| Could not change topic."+str(sys.exc_info()))
+				elif data[0] == 'leave_server':
+					for serv in c.servers:
+						if serv.id == data[1]:
+							console.display("Leaving {0}...".format(serv.name))
+							yield from c.leave_server(serv)
+							break
 		else:
 			console.display("ERROR| Connection to server has been closed unexpectedly.")
 			console.terminate()

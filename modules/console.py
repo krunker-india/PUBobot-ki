@@ -3,14 +3,14 @@
 
 from threading import Thread
 from multiprocessing import Queue
-import sys, os, datetime, readline
+import sys, os, datetime, readline, time
 
 from modules import bot, client, config
 
 class ConsoleCompleter(object):  # Custom completer
 
 	def __init__(self):
-		self.commands = sorted(["help", "say", "exec", "quit", "status", "notice", "reset_players", "disable_pickups", "pickups", "stats"])
+		self.commands = sorted(["help", "say", "exec", "quit", "status", "notice", "reset_players", "disable_pickups", "pickups", "stats", "echo_unused_channels", "delete_unused_channels", "echo_empty_servers", "leave_server"])
 		self.modules = sorted(["bot", "client", "config"])
 
 	def complete(self, text, state):
@@ -108,6 +108,20 @@ def run():
 					comment = l[1]
 				for i in bot.channels:
 					i.reset_players(comment=comment)
+			elif l[0] == "delete_unused_channels":
+				if len(l)>1:
+					delete_unused_channels(False, int(l[1]))
+				else:
+					delete_unused_channels(False)
+			elif l[0] == "echo_unused_channels":
+				if len(l)>1:
+					delete_unused_channels(True, int(l[1]))
+				else:
+					delete_unused_channels(True)
+			elif l[0] == "echo_empty_servers":
+				client.get_empty_servers()
+			elif l[0] == "leave_server":
+				client.send_queue.append(['leave_server', l[1]])
 			elif l[0] == "quit":
 				terminate()
 		except Exception as e:
@@ -121,6 +135,24 @@ def display(data):
 	linebuffer=readline.get_line_buffer()
 	sys.stdout.write("\r\n\033[F\033[K"+text+'\r\n>'+linebuffer)
 	log.write(text+'\r\n')
+
+#delete all channels with no activity within a month
+def delete_unused_channels(echo, tl=30):
+	todel = []
+	for chan in bot.channels:
+		l = chan.stats.lastgame()
+		if l:
+			lasttime = int(l[1])
+		else:
+			lasttime = int(chan.cfg["FIRST_INIT"])
+		tl = tl*60*60*24
+		if int(time.time())-lasttime > tl:
+			if echo:
+				display("{0} ({1})| {2} - Unused for {3}".format(chan.name, chan.id, chan.stats.stats(), datetime.timedelta(seconds=time.time()-lasttime)))
+			else:
+				todel.append(chan.id)
+	for chanid in todel:
+		config.delete_channel(chanid)
 
 def terminate():
 	global alive
@@ -140,4 +172,8 @@ help = """Commands:
   stats - list of overall stats of all channels.
   exec %code% - exec a python code.
   reset_players [comment] - reset players on all channels and highlight them.
+  echo_unused_channels [days] - show all channels without activity for a month or for specified number of days.
+  delete_unused_channels [days] - delete all channels without activity for a month or for specified number of days.
+  echo_empty_servers - list of servers without pickup channels.
+  leave_server id - leave server.
   quit - save and quit."""
