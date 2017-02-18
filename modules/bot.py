@@ -66,7 +66,7 @@ class Channel():
 		for i in players:
 			if self.id+i.id in scheduler.tasks.keys():
 				scheduler.cancel_task(self.id+i.id)
-			client.private_reply(self, i,"**{0}** pickup has been started, {1}.{2}".format(pickup.name, ipstr, capsstr))
+			#client.private_reply(self, i,"**{0}** pickup has been started, {1}.{2}".format(pickup.name, ipstr, capsstr))
 			for pu in ( pu for pu in self.pickups if i.id in [x.id for x in pu.players]):
 				pu.players.remove(i)
 
