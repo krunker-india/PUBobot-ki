@@ -20,7 +20,8 @@ def process_connection():
 	for channelid in bot.channels_list:
 		channel = Client.get_channel(channelid)
 		if channel == None:
-			console.display("SYSTEM| Could not found channel with CHANNELID '{0}'...".format(channelid))
+			console.display("SYSTEM| Could not found channel with CHANNELID '{0}'...moving to trash folder".format(channelid))
+			config.delete_channel(channelid)
 		else:
 			c = bot.Channel(channel)
 			bot.channels.append(c)

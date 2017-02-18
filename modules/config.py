@@ -28,17 +28,19 @@ def new_channel(channel, admin):
 	bot.channels.append(c)
 	console.display("SYSTEM| CREATED NEW PICKUP CHANNEL: {0}>{1}".format(channel.server.name, channel.name))
 
-def delete_channel(channel):
+def delete_channel(channelid):
 	for i in bot.channels:
-		if i.id == channel.id:
+		if i.id == channelid:
 			bot.channels.remove(i)
 			i.stats.close()
-			oldpath = "channels/"+channel.id
-			newpath = "trash/"+channel.id
-			if os.path.exists(newpath):
-				shutil.rmtree(newpath)
-			shutil.move(oldpath, newpath)
-			return True
+
+	oldpath = "channels/"+channelid
+	newpath = "trash/"+channelid
+	if os.path.exists(oldpath):
+		if os.path.exists(newpath):
+			shutil.rmtree(newpath)
+		shutil.move(oldpath, newpath)
+		return True
 	return False
 
 def backup_channel(channel, name):

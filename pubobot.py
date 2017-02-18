@@ -83,7 +83,7 @@ def on_message(message):
 			client.reply(message.channel, message.author, "You must have permission to manage channels to enable pickups.")
 	elif message.content == '!disable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
-			if config.delete_channel(message.channel):
+			if config.delete_channel(message.channel.id):
 				client.reply(message.channel, message.author, "pickups on this channel have been disabled.") 
 			else:
 				client.reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
