@@ -35,7 +35,7 @@
 !show_config - show the config variables.   
 
 ### ADMINISTRATION:
-!set max_expire_time <i>time</i> - set maximum !expire time for all users.
+!set max_expire_time <i>time</i> - set maximum !expire time for all users.   
 !noadd <i>@nick</i> [<i>hours</i>] [-r <i>reason</i>] - disallow user to play pickups.   
 !forgive <i>@nick</i> - allow user from noadds list to play pickups.   
 !phrase <i>@nick</i> <i>text</i> - set specified reply for specified user after !add command.   
