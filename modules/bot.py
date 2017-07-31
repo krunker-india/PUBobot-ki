@@ -71,25 +71,32 @@ class Channel():
 		elif self.cfg['TEAMS_PICK_SYSTEM'] == 'CAPTAINS_PICK' and len(pickup.players) > 3:
 			caps=random.sample(players, 2)
 			capsstr=" Captains are: {0}.".format('<@'+'> and <@'.join([i.id for i in caps])+'>')
-			self.lastgame_players = pickup.players
+			self.lastgame_players = list(pickup.players)
 			self.lastgame_players.remove(caps[0])
 			self.lastgame_players.remove(caps[1])
 			self.lastgame_teams = [[caps[0]],[caps[1]]]
+
+		elif self.cfg['TEAMS_PICK_SYSTEM'] == 'MANUAL_PICK' and len(pickup.players) > 3:
+			caps=False
+			capsstr=""
+			self.lastgame_players = list(pickup.players)
+			self.lastgame_teams = [[],[]]
 				
 		elif self.cfg['TEAMS_PICK_SYSTEM'] == 'RANDOM_TEAMS' and len(pickup.players) > 3:
-			while len(players) > 1:
-				self.lastgame_teams[0].append(players.pop(random.randint(0, len(players)-1)))
-				self.lastgame_teams[1].append(players.pop(random.randint(0, len(players)-1)))
+			self.lastgame_players = list(pickup.players)
+			while len(self.lastgame_players) > 1:
+				self.lastgame_teams[0].append(self.lastgame_players.pop(random.randint(0, len(self.lastgame_players)-1)))
+				self.lastgame_teams[1].append(self.lastgame_players.pop(random.randint(0, len(self.lastgame_players)-1)))
 			red_str = '<@'+'>, <@'.join([i.id for i in self.lastgame_teams[0]])+'>'
 			blue_str = '<@'+'>, <@'.join([i.id for i in self.lastgame_teams[1]])+'>'
 			caps=False
 			capsstr="\r\n[{0}]\r\n  **VS**\r\n[{1}]".format(red_str, blue_str)
-			players=list(pickup.players)
 
 		else:
 			caps=False
 			capsstr=''
 			self.lastgame_teams = [[],[]]
+			self.lastgame_players = []
 
 		noticestr="{0}, {1}.{2}".format('<@'+'>, <@'.join([i.id for i in players])+'>', ipstr, capsstr)
 
@@ -433,17 +440,20 @@ class Channel():
 			client.reply(self.channel, member, "You loose, it's **{0}**!".format(result))
 
 	def pick_player(self, member, args):
-		if self.cfg['TEAMS_PICK_SYSTEM'] != 'CAPTAINS_PICK':
+		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'MANUAL_PICK']:
 			client.reply(self.channel, member, "This pickup channel is not configured for this command!")
 			return
 		#if len(self.lastgame_teams[0]) == 0 or len(self.lastgame_teams[1]) == 0:
 		#	client.reply(self.channel, member, "Captains are not set!")
 		#	return
-		if self.lastgame_teams[0][0].id == member.id:
-			teamidx=0
-		elif self.lastgame_teams[1][0].id == member.id:
-			teamidx=1
-		else:
+		teamidx = -1
+		if len(self.lastgame_teams[0]):
+			if self.lastgame_teams[0][0].id == member.id:
+				teamidx=0
+		if len(self.lastgame_teams[1]):
+			if self.lastgame_teams[1][0].id == member.id:
+				teamidx=1
+		if teamidx == -1:
 			client.reply(self.channel, member, "You are not a captain!")
 			return
 
@@ -452,7 +462,7 @@ class Channel():
 			for i in self.lastgame_players:
 				if i.id == targetid:
 					self.lastgame_teams[teamidx].append(i)
-					self.lastgame.players.remove(i)
+					self.lastgame_players.remove(i)
 					self.print_teams()
 					return
 			for i in self.lastgame_teams[abs(teamidx-1)]:
@@ -466,7 +476,7 @@ class Channel():
 			client.reply(self.channel, member, "You must specify a player to pick!")
 
 	def subfor(self, member, args):
-		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'RANDOM_TEAMS']:
+		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'RANDOM_TEAMS', 'MANUAL_PICK']:
 			client.reply(self.channel, member, "This pickup channel is not configured for this command!")
 			return
 
@@ -488,7 +498,7 @@ class Channel():
 			client.reply(self.channel, member, "You must specify a player to substitute!")
 
 	def capfor(self, member, args):
-		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'RANDOM_TEAMS']:
+		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'MANUAL_PICK']:
 			client.reply(self.channel, member, "This pickup channel is not configured for this command!")
 			return
 
@@ -503,28 +513,36 @@ class Channel():
 						memberidx = x.index(i)
 						if args[0] == 'alpha':
 							if len(self.lastgame_teams[0]): #swap current captain possition
+								if self.lastgame_teams[0][0].id == member.id:
+									client.reply(self.channel, member, "You are allready the captain of this team!")
+									return
 								x[memberidx] = self.lastgame_teams[0][0]
+								self.lastgame_teams[0][0] = member
 							else:
 								x.pop(memberidx)
-							self.lastgame_teams[0].insert(0, member)
+								self.lastgame_teams[0].insert(0, member)
 						elif args[0] == 'beta':
 							if len(self.lastgame_teams[1]): #swap current captain possition
+								if self.lastgame_teams[1][0].id == member.id:
+									client.reply(self.channel, member, "You are allready the captain of this team!")
+									return
 								x[memberidx] = self.lastgame_teams[1][0]
+								self.lastgame_teams[1][0] = member
 							else:
 								x.pop(memberidx)
-							self.lastgame_teams[1].insert(0, member)
+								self.lastgame_teams[1].insert(0, member)
 						self.print_teams()
 						return
 
 			client.reply(self.channel, member, "You must be in players list to become a captain!")
 
 	def print_teams(self):
-		red_team = ", ".join([i.name for i in self.lastgame_teams[0]])
-		blue_team = ", ".join([i.name for i in self.lastgame_teams[1]])
+		red_team = ", ".join([i.nick or i.name for i in self.lastgame_teams[0]])
+		blue_team = ", ".join([i.nick or i.name for i in self.lastgame_teams[1]])
 		noticestr = "[{0}] **VS** [{1}]".format(red_team, blue_team)
 		if len(self.lastgame_players):
-			unpicked  = ", ".join([i.name for i in self.lastgame_players])
-			noticestr += "\r\nUnpicked: [{0}]"
+			unpicked  = ", ".join([i.nick or i.name for i in self.lastgame_players])
+			noticestr += "\r\nUnpicked: [{0}]".format(unpicked)
 		client.notice(self.channel, noticestr)
 
 	def update_topic(self):
@@ -1148,6 +1166,8 @@ class Channel():
 					self.update_config('TEAMS_PICK_SYSTEM', 'CAPTAINS_PICK')
 				elif value == 'random_teams':
 					self.update_config('TEAMS_PICK_SYSTEM', 'RANDOM_TEAMS')
+				elif value == 'manual_pick':
+					self.update_config('TEAMS_PICK_SYSTEM', 'MANUAL_PICK')
 				else:
 					client.reply(self.channel, member, "Invalid value. Possible options are: none, just_captains, captains_pick, random_teams")
 					return
