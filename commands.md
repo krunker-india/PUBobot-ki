@@ -6,7 +6,8 @@
 !remove or -- - removes you from all pickups.   
 !expire <i>time</i> - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.   
 !default_expire <i>time</i> or 'afk' - Set your personal default !expire time or set autoremove on afk status.   
-!sub - request sub for last game.
+!sub - request sub for last game.   
+!allowoffline - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users)   
 
 ### INFO:
 !who [<i>pickup</i>[ <i>pickup</i> ...]] - list of users added to a pickups.   
@@ -17,6 +18,15 @@
 !top [weekly or monthly or yearly] - shows you most active players.   
 !stats [<i>nick</i> or <i>pickup</i>] - shows you overall stats or stats for specified argument.   
 !ip [<i>pickup</i> or default] - shows you ip of last pickup or specified pickup.   
+!map <i>pickup</i> - print a random map for specified pickup.   
+!maps <i>pickup</i> - show all maps for specified pickup.   
+
+### TEAMS PICKING:
+!cointoss [heads or tails] - toss a coin.   
+!pick <i>@nic</i>k - pick a user to your team.   
+!subfor <i>@nick</i> - become a substitute for specified player.   
+!capfor alpha or beta - become a captain of specified team.   
+!teams - show teams for current pickup.   
 
 ### PICKUP MANAGEMENT:
 !set prefix <i>prefix</i> - set the prefix before bot commands. Default value: '!'.
@@ -24,6 +34,8 @@
 !add_pickups <i>name</i>:<i>players</i>[ <i>name</i>:<i>players</i> ...] - create new pickups.   
 !remove_pickups <i>pickup</i>[ <i>pickup</i> ...] - delete specified pickups.   
 !set_ip <i>pickup</i>[ <i>pickup</i> ...] : <i>ip</i> - set server to be played for game. Use 'default' value for <i>pickup</i> to set server for pickups with default server value.   
+!set_maps <i>pickup</i>[ <i>pickup</i>...] : <i>map name 1</i>, <i>map name 2</i>... - set maps for specified pickups, set 'none' value to disable.   
+!set teams_pick_system none, just_captains, captains_pick or random_teams - set the teams pick system.   
 !promotion_role <i>pickup</i>[ <i>pickup</i> ...] : <i>role_name</i> - set <i>role</i> to be highlighted on '!promote' command for specified pickups, set 'none' as <i>role</i> to disable. Use 'default' value for <i>pickup</i> to change the default setting.   
 !whitelist_role <i>pickup</i>[ <i>pickup</i> ...] : <i>role_name</i> - allow only specified <i>role</i> to play specified pickups, set 'none' as <i>role</i> to disable.   
 !blacklist_role <i>pickup</i>[ <i>pickup</i> ...] : <i>role_name</i> - disallow specified <i>role</i> to play specified pickups, set 'none' as <i>role</i> to disable.   
@@ -41,6 +53,7 @@
 !phrase <i>@nick</i> <i>text</i> - set specified reply for specified user after !add command.   
 !remove_player <i>@nick</i> - remove specified players from all pickups.   
 !reset - removes all players from all pickups.   
+!start <i>pickup</i> - force a pickup to start with deficient players count.   
 !set adminrole <i>role_name</i> - set channel role for pickup admins.   
 !set bantime <i>hours</i> - set default !noadd time.
 !set promotion_delay <i>minutes<i> - set how often '!promote' or '!sub' commands can be used.   

@@ -11,14 +11,18 @@ def init():
 
 class Pickup():
 
-	def __init__(self, name, maxplayers, ip, promotion_role, whitelist_role, blacklist_role):
-		self.players = [] #[id, nick]
+	def __init__(self, name, maxplayers, ip, promotion_role, whitelist_role, blacklist_role, maps):
+		self.players = [] #[discord server member obj]
 		self.maxplayers = maxplayers
 		self.name = name
 		self.ip = ip
 		self.promotion_role = promotion_role
 		self.whitelist_role = whitelist_role
 		self.blacklist_role = blacklist_role
+		if len(maps):
+			self.maps = [i.strip() for i in maps.split(",")]
+		else:
+			self.maps = []
 
 class Channel():
 
@@ -33,7 +37,10 @@ class Channel():
 		self.pickups = []
 		self.init_pickups()
 		self.lastgame_cache = self.stats.lastgame()
+		self.lastgame_players = []
+		self.lastgame_teams = [[], []] #first player in each team is a captain
 		self.oldtopic = '[**no pickups**]'
+		self.allowoffline = [] #users with !allowoffline
 
 		if self.cfg['FIRST_INIT'] == 'True':
 			client.notice(self.channel, config.cfg.FIRST_INIT_MESSAGE)
@@ -48,20 +55,48 @@ class Channel():
 				console.display("ERROR| Failed to parse a pickup of channel {0} @ {1}.".format(self.id, str(i)))
 			
 	def start_pickup(self, pickup):
-		players=tuple(pickup.players) #just to save the value
-		if pickup.maxplayers > 2:
+		players=list(pickup.players) #just to save the value
+		
+		ipstr = self.cfg['IP_FORMAT'].replace("%ip%", pickup.ip).replace("%password%", self.cfg['PICKUP_PASSWORD'])
+		if pickup.maps != []:
+			ipstr += ". Suggested map: **{0}**".format(random.choice(pickup.maps))
+		
+		#if len(pickup.players) > 2
+		if self.cfg['TEAMS_PICK_SYSTEM'] == 'JUST_CAPTAINS' and len(pickup.players) > 3:
 			caps=random.sample(players, 2)
-			capsstr=" Captains will be: {0}.".format('<@'+'> and <@'.join([i.id for i in caps])+'>')
+			capsstr=" Suggested captains: {0}.".format('<@'+'> and <@'.join([i.id for i in caps])+'>')
+			self.lastgame_teams = [[],[]]
+			self.lastgame_players = []
+				
+		elif self.cfg['TEAMS_PICK_SYSTEM'] == 'CAPTAINS_PICK' and len(pickup.players) > 3:
+			caps=random.sample(players, 2)
+			capsstr=" Captains are: {0}.".format('<@'+'> and <@'.join([i.id for i in caps])+'>')
+			self.lastgame_players = pickup.players
+			self.lastgame_players.remove(caps[0])
+			self.lastgame_players.remove(caps[1])
+			self.lastgame_teams = [[caps[0]],[caps[1]]]
+				
+		elif self.cfg['TEAMS_PICK_SYSTEM'] == 'RANDOM_TEAMS' and len(pickup.players) > 3:
+			while len(players) > 1:
+				self.lastgame_teams[0].append(players.pop(random.randint(0, len(players)-1)))
+				self.lastgame_teams[1].append(players.pop(random.randint(0, len(players)-1)))
+			red_str = '<@'+'>, <@'.join([i.id for i in self.lastgame_teams[0]])+'>'
+			blue_str = '<@'+'>, <@'.join([i.id for i in self.lastgame_teams[1]])+'>'
+			caps=False
+			capsstr="\r\n[{0}]\r\n  **VS**\r\n[{1}]".format(red_str, blue_str)
+			players=list(pickup.players)
+
 		else:
 			caps=False
 			capsstr=''
+			self.lastgame_teams = [[],[]]
 
-		ipstr = self.cfg['IP_FORMAT'].replace("%ip%", pickup.ip).replace("%password%", self.cfg['PICKUP_PASSWORD'])
 		noticestr="{0}, {1}.{2}".format('<@'+'>, <@'.join([i.id for i in players])+'>', ipstr, capsstr)
+
 		if len(players) > 4:
-			client.notice(self.channel, pickup.name+' pickup has been started!\r\n'+noticestr)
+			client.notice(self.channel, '**{0}** pickup has been started!\r\n{1}'.format(pickup.name, noticestr))
 		else:
-			client.notice(self.channel, pickup.name+' pickup has been started! '+noticestr)
+			client.notice(self.channel, '**{0}** pickup has been started! {1}'.format(pickup.name, noticestr))
 
 		for i in players:
 			if self.id+i.id in scheduler.tasks.keys():
@@ -69,6 +104,10 @@ class Channel():
 			client.private_reply(self, i,"**{0}** pickup has been started, {1}.{2}".format(pickup.name, ipstr, capsstr))
 			for pu in ( pu for pu in self.pickups if i.id in [x.id for x in pu.players]):
 				pu.players.remove(i)
+
+		for i in players:
+			if i in self.allowoffline:
+				self.allowoffline.remove(i)
 
 		self.stats.register_pickup(pickup.name, players, caps)
 		self.lastgame_cache = self.stats.lastgame()
@@ -111,11 +150,17 @@ class Channel():
 			elif lower[0]=="default_expire":
 				self.default_expire(member,lower[1:msglen])
 
+			elif lower[0]=="allowoffline":
+				self.switch_allowoffline(member)
+
 			elif lower[0]=="remove_player" and msglen == 2:
 				self.remove_players(member, lower[1], isadmin)
 
 			elif lower[0]=="who":
 				self.who(member,lower[1:msglen])
+
+			elif lower[0]=="start":
+				self.user_start_pickup(member, lower[1:msglen])
 
 			elif lower[0] in ["games", "pickups"]:
 				self.replypickups(member)
@@ -132,6 +177,21 @@ class Channel():
 			elif lower[0]=="sub":
 				self.sub_request(member)
 
+			elif lower[0] in ["cointoss", "ct"]:
+				self.cointoss(member, lower[1:2])
+
+			elif lower[0]=="pick":
+				self.pick_player(member, lower[1:2])
+
+			elif lower[0]=="capfor":
+				self.capfor(member, lower[1:2])
+
+			elif lower[0]=="subfor":
+				self.subfor(member, lower[1:2])
+
+			elif lower[0]=="teams":
+				self.print_teams()
+
 			elif lower[0]=="stats":
 				self.getstats(member,msgtup[1:2])
 
@@ -146,6 +206,15 @@ class Channel():
 
 			elif lower[0]=="set_ip" and msglen>2:
 				self.setip(member, msgtup[1:msglen], isadmin)
+
+			elif lower[0]=="set_maps":
+				self.set_maps(member, msgtup[1:msglen], isadmin)
+
+			elif lower[0]=="maps":
+				self.show_maps(member, lower[1:msglen], False)
+			
+			elif lower[0]=="map":
+				self.show_maps(member, lower[1:msglen], True)
 
 			elif lower[0]=="promotion_role" and msglen>2:
 				self.set_promotion_role(member, msgtup[1:msglen], isadmin)
@@ -305,6 +374,15 @@ class Channel():
 		else:
 			client.notice(self.channel, 'no one added...ZzZz')
 
+	def user_start_pickup(self, member, args):
+		if len(args):
+			for pickup in self.pickups:
+				if pickup.name.lower() == args[0]:
+					self.start_pickup(pickup)
+					return
+		else:
+			client.reply(self.channel, member, "You must specify a pickup to start!")
+
 	def lastgame(self, member, args):
 		if args != []:
 			l = self.stats.lastgame(args[0]) # number, ago, gametype, players, caps
@@ -336,6 +414,118 @@ class Channel():
 				client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['PROMOTION_DELAY'])-self.newtime+self.oldtime)))))
 		else:
 			client.reply(self.channel, member, "No pickups played yet.")
+
+	def cointoss(self, member, args):
+		if len(args):
+			if args[0] in ['heads', 'tails']:
+				pick = args[0]
+			else:
+				client.reply(self.channel, member, "Its best to pick between **heads** or **tails**. But who knows...")
+				#return
+				pick = args[0]
+		else:
+			pick = 'heads'
+
+		result = random.choice(['heads', 'tails'])
+		if result == pick:
+			client.reply(self.channel, member, "You win, it's **{0}**!".format(result))
+		else:
+			client.reply(self.channel, member, "You loose, it's **{0}**!".format(result))
+
+	def pick_player(self, member, args):
+		if self.cfg['TEAMS_PICK_SYSTEM'] != 'CAPTAINS_PICK':
+			client.reply(self.channel, member, "This pickup channel is not configured for this command!")
+			return
+		#if len(self.lastgame_teams[0]) == 0 or len(self.lastgame_teams[1]) == 0:
+		#	client.reply(self.channel, member, "Captains are not set!")
+		#	return
+		if self.lastgame_teams[0][0].id == member.id:
+			teamidx=0
+		elif self.lastgame_teams[1][0].id == member.id:
+			teamidx=1
+		else:
+			client.reply(self.channel, member, "You are not a captain!")
+			return
+
+		if len(args):
+			targetid = args[0].lstrip("<@").rstrip(">")
+			for i in self.lastgame_players:
+				if i.id == targetid:
+					self.lastgame_teams[teamidx].append(i)
+					self.lastgame.players.remove(i)
+					self.print_teams()
+					return
+			for i in self.lastgame_teams[abs(teamidx-1)]:
+				if i.id == targetid:
+					self.lastgame_teams[teamidx].append(i)
+					self.lastgame_teams[abs(teamidx-1)].remove(i)
+					self.print_teams()
+					return
+			client.reply(self.channel, member, "Specified player are not added or allready in your team!")
+		else:
+			client.reply(self.channel, member, "You must specify a player to pick!")
+
+	def subfor(self, member, args):
+		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'RANDOM_TEAMS']:
+			client.reply(self.channel, member, "This pickup channel is not configured for this command!")
+			return
+
+		if member in self.lastgame_players+self.lastgame_teams[0]+self.lastgame_teams[1]:
+			client.reply(self.channel, member, "You are allready in the players list!")
+			return
+
+		if len(args):
+			targetid = args[0].lstrip("<@").rstrip(">")
+			for x in [self.lastgame_players, self.lastgame_teams[0], self.lastgame_teams[1]]:
+				for i in x:
+					if i.id == targetid:
+						idx = x.index(i)
+						x[idx] = member
+						self.print_teams()
+						return
+			client.reply(self.channel, member, "Specified player not found!")
+		else:
+			client.reply(self.channel, member, "You must specify a player to substitute!")
+
+	def capfor(self, member, args):
+		if self.cfg['TEAMS_PICK_SYSTEM'] not in ['CAPTAINS_PICK', 'RANDOM_TEAMS']:
+			client.reply(self.channel, member, "This pickup channel is not configured for this command!")
+			return
+
+		if len(args):
+			if args[0] not in ['alpha', 'beta']:
+				client.reply(self.channel, member, "Specified team must be **alpha** or **beta**!")
+				return
+
+			for x in [self.lastgame_players, self.lastgame_teams[0], self.lastgame_teams[1]]:
+				for i in x:
+					if i.id == member.id:
+						memberidx = x.index(i)
+						if args[0] == 'alpha':
+							if len(self.lastgame_teams[0]): #swap current captain possition
+								x[memberidx] = self.lastgame_teams[0][0]
+							else:
+								x.pop(memberidx)
+							self.lastgame_teams[0].insert(0, member)
+						elif args[0] == 'beta':
+							if len(self.lastgame_teams[1]): #swap current captain possition
+								x[memberidx] = self.lastgame_teams[1][0]
+							else:
+								x.pop(memberidx)
+							self.lastgame_teams[1].insert(0, member)
+						self.print_teams()
+						return
+
+			client.reply(self.channel, member, "You must be in players list to become a captain!")
+
+	def print_teams(self):
+		red_team = ", ".join([i.name for i in self.lastgame_teams[0]])
+		blue_team = ", ".join([i.name for i in self.lastgame_teams[1]])
+		noticestr = "[{0}] **VS** [{1}]".format(red_team, blue_team)
+		if len(self.lastgame_players):
+			unpicked  = ", ".join([i.name for i in self.lastgame_players])
+			noticestr += "\r\nUnpicked: [{0}]"
+		client.notice(self.channel, noticestr)
 
 	def update_topic(self):
 		newtopic=''
@@ -452,7 +642,14 @@ class Channel():
 				client.reply(self.channel, member, "set your default expire time to {0}".format(str(datetime.timedelta(seconds=int(timeint))),))
 			else:
 				client.reply(self.channel, member, "Invalid time amount. Maximum expire time on this channel is {0}".format(str(datetime.timedelta(seconds=int(int(self.cfg['MAX_EXPIRE_TIME'])))),))
-				
+
+	def switch_allowoffline(self, member):
+		if member in self.allowoffline:
+			self.allowoffline.remove(member)
+			client.reply(self.channel, member, "Your offline/afk immune is gone.")
+		else:
+			self.allowoffline.append(member)
+			client.reply(self.channel, member, "You will have offline/afk immune until your next pickup.")
 			
 	def getstats(self, member,target):
 		if target == []:
@@ -566,6 +763,57 @@ class Channel():
 				client.reply(self.channel, member, "No such pickups were found.")
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
+
+	def set_maps(self, member, args, isadmin):
+		if isadmin:
+			#parse arguments
+			try:
+				pickupnames,maps=' '.join(args).split(' : ',1)
+				pickupnames = pickupnames.lower().split(" ")
+				maps = [i.strip() for i in maps.split(",")]
+			except:
+				client.reply(self.channel, member, "Bad arguments")
+				return
+				
+			#set empty value if we got 'none'
+			if len(maps):
+				if maps[0].lower() == 'none':
+					maps = []
+
+			#find specified pickups and set maps
+			affected_pickups = []
+			for pickup in self.pickups:
+				if pickup.name.lower() in pickupnames:
+					pickup.maps = maps
+					affected_pickups.append(pickup.name)
+
+			#echo result
+			pickups = "**" + "**, **".join(affected_pickups) + "**"
+			if len(maps):
+				maps = "**" + "**, **".join(maps) + "**"
+				client.reply(self.channel, member, "Set {0} maps for {1} pickups.".format(maps, pickups))
+			else:
+				client.reply(self.channel, member, "Disabled maps for {0} pickups.".format(pickups))
+		else:
+			client.reply(self.channel, member, "You have no right for this!")
+
+	def show_maps(self, member, args, pick):
+		if len(args):
+			pickupname = args[0].lower()
+			for pickup in self.pickups:
+				if pickup.name.lower() == pickupname:
+					if pickup.maps == []:
+						client.reply(self.channel, member, "No maps set for **{0}** pickup".format(pickup.name))
+					else:
+						if pick:
+							client.notice(self.channel, "**{0}**".format(random.choice(pickup.maps)))
+						else:
+							maps = "**" + "**, **".join(pickup.maps) + "**"
+							client.notice(self.channel, "Maps for [**{0}**]: {1}.".format(pickup.name, maps))
+					return
+			client.reply(self.channel, member, "Pickup '{0}' not found!".format(args[0]))
+		else:
+			client.reply(self.channel, member, "You must specify a pickup!")
 
 	def set_promotion_role(self, member, args, isadmin):
 		if isadmin:
@@ -809,12 +1057,13 @@ class Channel():
 		scheduler.add_task(self.id+"#backup#", int(self.cfg['BACKUP_TIME']) * 60 * 60, self.scheduler_backup, ())
 			
 	def update_member(self, member):
-		if str(member.status) == 'offline':
-			self.remove_player(member,[],'offline')
-		elif str(member.status) == 'idle':
-			#dont remove if user have expire time set!
-			if self.id+member.id not in scheduler.tasks.keys():
-				self.remove_player(member,[],'idle')
+		if member not in self.allowoffline:
+			if str(member.status) == 'offline':
+				self.remove_player(member,[],'offline')
+			elif str(member.status) == 'idle':
+				#dont remove if user have expire time set!
+				if self.id+member.id not in scheduler.tasks.keys():
+					self.remove_player(member,[],'idle')
 
 	def update_config(self, variable, value):
 		self.cfg[variable] = value
@@ -889,10 +1138,25 @@ class Channel():
 				else:
 					client.reply(self.channel, member, "max expire time cant be in past!.")
 
+			elif var == 'teams_pick_system':
+				value = value.lower()
+				if value == 'none':
+					self.update_config('TEAMS_PICK_SYSTEM', 'NONE')
+				elif value == 'just_captains':
+					self.update_config('TEAMS_PICK_SYSTEM', 'JUST_CAPTAINS')
+				elif value == 'captains_pick':
+					self.update_config('TEAMS_PICK_SYSTEM', 'CAPTAINS_PICK')
+				elif value == 'random_teams':
+					self.update_config('TEAMS_PICK_SYSTEM', 'RANDOM_TEAMS')
+				else:
+					client.reply(self.channel, member, "Invalid value. Possible options are: none, just_captains, captains_pick, random_teams")
+					return
+				client.reply(self.channel, member, "done.")
+
 			elif var == "prefix":
 				if len(value) == 1:
 					self.update_config("PREFIX", value)
-					client.reply(self.channel, member, "done.".format(self.cfg["PREFIX"]))
+					client.reply(self.channel, member, "done.")
 				else:
 					client.reply(self.channel, member, "PREFIX value must be one character.")
 

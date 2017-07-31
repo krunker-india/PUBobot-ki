@@ -56,7 +56,7 @@ class Stats():
 			result = self.c.fetchone()
 		else:
 			#try to find last game by gametype
-			self.c.execute("SELECT lastgame FROM gametypes WHERE gametype = ?", (text,))
+			self.c.execute("SELECT lastgame FROM gametypes WHERE gametype = ? COLLATE NOCASE", (text,))
 			tmp = self.c.fetchone()
 			if tmp != None:
 				pickupid = tmp[0]
@@ -292,7 +292,7 @@ class Stats():
 			self.c.execute("UPDATE OR IGNORE config SET value = ? WHERE variable = ?", (cfg[var], var))
 			pickup_list = []
 			for i in pickups:
-				self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
+				self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role, ", ".join(i.maps)))
 		self.conn.commit()
 
 	def update_config(self, variable, value):
@@ -323,6 +323,10 @@ class Stats():
 		if 'expire' not in [i[1] for i in self.c.fetchall()]:
 			self.c.execute("ALTER TABLE players ADD COLUMN expire INTEGER NOT NULL DEFAULT 0")
 
+		self.c.execute("PRAGMA table_info(pickups_config)")
+		if 'maps' not in [i[1] for i in self.c.fetchall()]:
+			self.c.execute("ALTER TABLE pickups_config ADD COLUMN maps TEXT NOT NULL DEFAULT ''")
+
 		self.c.execute("""DELETE FROM config WHERE variable = 'FIRST_INIT_MESSAGE';""")
 		self.c.execute("""DELETE FROM config WHERE variable = 'CHANGE_TOPIC';""")
 		self.c.execute("""DELETE FROM config WHERE variable = 'TOPIC';""")
@@ -331,3 +335,4 @@ class Stats():
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('PREFIX', '!');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('MAX_EXPIRE_TIME', '21600');""")
 		self.c.execute("""INSERT OR IGNORE INTO config VALUES('++_REQ_PLAYERS', '5');""")
+		self.c.execute("""INSERT OR IGNORE INTO config VALUES('TEAMS_PICK_SYSTEM', 'JUST_CAPTAINS');""")
