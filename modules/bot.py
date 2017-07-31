@@ -458,7 +458,7 @@ class Channel():
 			return
 
 		if len(args):
-			targetid = args[0].lstrip("<@").rstrip(">")
+			targetid = args[0].lstrip("<@!").rstrip(">")
 			for i in self.lastgame_players:
 				if i.id == targetid:
 					self.lastgame_teams[teamidx].append(i)
@@ -485,7 +485,7 @@ class Channel():
 			return
 
 		if len(args):
-			targetid = args[0].lstrip("<@").rstrip(">")
+			targetid = args[0].lstrip("<@!").rstrip(">")
 			for x in [self.lastgame_players, self.lastgame_teams[0], self.lastgame_teams[1]]:
 				for i in x:
 					if i.id == targetid:
