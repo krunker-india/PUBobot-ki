@@ -301,7 +301,7 @@ class Stats():
 
 	def update_pickups(self, pickups):
 		for i in pickups:
-			self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role))
+			self.c.execute("""INSERT OR REPLACE INTO pickups_config VALUES(?, ?, ?, ?, ?, ?, ?);""", (i.name, i.maxplayers, i.ip, i.promotion_role, i.whitelist_role, i.blacklist_role, ", ".join(i.maps)))
 		self.conn.commit()
 
 	def close(self):

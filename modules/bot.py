@@ -714,7 +714,7 @@ class Channel():
 					return()
 			if newpickups != []:
 				for i in newpickups:
-					self.pickups.append(Pickup(i[0], i[1], self.cfg['DEFAULT_IP'], self.cfg['PROMOTION_ROLE'], 'none', 'none'))
+					self.pickups.append(Pickup(i[0], i[1], self.cfg['DEFAULT_IP'], self.cfg['PROMOTION_ROLE'], 'none', 'none', []))
 				self.stats.update_pickups(self.pickups)
 				self.replypickups(member)
 		else:
