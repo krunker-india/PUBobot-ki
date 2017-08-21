@@ -84,6 +84,7 @@ class Channel():
 				
 		elif self.cfg['TEAMS_PICK_SYSTEM'] == 'RANDOM_TEAMS' and len(pickup.players) > 3:
 			self.lastgame_players = list(pickup.players)
+			self.lastgame_teams = [[], []]
 			while len(self.lastgame_players) > 1:
 				self.lastgame_teams[0].append(self.lastgame_players.pop(random.randint(0, len(self.lastgame_players)-1)))
 				self.lastgame_teams[1].append(self.lastgame_players.pop(random.randint(0, len(self.lastgame_players)-1)))
