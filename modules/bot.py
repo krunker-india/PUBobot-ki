@@ -168,7 +168,7 @@ class Channel():
 				self.who(member,lower[1:msglen])
 
 			elif lower[0]=="start":
-				self.user_start_pickup(member, lower[1:msglen])
+				self.user_start_pickup(member, lower[1:msglen], isadmin)
 
 			elif lower[0] in ["games", "pickups"]:
 				self.replypickups(member)
@@ -285,7 +285,11 @@ class Channel():
 
 		changes = False
 		#ADD GUY TO TEH GAMES
-		for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0 and int(self.cfg["++_REQ_PLAYERS"])<=pickup.maxplayers) or pickup.name.lower() in target_pickups)):
+		if target_pickup == [] and len(self.pickups) < 2: #make !add always work if only one pickup is configured on the channel
+			filtered_pickups = self.pickups
+		else:
+			filtered_pickups = [pickup for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0 and int(self.cfg["++_REQ_PLAYERS"])<=pickup.maxplayers) or pickup.name.lower() in target_pickups))]
+		for pickup in filtered_pickups:
 			if not member.id in [i.id for i in pickup.players]:
 				#check if pickup have blacklist or whitelist
 				if pickup.blacklist_role in [r.name for r in member.roles]:
@@ -382,14 +386,17 @@ class Channel():
 		else:
 			client.notice(self.channel, 'no one added...ZzZz')
 
-	def user_start_pickup(self, member, args):
-		if len(args):
-			for pickup in self.pickups:
-				if pickup.name.lower() == args[0]:
-					self.start_pickup(pickup)
-					return
+	def user_start_pickup(self, member, args, isadmin):
+		if isadmin:
+			if len(args):
+				for pickup in self.pickups:
+					if pickup.name.lower() == args[0]:
+						self.start_pickup(pickup)
+						return
+			else:
+				client.reply(self.channel, member, "You must specify a pickup to start!")
 		else:
-			client.reply(self.channel, member, "You must specify a pickup to start!")
+			client.reply(self.channel, member, "You have no right for this!")
 
 	def lastgame(self, member, args):
 		if args != []:
