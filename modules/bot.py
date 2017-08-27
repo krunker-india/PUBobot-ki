@@ -285,7 +285,7 @@ class Channel():
 
 		changes = False
 		#ADD GUY TO TEH GAMES
-		if target_pickup == [] and len(self.pickups) < 2: #make !add always work if only one pickup is configured on the channel
+		if target_pickups == [] and len(self.pickups) < 2: #make !add always work if only one pickup is configured on the channel
 			filtered_pickups = self.pickups
 		else:
 			filtered_pickups = [pickup for pickup in ( pickup for pickup in self.pickups if ((target_pickups == [] and len(pickup.players)>0 and int(self.cfg["++_REQ_PLAYERS"])<=pickup.maxplayers) or pickup.name.lower() in target_pickups))]
