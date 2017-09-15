@@ -15,10 +15,10 @@ def init(dirname=""):
 		console.display("ERROR| ERROR PARSING config.cfg FILE!!! {0}".format(str(e)))
 		console.terminate()
 	
-	#search for channels
-	for i in os.listdir('channels'):
-		if i != 'default':
-			bot.channels_list.append(i)
+	#check if we need to update from previous stats system
+	if os.path.isdir('channels'):
+		console.display("OLD DATABASE FOLDER FOUND! PLEASE RUN 'updater.py' OR DELETE/RENAME 'channels' FOLDER.")
+		os._exit(0)
 
 def new_channel(channel, admin):
 	path = "channels/"+channel.id

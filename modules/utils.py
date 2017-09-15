@@ -6,7 +6,9 @@ def format_timestring(timelist):
 	for i in timelist: #convert given time to float
 		try:
 			num=int(i[:-1]) #the number part
-			if i[-1]=='h':
+			if i[-1]=='d':
+				timeint+=num*3600*24
+			elif i[-1]=='h':
 				timeint+=num*3600
 			elif i[-1]=='m':
 				timeint+=num*60

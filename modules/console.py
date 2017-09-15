@@ -5,7 +5,7 @@ from threading import Thread
 from multiprocessing import Queue
 import sys, os, datetime, readline, time
 
-from modules import bot, client, config
+from modules import bot, client, config, stats3
 
 class ConsoleCompleter(object):  # Custom completer
 
@@ -156,8 +156,7 @@ def delete_unused_channels(echo, tl=30):
 
 def terminate():
 	global alive
-	bot.terminate()
-	log.close()
+	stats3.close()
 	print("Waiting for connection to close...")
 	alive = False
 	

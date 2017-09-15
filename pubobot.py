@@ -8,12 +8,13 @@ except:
 	sys.exit(1)
 
 #my modules
-from modules import console, config, bot, client, scheduler
+from modules import console, config, bot, client, scheduler, stats3
 
 console.init()
 scheduler.init()
 bot.init()
 config.init()
+stats3.init()
 
 #start discord api
 c = discord.Client()
@@ -59,6 +60,7 @@ def bot_run():
 		yield from Client.logout()
 	except:
 		pass
+	console.log.close()
 	print("QUIT NOW.")
 	os._exit(0)
 
@@ -82,17 +84,22 @@ def on_message(message):
 	if message.content == '!enable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
 			if message.channel.id not in [x.id for x in bot.channels]:
-				config.new_channel(message.channel, message.author)
+				newcfg = stats3.new_channel(message.server.id, message.server.name, message.channel.id, message.channel.name, message.author.id)
+				bot.channels.append(bot.Channel(message.channel, newcfg))
+				client.reply(message.channel, message.author, config.cfg.FIRST_INIT_MESSAGE)
 			else:
 				client.reply(message.channel, message.author, "this channel allready have pickups configured!")
 		else:
 			client.reply(message.channel, message.author, "You must have permission to manage channels to enable pickups.")
 	elif message.content == '!disable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
-			if config.delete_channel(message.channel.id):
-				client.reply(message.channel, message.author, "pickups on this channel have been disabled.") 
-			else:
-				client.reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
+			for chan in bot.channels:
+				if chan.id == message.channel.id:
+					stats3.delete_channel(message.channel.id)
+					bot.channels.remove(chan)
+					client.reply(message.channel, message.author, "pickups on this channel have been disabled.")
+					return
+			client.reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
 		else:
 			client.reply(message.channel, message.author, "You must have permission to manage channels to disable pickups.") 
 	else:
@@ -109,8 +116,7 @@ def on_message(message):
 def on_member_update(before, after):
 	#console.display("DEBUG| {0} changed status from {1}  to -{2}-".format(after.name, before.status, after.status))
 	if str(after.status) in ['idle', 'offline']:
-		for channel in bot.channels:
-			channel.update_member(after)
+		bot.update_member(after)
 
 loop = asyncio.get_event_loop()
 
