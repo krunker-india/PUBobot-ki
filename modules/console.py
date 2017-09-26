@@ -91,13 +91,13 @@ def run():
 					pickups=[]
 					for p in c.pickups:
 						if p.players != []:
-							pickups.append('[{0} ({1}/{2})]'.format(p.name, len(p.players), p.maxplayers))
+							pickups.append('[{0} ({1}/{2})]'.format(p.name, len(p.players), p.cfg["maxplayers"]))
 					if pickups != []:
 						channels.append("{0} {1}".format(c.name, " ".join(pickups)))
 				display("All pickups: {0}".format(" | ".join(channels)))
 			elif l[0] == "stats":
 				for c in bot.channels:
-					display("STATS| {0}: {1}".format(c.name, c.stats.stats()))
+					display("STATS| {0}: {1}".format(c.name, stats3.stats(c.id)))
 			elif l[0] == "channels":
 				display("CONSOLE| Pickup channels: {0}".format(" | ".join([i.name for i in bot.channels])))
 			elif l[0] == "exec":
