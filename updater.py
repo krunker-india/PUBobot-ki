@@ -10,6 +10,8 @@ def get_role_id(channel, role_name):
 	return None
 
 def update_databases():
+	known_pickup_ids = dict()
+	id_step = 0
 	newconn = sqlite3.connect("database.sqlite3")
 	newc = newconn.cursor()
 	for channel_id in os.listdir("channels"):
@@ -98,12 +100,14 @@ def update_databases():
 				oldc.execute("SELECT id, time, gametype, players FROM pickups")
 				l = oldc.fetchall()
 				for i in l:
-					newc.execute("INSERT INTO pickups (channel_id, pickup_id, at, pickup_name, players) VALUES (?, ?, ?, ?, ?)", (channel_id, i[0], i[1], i[2], i[3]))
+					known_pickup_ids[i[0]] = id_step
+					newc.execute("INSERT INTO pickups (channel_id, pickup_id, at, pickup_name, players) VALUES (?, ?, ?, ?, ?)", (channel_id, id_step, i[1], i[2], i[3]))
+					id_step += 1
 
 				oldc.execute("SELECT pickup_id, memberid, membername, time, gametype FROM player_games")
 				l = oldc.fetchall()
 				for i in l:
-					newc.execute("INSERT INTO player_pickups (channel_id, pickup_id, user_id, user_name, at, pickup_name) VALUES (?, ?, ?, ?, ?, ?)", (channel_id, i[0], i[1], i[2], i[3], i[4]))
+					newc.execute("INSERT INTO player_pickups (channel_id, pickup_id, user_id, user_name, at, pickup_name) VALUES (?, ?, ?, ?, ?, ?)", (channel_id, known_pickup_ids[i[0]], i[1], i[2], i[3], i[4]))
 				oldconn.close()
 
 	newconn.commit()
@@ -120,7 +124,7 @@ def on_ready():
 	print("SUCCESSFULLY UPDATED")
 	c.close()
 	os.rename("channels", "channels_old")
-	os._exit()
+	os._exit(0)
 		
 f = open('config.cfg', 'r')
 cfg = imp.load_source('data', '', f)
