@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # encoding: utf-8
-import os, time, sys
+import os, time, sys, traceback
 try:
 	import discord, asyncio
 except:
@@ -13,8 +13,8 @@ from modules import console, config, bot, client, scheduler, stats3
 console.init()
 scheduler.init()
 bot.init()
-config.init()
 stats3.init()
+config.init()
 
 #start discord api
 c = discord.Client()
@@ -75,6 +75,7 @@ def on_ready():
 		loop.create_task(bot_run())
 	else:
 		console.display("DEBUG| Unexpected on_ready event!")
+		yield from c.change_presence(game=discord.Game(name='pm !help'))
 @c.event
 @asyncio.coroutine
 def on_message(message):
@@ -109,7 +110,8 @@ def on_message(message):
 				try:
 					channel.processmsg(message.content, message.author)
 				except:
-					console.display("ERROR| Error processing message: "+str(sys.exc_info()))
+					console.display("ERROR| Error processing message: {0}".format(traceback.format_exc()))
+					
 	
 @c.event
 @asyncio.coroutine

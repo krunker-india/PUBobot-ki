@@ -65,6 +65,7 @@ def reply(channel, member, msg):
 	send_queue.append(['msg', channel, "<@{0}>, {1}".format(member.id, msg)])
 	
 def private_reply(channel, member, msg):
+	#pass
 	send_queue.append(['msg', member, msg])
 
 def set_topic(channel, newtopic):

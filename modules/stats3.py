@@ -33,7 +33,7 @@ def _channelcfg_to_dict(l):
 	d["admin_id"] = l[6]
 	d["admin_role"] = l[7]
 	d["moderator_role"] = l[8]
-	d["captain_role"] = l[9]
+	d["captains_role"] = l[9]
 	d["noadd_role"] = l[10]
 	d["prefix"] = l[11]
 	d["default_bantime"] = l[12]
@@ -43,13 +43,15 @@ def _channelcfg_to_dict(l):
 	d["ip"] = l[16]
 	d["password"] = l[17]
 	d["maps"] = l[18]
-	d["teams_pick_system"] = l[19]
-	d["promotion_role"] = l[20]
-	d["promotion_delay"] = l[21]
-	d["blacklist_role"] = l[22]
-	d["whitelist_role"] = l[23]
-	d["require_ready"] = l[24]
-	d["readd_treshold"] = l[25]
+	d["pick_captains"] = l[19]
+	d["pick_teams"] = l[20]
+	d["pick_order"] = l[21]
+	d["promotion_role"] = l[22]
+	d["promotion_delay"] = l[23]
+	d["blacklist_role"] = l[24]
+	d["whitelist_role"] = l[25]
+	d["require_ready"] = l[26]
+	d["ranked"] = l[27]
 	return d
 
 def _pickupcfg_to_dict(l):
@@ -59,18 +61,21 @@ def _pickupcfg_to_dict(l):
 	d["maxplayers"] = l[2]
 	d["minplayers"] = l[3]
 	d["startmsg"] = l[4]
-	d["submsg"] = l[5]
-	d["ip"] = l[6]
-	d["password"] = l[7]
-	d["maps"] = l[8]
-	d["teams_pick_system"] = l[9]
-	d["pick_order"] = l[10]
-	d["promotion_role"] = l[11]
-	d["blacklist_role"] = l[12]
-	d["whitelist_role"] = l[13]
-	d["captain_role"] = l[14]
-	d["require_ready"] = l[15]
-	d["ready_timeout"] = l[16]
+	d["start_pm_msg"] = l[5]
+	d["submsg"] = l[6]
+	d["ip"] = l[7]
+	d["password"] = l[8]
+	d["maps"] = l[9]
+	d["pick_captains"] = l[10]
+	d["captains_role"] = l[11]
+	d["pick_teams"] = l[12]
+	d["pick_order"] = l[13]
+	d["promotion_role"] = l[14]
+	d["blacklist_role"] = l[15]
+	d["whitelist_role"] = l[16]
+	d["captain_role"] = l[17]
+	d["require_ready"] = l[18]
+	d["ranked"] = l[19]
 	return d
 
 def get_pickups(channel_id):
@@ -81,6 +86,22 @@ def get_pickups(channel_id):
 		d = _pickupcfg_to_dict(pickup)
 		l.append(d)
 	return l
+
+def get_pickup_groups(channel_id):
+	c.execute("SELECT group_name, pickup_names FROM pickup_groups WHERE channel_id = ?", (channel_id, ))
+	pg = c.fetchall()
+	d = dict()
+	for i in pg:
+		d[i[0]] = i[1].split(" ")
+	return d
+
+def new_pickup_group(channel_id, group_name, pickup_names):
+	c.execute("INSERT OR REPLACE INTO pickup_groups (channel_id, group_name, pickup_names) VALUES (?, ?, ?)", (channel_id, group_name, " ".join(pickup_names)))
+	conn.commit()
+
+def delete_pickup_group(channel_id, group_name):
+	c.execute("DELETE FROM pickup_groups WHERE channel_id = ? AND group_name = ?", (channel_id, group_name))
+	conn.commit()
 
 def new_channel(server_id, server_name, channel_id, channel_name, admin_id):
 	c.execute("INSERT OR REPLACE INTO channels (server_id, server_name, channel_id, channel_name, first_init, admin_id) VALUES (?, ?, ?, ?, ?, ?)", (server_id, server_name, channel_id, channel_name, str(int(time())), admin_id))
@@ -111,27 +132,66 @@ def delete_channel(channel_id):
 	c.execute("DELETE FROM pickups WHERE channel_id = ?", (channel_id, ))
 	conn.commit()
 
-def register_pickup(channel_id, pickup_name, players):
+def reset_stats(channel_id):
+	c.execute("DELETE FROM pickups WHERE channel_id = ?", (channel_id, ))
+	c.execute("DELETE FROM player_pickups WHERE channel_id = ?", (channel_id, ))
+	conn.commit()
+
+def register_pickup(channel_id, pickup_name, players, lastpick, beta_team, alpha_team, winner_team):
 	at = int(time())
-	playersstr = " " + " ".join([i.name for i in players]) + " "
+	playersstr = " " + " ".join([i.nick or i.name for i in players]) + " "
+	if beta_team:
+		betastr = " ".join([i.nick or i.name for i in beta_team])
+	else:
+		betastr = None
+	if alpha_team:
+		alphastr = " ".join([i.nick or i.name for i in alpha_team])
+	else:
+		alphastr = None
 
 	#insert pickup
-	c.execute("INSERT INTO pickups (channel_id, pickup_name, at, players) VALUES (?, ?, ?, ?)", (channel_id, pickup_name, at, playersstr))
+	c.execute("INSERT INTO pickups (channel_id, pickup_name, at, players, alpha_players, beta_players, winner_team) VALUES (?, ?, ?, ?, ?, ?, ?)", (channel_id, pickup_name, at, playersstr, alphastr, betastr, winner_team))
 	#update player_games and players
 	for player in players:
-		c.execute("INSERT OR IGNORE INTO player_pickups (channel_id, user_id, user_name, pickup_name, at) VALUES (?, ?, ?, ?, ?)", (channel_id, player.id, player.name, pickup_name, at))
+		team = None
+		is_winner = None
+		if beta_team and alpha_team:
+			if player in beta_team:
+				team = 'beta'
+				if winner_team == team:
+					is_winner = True
+				elif winner_team == 'alpha':
+					is_winner = False
+				else:
+					is_winner = None
+			elif player in alpha_team:
+				team = 'alpha'
+				if winner_team == team:
+					is_winner = True
+				elif winner_team == 'beta':
+					is_winner = False
+				else:
+					is_winner = None
+		if lastpick:
+			if player == lastpick:
+				is_lastpick = True
+			else:
+				is_lastpick = False
+		else:
+			is_lastpick = None
+		c.execute("INSERT OR IGNORE INTO player_pickups (channel_id, user_id, user_name, pickup_name, at, team, is_winner, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (channel_id, player.id, player.name, pickup_name, at, team, is_winner, is_lastpick))
 	conn.commit()
 
 def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
 	if not text: #return lastest game
-		c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players FROM pickups WHERE channel_id = ? ORDER BY pickup_id DESC LIMIT 1", (channel_id, ))
+		c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players, winner_team FROM pickups WHERE channel_id = ? ORDER BY pickup_id DESC LIMIT 1", (channel_id, ))
 		result = c.fetchone()
 	else:
 		#try to find last game by gametype
-		c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players FROM pickups WHERE channel_id = ? and pickup_name = ? ORDER BY pickup_id DESC LIMIT 1 COLLATE NOCASE", (channel_id, text))
+		c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players, winner_team FROM pickups WHERE channel_id = ? and pickup_name = ? ORDER BY pickup_id DESC LIMIT 1 COLLATE NOCASE", (channel_id, text))
 		result = c.fetchone()
 		if result == None: #no results, try to find last game by player
-			c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players FROM pickups WHERE channel_id = '{0}' and players LIKE '% {1} %' ORDER BY pickup_id DESC LIMIT 1".format(channel_id, text))
+			c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players, winner_team FROM pickups WHERE channel_id = '{0}' and players LIKE '% {1} %' ORDER BY pickup_id DESC LIMIT 1".format(channel_id, text))
 			result = c.fetchone()
 	return result
 
@@ -304,7 +364,7 @@ def update_channel_config(channel_id, variable, value):
 	conn.commit()
 
 def update_pickup_config(channel_id, pickup_name, variable, value):
-	c.execute("UPDATE OR IGNORE channels SET {0} = ? WHERE channel_id = ? and pickup_name = ?".format(variable), (value, channel_id, pickup_name))
+	c.execute("UPDATE OR IGNORE pickup_configs SET {0} = ? WHERE channel_id = ? and pickup_name = ?".format(variable), (value, channel_id, pickup_name))
 	conn.commit()
 
 def update_pickups(channel_id, pickups):
@@ -313,22 +373,59 @@ def update_pickups(channel_id, pickups):
 	conn.commit()
 
 def check_tables():
-	c.execute("CREATE TABLE IF NOT EXISTS `bans` ( `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `active` BLOB, `at` INTEGER, `duratation` INTEGER, `reason` TEXT, `author_name` TEXT, `unban_author_name` TEXT )")
+	c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+	tables = c.fetchall()
+	
+	if 'bans' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `bans` ( `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `active` BLOB, `at` INTEGER, `duratation` INTEGER, `reason` TEXT, `author_name` TEXT, `unban_author_name` TEXT )")
 
-	c.execute("CREATE TABLE IF NOT EXISTS `channel_players` ( `channel_id` TEXT, `user_id` TEXT, `points` INTEGER, `lastpicked` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`) )")
+	if 'channel_players' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `channel_players` ( `channel_id` TEXT, `user_id` TEXT, `points` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`) )")
 
-	c.execute("CREATE TABLE IF NOT EXISTS `channels` ( `server_id` TEXT, `server_name` TEXT, `channel_id` TEXT, `channel_name` TEXT, `premium` BOOL, `first_init` INTEGER, `admin_id` TEXT, `admin_role` TEXT, `moderator_role` TEXT, `captain_role` TEXT, `noadd_role` TEXT, `prefix` TEXT DEFAULT '!', `default_bantime` INTEGER DEFAULT 7200, `++_req_players` INTEGER DEFAULT 4, `startmsg` TEXT, `submsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `teams_pick_system` TEXT, `promotion_role` TEXT, `promotion_delay` INTEGER DEFAULT 18000, `blacklist_role` TEXT, `whitelist_role` TEXT, `require_ready` INTEGER, `readd_treshold` INTEGER, PRIMARY KEY(`channel_id`) )")
-	
-	c.execute("CREATE TABLE IF NOT EXISTS `nukem_quotes` ( `quote` TEXT )")
-	
-	c.execute("CREATE TABLE IF NOT EXISTS `pickup_configs` ( `channel_id` TEXT, `pickup_name` TEXT, `maxplayers` INTEGER, `minplayers` INTEGER, `startmsg` TEXT, `start_pm_msg` TEXT, `submsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `teams_pick_system` TEXT, `pick_order` TEXT, `promotion_role` TEXT, `blacklist_role` TEXT, `whitelist_role` TEXT, `captain_role` TEXT, `require_ready` INTEGER, PRIMARY KEY(`channel_id`, `pickup_name`) )")
-	
-	c.execute("CREATE TABLE IF NOT EXISTS `pickups` ( `pickup_id` INTEGER PRIMARY KEY, `channel_id` TEXT, `pickup_name` TEXT, `at` INTEGER, `players` TEXT, `alpha_players` TEXT, `beta_players` TEXT )")
-	
-	c.execute("CREATE TABLE IF NOT EXISTS `player_pickups` ( `pickup_id` INTEGER, `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `pickup_name` TEXT, `at` INTEGER, `team` TEXT )")
-	
-	c.execute("CREATE TABLE IF NOT EXISTS `players` ( `user_id` TEXT, `default_expire` INTEGER, `disable_pm` BLOB, PRIMARY KEY(`user_id`) )")
+	if 'channels' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `channels` ( `server_id` TEXT, `server_name` TEXT, `channel_id` TEXT, `channel_name` TEXT, `premium` BOOL, `first_init` INTEGER, `admin_id` TEXT, `admin_role` TEXT, `moderator_role` TEXT, `captains_role` TEXT, `noadd_role` TEXT, `prefix` TEXT DEFAULT '!', `default_bantime` INTEGER DEFAULT 7200, `++_req_players` INTEGER DEFAULT 5, `startmsg` TEXT, `submsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `pick_captains` INTEGER, `pick_teams` TEXT DEFAULT 'no_teams', `pick_order` TEXT, `promotion_role` TEXT, `promotion_delay` INTEGER DEFAULT 18000, `blacklist_role` TEXT, `whitelist_role` TEXT, `require_ready` INTEGER, `ranked` INTEGER, PRIMARY KEY(`channel_id`) )")
 
+	if 'pickup_configs' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `pickup_configs` ( `channel_id` TEXT, `pickup_name` TEXT, `maxplayers` INTEGER, `minplayers` INTEGER, `startmsg` TEXT, `start_pm_msg` TEXT, `submsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `pick_captains` INTEGER, `captains_role` TEXT, `pick_teams` TEXT, `pick_order` TEXT, `promotion_role` TEXT, `blacklist_role` TEXT, `whitelist_role` TEXT, `captain_role` TEXT, `require_ready` INTEGER, `ranked` INTEGER, PRIMARY KEY(`channel_id`, `pickup_name`) )")
+
+	if 'pickups' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `pickups` ( `pickup_id` INTEGER PRIMARY KEY, `channel_id` TEXT, `pickup_name` TEXT, `at` INTEGER, `players` TEXT, `alpha_players` TEXT, `beta_players` TEXT, `winner_team` TEXT )")
+
+	if 'player_pickups' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `player_pickups` ( `pickup_id` INTEGER, `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `pickup_name` TEXT, `at` INTEGER, `team` TEXT, `is_winner` BLOB, `is_lastpick` BLOB)")
+
+	if 'players' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `players` ( `user_id` TEXT, `default_expire` INTEGER, `disable_pm` BLOB, PRIMARY KEY(`user_id`) )")
+
+	if 'pickup_groups' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `pickup_groups` ( `channel_id` TEXT, `group_name` TEXT, `pickup_names` TEXT, PRIMARY KEY(`channel_id`, `group_name`) )")
+
+	if 'nukem_quotes' not in tables:
+		c.execute("CREATE TABLE IF NOT EXISTS `nukem_quotes` ( `quote` TEXT )")
+		c.executescript("""
+			INSERT INTO nukem_quotes VALUES ("AAhhh... much better!");
+			INSERT INTO nukem_quotes VALUES ("Bitchin'!");
+			INSERT INTO nukem_quotes VALUES ("Come get some!");
+			INSERT INTO nukem_quotes VALUES ("Do, or do not, there is no try.");
+			INSERT INTO nukem_quotes VALUES ("Eat shit and die.");
+			INSERT INTO nukem_quotes VALUES ("Get that crap outta here!");
+			INSERT INTO nukem_quotes VALUES ("Go ahead, make my day.");
+			INSERT INTO nukem_quotes VALUES ("Hail to the king, baby!");
+			INSERT INTO nukem_quotes VALUES ("Heh, heh, heh... what a mess!");
+			INSERT INTO nukem_quotes VALUES ("Holy cow!");
+			INSERT INTO nukem_quotes VALUES ("Holy shit!");
+			INSERT INTO nukem_quotes VALUES ("I'm gonna get medieval on your asses!");
+			INSERT INTO nukem_quotes VALUES ("I'm gonna kick your ass, bitch!");
+			INSERT INTO nukem_quotes VALUES ("Let God sort 'em out!");
+			INSERT INTO nukem_quotes VALUES ("Ooh, that's gotta hurt.");
+			INSERT INTO nukem_quotes VALUES ("See you in Hell!");
+			INSERT INTO nukem_quotes VALUES ("Piece of Cake.");
+			INSERT INTO nukem_quotes VALUES ("Suck it down!");
+			INSERT INTO nukem_quotes VALUES ("Terminated!");
+			INSERT INTO nukem_quotes VALUES ("Your face, your ass - what's the difference?");
+			INSERT INTO nukem_quotes VALUES ("Nobody fucks up our pickups... and lives!");
+			INSERT INTO nukem_quotes VALUES ("My boot, your face; the perfect couple.");
+			""")
 	conn.commit()
 
 def close():
