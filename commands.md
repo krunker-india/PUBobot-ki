@@ -51,10 +51,10 @@
 
 !set_default variable value - set a global variable value. Availible variables: admin_role, moderator_role, captains_role, prefix, default_bantime, ++_req_players, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, promotion_role, promotion_delay, blacklist_role, whitelist_role, require_ready.   
 
-!set_pickups <i>pickup</i>[ <i>pickup</i>...] variable value - set variables for specified pickups.Availible variables: maxplayers, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, pick_order, promotion_role, blacklist_role, whitelist_role, captains_role, require_ready.   
+!set_pickups <i>pickup</i>[ <i>pickup</i>...] variable value - set variables for specified pickups. Availible variables: maxplayers, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, pick_order, promotion_role, blacklist_role, whitelist_role, captains_role, require_ready.   
 
-####CONFIGURATION VARIABLES:
-	For any variable set 'none' value to disable.
+#### CONFIGURATION VARIABLES:
+	For any variable set 'none' value to disable.   
 	admin_role <i>role_name</i> - users with this role will have access to configuration and moderation commands.   
 	moderator_role <i>role_name</i> - users with this role will have access to moderation commands.   
 	captains_role <i>role_name</i> - random captains will be preffered to this role, also '!capfor' command will be only availible for users with this role if its set.   
