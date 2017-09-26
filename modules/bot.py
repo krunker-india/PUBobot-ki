@@ -348,7 +348,7 @@ class Channel():
 			if i.id in scheduler.tasks.keys():
 				scheduler.cancel_task(i.id)
 			client.private_reply(self, i,"**{0}** pickup has been started @ <#{1}>.".format(pickup.name, self.id))
-			for pu in ( pu for pu in active_pickups if i.id in [x.id for x in pu.players]):
+			for pu in ( pu for pu in list(active_pickups) if i.id in [x.id for x in pu.players]):
 				pu.players.remove(i)
 				if not len(pu.players):
 					active_pickups.remove(pu)
