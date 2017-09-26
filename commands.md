@@ -53,27 +53,27 @@
 
 !set_pickups <i>pickup</i>[ <i>pickup</i>...] variable value - set variables for specified pickups. Availible variables: maxplayers, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, pick_order, promotion_role, blacklist_role, whitelist_role, captains_role, require_ready.   
 
-#### CONFIGURATION VARIABLES:
-	For any variable set 'none' value to disable.   
-	admin_role <i>role_name</i> - users with this role will have access to configuration and moderation commands.   
-	moderator_role <i>role_name</i> - users with this role will have access to moderation commands.   
-	captains_role <i>role_name</i> - random captains will be preffered to this role, also '!capfor' command will be only availible for users with this role if its set.   
-	prefix <i>symbol</i> - set prefix before all bot's commands, default '!'.   
-	default_bantime <i>time</i> - set default time for !noadd command.   
-	++_req_players <i>number</i> - set minimum pickup required players amount for '++' command or '!add' command without argument, so users wont add to 1v1/2v2 pickups unintentionally. Default value: 5.   
-	startmsg <i>text</i> - set message on the pickup start. Use %ip% and %password% in <i>text</i> to represent ip and password.   
-	submsg <i>text</i>- set message on !sub command. Use %pickup_name%, %ip%, %password% and %promotion_role% to represent its values.   
-	ip <i>text</i> - set ip wich will be shown in startmsg, submsg and on !ip command.   
-	password <i>text</i> - set password wich will be shown in startmsg, submsg and on !ip command.   
-	maps <i>map_name</i>[, <i>map_name</i>...] - set maps.   
-	pick_captains 0 or 1 - set if bot should suggest captains.   
-	pick_teams <i>value</i> -  set teams pick system the bot should use. Value must be in 'no_teams', 'auto' or 'manual'.   
-		no_teams - bot will only print players list and captains if needed.   
-		auto - bot will print random teams.   
-		manual - users will have to pick teams using teams picking commands.   
-	pick_order <i>order</i> - force specified teams picking order. Example value: 'abababba'.   
-	promotion_role <i>role_name</i> - set promotion_role to highlight on !promote and !sub commands.   
-	promotion_delay <i>time</i> - set time delay between !promote and !sub commands can be used.   
-	blacklist_role <i>role_name</i> - users with this role will not be able to add to specified pickups.   
-	whitelist_role <i>role_name</i> - only users with this role will be able to add to specified pickups.   
-	require_ready none or <i>time</i> - if set users will have to confirm themselves using '!ready' command.   
+##### CONFIGURATION VARIABLES:
+* For any variable set 'none' value to disable.
+* admin_role <i>role_name</i> - users with this role will have access to configuration and moderation commands.
+* moderator_role <i>role_name</i> - users with this role will have access to moderation commands.
+* captains_role <i>role_name</i> - random captains will be preffered to this role, also '!capfor' command will be only availible for users with this role if its set.
+* prefix <i>symbol</i> - set prefix before all bot's commands, default '!'.
+* default_bantime <i>time</i> - set default time for !noadd command.
+* ++_req_players <i>number</i> - set minimum pickup required players amount for '++' command or '!add' command without argument, so users wont add to 1v1/2v2 pickups unintentionally. Default value: 5.
+* startmsg <i>text</i> - set message on the pickup start. Use %ip% and %password% in <i>text</i> to represent ip and password.
+* submsg <i>text</i>- set message on !sub command. Use %pickup_name%, %ip%, %password% and %promotion_role% to represent its values.
+* ip <i>text</i> - set ip wich will be shown in startmsg, submsg and on !ip command.
+* password <i>text</i> - set password wich will be shown in startmsg, submsg and on !ip command.
+* maps <i>map_name</i>[, <i>map_name</i>...] - set maps.
+* pick_captains 0 or 1 - set if bot should suggest captains.
+* pick_teams <i>value</i> -  set teams pick system the bot should use. Value must be in 'no_teams', 'auto' or 'manual'.
+ * no_teams - bot will only print players list and captains if needed.
+ * auto - bot will print random teams.
+ * manual - users will have to pick teams using teams picking commands.
+* pick_order <i>order</i> - force specified teams picking order. Example value: 'abababba'.
+* promotion_role <i>role_name</i> - set promotion_role to highlight on !promote and !sub commands.
+* promotion_delay <i>time</i> - set time delay between !promote and !sub commands can be used.
+* blacklist_role <i>role_name</i> - users with this role will not be able to add to specified pickups.
+* whitelist_role <i>role_name</i> - only users with this role will be able to add to specified pickups.
+* require_ready none or <i>time</i> - if set users will have to confirm themselves using '!ready' command.
