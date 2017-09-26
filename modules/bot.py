@@ -534,7 +534,7 @@ class Channel():
 			filtered_pickups = self.pickups
 		else:
 			if not len(target_pickups):
-				filtered_pickups = list(filter(lambda p: len(p.players)>0 and int(self.cfg["++_req_players"])<=pickup.maxplayers, self.pickups))
+				filtered_pickups = list(filter(lambda p: len(p.players)>0 and int(self.cfg["++_req_players"])<=p.cfg["maxplayers"], self.pickups))
 			else:
 				for i in list(target_pickups):
 					if i in self.pickup_groups.keys():
