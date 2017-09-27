@@ -153,7 +153,10 @@ class Match():
 		return players_highlight
 
 	def print_startmsg_instant(self):
-		startmsg = "*({0})* **{1}** pickup has been started! ".format(str(self.id), self.pickup.name)
+		if self.ranked:
+			startmsg = "*({0})* **{1}** pickup has been started! ".format(str(self.id), self.pickup.name)
+		else:
+			startmsg = "**{0}** pickup has been started! ".format(self.pickup.name)
 		
 		if self.beta_team and self.alpha_team and len(self.players) > 1:
 			startmsg += "\r\n"+self._teams_to_str()+"\r\n"
@@ -197,7 +200,7 @@ class Match():
 		client.notice(self.channel, startmsg)
 
 	def print_startmsg_teams_picking_finish(self):
-		startmsg = "*({0})* **TEAMS READY:**\r\n".format(str(self.id))
+		startmsg = "**TEAMS READY:**\r\n"
 		startmsg += self._teams_to_str()
 		startmsg += "\r\n" + self._startmsg_to_str()
 		if self.map:
@@ -211,7 +214,7 @@ class Match():
 		if self.state == 'none':
 			if self.require_ready:
 				self.state = 'waiting_ready'
-				client.notice(self.channel, "**{0}** pickup is now on waiting ready state!\r\n{1} please type **!ready** or **!notready**.".format(self.pickup.name, ", ".join(["<@{0}>".format(i.id) for i in self.players])))
+				client.notice(self.channel, "*({0})* **{1}** pickup is now on waiting ready state!\r\n{2} please type **!ready** or **!notready**.".format(str(self.id), self.pickup.name, ", ".join(["<@{0}>".format(i.id) for i in self.players])))
 			elif self.pick_teams == 'manual':
 				self.print_startmsg_teams_picking_start()
 				self.state = 'teams_picking'
@@ -685,6 +688,8 @@ class Channel():
 			ip = self.get_value('ip', self.lastgame_pickup)
 			password = self.get_value('password', self.lastgame_pickup)
 			submsg = self.get_value('submsg', self.lastgame_pickup)
+			if not submsg:
+				submsg = "%promotion_role% NEED SUB @ **%pickup_name%**, please connect to %ip%."
 					
 			submsg = submsg.replace("%pickup_name%", self.lastgame_pickup.name)
 			submsg = submsg.replace("%ip%", ip or "")
@@ -816,23 +821,25 @@ class Channel():
 			client.reply(self.channel, member, "Not enough arguments.")
 
 	def subfor(self, member, args):	
-		if match.state not in ["teams_picking", "waiting_report"]:
-			client.reply(self.channel, member, "The match is not on teams picking stage.")
-			return
-
-		if member in match.players:
-			client.reply(self.channel, member, "You are already in the players list!")
-			return
-
 		if len(args):
 			target = client.get_member_by_id(args[0])
 			if not target:
 				client.reply(self.channel, member, "Could not find specified user.")
 				return
 			match = self._match_by_player(target)
+
 			if not match:
 				client.reply(self.channel, member, "Could not find an active match.")
 				return
+
+			if match.state not in ["teams_picking", "waiting_report"]:
+				client.reply(self.channel, member, "The match is not on teams picking stage.")
+				return
+
+			if member in match.players:
+				client.reply(self.channel, member, "You are already in the players list!")
+				return
+
 			for x in [match.unpicked, match.alpha_team, match.beta_team]:
 				if target in x:
 					idx = x.index(target)
