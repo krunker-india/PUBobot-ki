@@ -37,6 +37,7 @@
 !remove_player <i>@nick</i> - remove specified players from all pickups.   
 !reset - removes all players from all pickups.   
 !start <i>pickup</i> - force a pickup to start with deficient players count.   
+!cancel_match <i>match_id</i> - cancel an active match, match_id can be found at the beginning of pickup start message.   
 
 ### CONFIGURATION:
 !enable_pickups - turn on the pickup bot on the channel.   
