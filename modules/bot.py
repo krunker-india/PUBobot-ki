@@ -963,7 +963,7 @@ class Channel():
 					return
 
 			else:
-				pickups = sorted(self.pickups, key=lambda x: len(x.players))
+				pickups = sorted(self.pickups, key=lambda x: len(x.players), reverse=True)
 				if len(pickups[0].players):
 					pickup = pickups[0]
 
