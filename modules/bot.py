@@ -445,6 +445,9 @@ class Channel():
 			elif lower[0]=="teams":
 				self.print_teams(member)
 
+			elif lower[0]=="cancel_match":
+				self.cancel_match(member, lower[1:2], access_level)
+
 			elif lower[0] in ["ready", "r"]:
 				self.set_ready(member, True)
 
@@ -901,6 +904,23 @@ class Channel():
 			client.notice(self.channel, match._teams_picking_to_str())
 		else:
 			client.reply(self.channel, member, "This match does not have teams.")
+
+	def cancel_match(self, member, args, isadmin):
+		if not access_level:
+			client.reply(self.channel, member, "You dont have right for this!")
+			return
+
+		if not len(args):
+			client.reply(self.channel, member, "You must specify the match id.")
+			return
+
+		for i in self.active_matches:
+			if str(i.id) == args[0]:
+				i.cancel_match()
+				client.reply(self.channel, member, "Match *({0})* has been canceled.".format(str(i.id)))
+				return
+
+		client.reply(self.channel, member, "Could not find an active match with id '{0}'".format(args[0]))
 
 	def set_ready(self, member, isready):
 		match = self._match_by_player(member)
