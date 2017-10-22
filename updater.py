@@ -85,6 +85,8 @@ def update_databases():
 						i[3] = None
 					if i[4] == "none":
 						i[4] = None
+					else:
+						i[4] = i[4].lstrip("<@&").rstrip(">")
 					if i[5] == "none":
 						i[5] = None
 					newc.execute("INSERT INTO pickup_configs (channel_id, pickup_name, maxplayers, ip, promotion_role, whitelist_role, blacklist_role, maps) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (channel_id, i[0], i[1], i[2], i[3], i[4], i[5], i[6]))

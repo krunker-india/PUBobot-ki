@@ -330,6 +330,7 @@ class Channel():
 		self.lastgame_cache = stats3.lastgame(self.id)
 		self.lastgame_pickup = None
 		self.oldtopic = '[**no pickups**]'
+		self.to_remove = [] #players
 		
 	def init_pickups(self):
 		pickups = stats3.get_pickups(self.id)
@@ -345,6 +346,7 @@ class Channel():
 			return
 
 		players = list(pickup.players)
+		affected_channels = list()
 		for i in players:
 			if i in allowoffline:
 				allowoffline.remove(i)
@@ -355,6 +357,16 @@ class Channel():
 				pu.players.remove(i)
 				if not len(pu.players):
 					active_pickups.remove(pu)
+				if pu.channel != self:
+					if i not in pu.channel.to_remove:
+						pu.channel.to_remove.append(i)
+					if pu.channel not in affected_channels:
+						affected_channels.append(pu.channel)
+
+		for i in affected_channels:
+			client.notice(i.channel, "{0} was removed from all pickups! (pickup started on another channel)".format(", ".join(["**{0}**".format(i.nick or i.name) for i in i.toremove])))
+			i.toremove = []
+			i.update_topic()
 
 		console.display("DEBUG| active_pickups: {0}".format(str([i.name for i in active_pickups])))
 		console.display("DEBUG| allowoffline: {0}".format(str([i.name for i in allowoffline])))
