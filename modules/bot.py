@@ -364,8 +364,8 @@ class Channel():
 						affected_channels.append(pu.channel)
 
 		for i in affected_channels:
-			client.notice(i.channel, "{0} was removed from all pickups! (pickup started on another channel)".format(", ".join(["**{0}**".format(i.nick or i.name) for i in i.toremove])))
-			i.toremove = []
+			client.notice(i.channel, "{0} was removed from all pickups! (pickup started on another channel)".format(", ".join(["**{0}**".format(i.nick or i.name) for i in i.to_remove])))
+			i.to_remove = []
 			i.update_topic()
 
 		console.display("DEBUG| active_pickups: {0}".format(str([i.name for i in active_pickups])))
