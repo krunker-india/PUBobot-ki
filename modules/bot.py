@@ -1409,6 +1409,7 @@ class Channel():
 
 	def show_pickup_config(self, member, args):
 		if len(args):
+			args[0] = args[0].lower()
 			for pickup in self.pickups:
 				if pickup.name.lower() == args[0]:
 					if len(args) > 1:
