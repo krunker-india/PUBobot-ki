@@ -360,11 +360,11 @@ def save_config(channel_id, cfg, pickups):
 	conn.commit()
 
 def update_channel_config(channel_id, variable, value):
-	c.execute("UPDATE OR IGNORE channels SET "{0}" = ? WHERE channel_id = ?".format(variable), (value, channel_id))
+	c.execute("UPDATE OR IGNORE channels SET \"{0}\" = ? WHERE channel_id = ?".format(variable), (value, channel_id))
 	conn.commit()
 
 def update_pickup_config(channel_id, pickup_name, variable, value):
-	c.execute("UPDATE OR IGNORE pickup_configs SET "{0}" = ? WHERE channel_id = ? and pickup_name = ?".format(variable), (value, channel_id, pickup_name))
+	c.execute("UPDATE OR IGNORE pickup_configs SET \"{0}\" = ? WHERE channel_id = ? and pickup_name = ?".format(variable), (value, channel_id, pickup_name))
 	conn.commit()
 
 def update_pickups(channel_id, pickups):
