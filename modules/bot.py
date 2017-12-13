@@ -837,7 +837,7 @@ class Channel():
 
 	def subfor(self, member, args):	
 		if len(args):
-			target = client.get_member_by_id(args[0])
+			target = client.get_member_by_id(self.channel, args[0])
 			if not target:
 				client.reply(self.channel, member, "Could not find specified user.")
 				return
