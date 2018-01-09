@@ -933,7 +933,7 @@ class Channel():
 			client.reply(self.channel, member, "You must specify the match id.")
 			return
 
-		for i in self.active_matches:
+		for i in active_matches:
 			if str(i.id) == args[0]:
 				i.cancel_match()
 				client.reply(self.channel, member, "Match *({0})* has been canceled.".format(str(i.id)))
