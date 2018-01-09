@@ -924,7 +924,7 @@ class Channel():
 		else:
 			client.reply(self.channel, member, "This match does not have teams.")
 
-	def cancel_match(self, member, args, isadmin):
+	def cancel_match(self, member, args, access_level):
 		if not access_level:
 			client.reply(self.channel, member, "You dont have right for this!")
 			return
