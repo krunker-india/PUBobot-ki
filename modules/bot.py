@@ -349,7 +349,7 @@ class Channel():
 		affected_channels = list()
 
 		pmsg = self.get_value('start_pm_msg', pickup) or "**%pickup_name%** pickup has been started @ %channel%."
-		pmsg.replace("%channel%", "<#{1}>".format(self.id))
+		pmsg.replace("%channel%", "<#{0}>".format(self.id))
 		pmsg.replace("%pickup_name%", pickup.name)
 		pmsg.replace("%ip%", self.get_value('ip', pickup) or "")
 		pmsg.replace("%password%", self.get_value('password', pickup) or "")
