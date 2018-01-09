@@ -347,12 +347,19 @@ class Channel():
 
 		players = list(pickup.players)
 		affected_channels = list()
+
+		pmsg = self.get_value('start_pm_msg', pickup) or "**%pickup_name%** pickup has been started @ %channel%."
+		pmsg.replace("%channel%", "<#{1}>".format(self.id))
+		pmsg.replace("%pickup_name%", pickup.name)
+		pmsg.replace("%ip%", self.get_value('ip', pickup) or "")
+		pmsg.replace("%password%", self.get_value('password', pickup) or "")
+
 		for i in players:
 			if i in allowoffline:
 				allowoffline.remove(i)
 			if i.id in scheduler.tasks.keys():
 				scheduler.cancel_task(i.id)
-			client.private_reply(self, i,"**{0}** pickup has been started @ <#{1}>.".format(pickup.name, self.id))
+			client.private_reply(self, i, pmsg)
 			for pu in ( pu for pu in list(active_pickups) if i.id in [x.id for x in pu.players]):
 				pu.players.remove(i)
 				if not len(pu.players):
@@ -861,7 +868,7 @@ class Channel():
 					x[idx] = member
 					idx = match.players.index(target)
 					match.players[idx] = member
-					client.notice(self.channel, match._teams_picking_to_str)
+					client.notice(self.channel, match._teams_picking_to_str())
 					return
 			client.reply(self.channel, member, "Specified player not found in the match!")
 		else:
@@ -1527,6 +1534,14 @@ class Channel():
 				self.update_channel_config(variable, value)
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
 
+		elif variable == "start_pm_msg":
+			if value.lower() == "none":
+				self.update_channel_config(variable, None)
+				client.reply(self.channel, member, "Removed {0} default value".format(variable))
+			else:
+				self.update_channel_config(variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+
 		elif variable == "submsg":
 			if value.lower() == "none":
 				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
@@ -1686,6 +1701,16 @@ class Channel():
 			pass
 
 		elif variable == "startmsg":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			else:
+				for i in pickups:
+					self.update_pickup_config(i, variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+
+		elif variable == "start_pm_msg":
 			if value.lower() == "none":
 				for i in pickups:
 					self.update_pickup_config(i, variable, None)

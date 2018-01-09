@@ -426,6 +426,12 @@ def check_tables():
 			INSERT INTO nukem_quotes VALUES ("Nobody fucks up our pickups... and lives!");
 			INSERT INTO nukem_quotes VALUES ("My boot, your face; the perfect couple.");
 			""")
+
+	try:
+		c.execute('ALTER TABLE channels ADD COLUMN start_pm_msg TEXT;')
+	except:
+		pass
+
 	conn.commit()
 
 def close():
