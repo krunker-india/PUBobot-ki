@@ -52,6 +52,7 @@ def _channelcfg_to_dict(l):
 	d["whitelist_role"] = l[25]
 	d["require_ready"] = l[26]
 	d["ranked"] = l[27]
+	d["start_pm_msg"] = l[28]
 	return d
 
 def _pickupcfg_to_dict(l):
