@@ -62,7 +62,8 @@
 * prefix <i>symbol</i> - set prefix before all bot's commands, default '!'.
 * default_bantime <i>time</i> - set default time for !noadd command.
 * ++_req_players <i>number</i> - set minimum pickup required players amount for '++' command or '!add' command without argument, so users wont add to 1v1/2v2 pickups unintentionally. Default value: 5.
-* startmsg <i>text</i> - set message on the pickup start. Use %ip% and %password% in <i>text</i> to represent ip and password.
+* startmsg <i>text</i> - set message on a pickup start. Use %ip% and %password% in <i>text</i> to represent ip and password.
+* start_pm_msg <i>text</i> - set private message on a pickup start. Use %pickup_name%, %ip%, %password% and %channel% to represent its values.
 * submsg <i>text</i>- set message on !sub command. Use %pickup_name%, %ip%, %password% and %promotion_role% to represent its values.
 * ip <i>text</i> - set ip wich will be shown in startmsg, submsg and on !ip command.
 * password <i>text</i> - set password wich will be shown in startmsg, submsg and on !ip command.
