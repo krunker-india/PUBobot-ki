@@ -538,6 +538,9 @@ class Channel():
 
 			elif lower[0]=="set_pickups" and msglen > 3:
 				self.configure_pickups(member, msgtup[1:msglen], access_level)
+
+			elif lower[0]=="help":
+				self.help_answer(member, lower[1:])
 			
 	### COMMANDS ###
 
@@ -1391,6 +1394,17 @@ class Channel():
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
+	def help_answer(self, member, args):
+		if args != []:
+			answer = None
+			for p in self.pickups:
+				if args[0] == p.name.lower():
+					answer = self.get_value('help_answer', p)
+		else:
+			answer = self.cfg['help_answer']
+		if answer:
+			client.notice(self.channel, answer)
+
 	def get_value(self, variable, pickup):
 		if pickup.cfg[variable] != None:
 			return pickup.cfg[variable]
@@ -1528,6 +1542,13 @@ class Channel():
 					client.reply(self.channel, member, "++_req_players number must be a positive number less than 50.")
 
 		elif variable == "startmsg":
+			if value.lower() == "none":
+				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
+			else:
+				self.update_channel_config(variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+
+		elif variable == "help_answer":
 			if value.lower() == "none":
 				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
 			else:
@@ -1701,6 +1722,16 @@ class Channel():
 			pass
 
 		elif variable == "startmsg":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			else:
+				for i in pickups:
+					self.update_pickup_config(i, variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+
+		elif variable == "help_answer":
 			if value.lower() == "none":
 				for i in pickups:
 					self.update_pickup_config(i, variable, None)

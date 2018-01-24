@@ -64,7 +64,7 @@
 * ++_req_players <i>number</i> - set minimum pickup required players amount for '++' command or '!add' command without argument, so users wont add to 1v1/2v2 pickups unintentionally. Default value: 5.
 * startmsg <i>text</i> - set message on a pickup start. Use %ip% and %password% in <i>text</i> to represent ip and password.
 * start_pm_msg <i>text</i> - set private message on a pickup start. Use %pickup_name%, %ip%, %password% and %channel% to represent its values.
-* submsg <i>text</i>- set message on !sub command. Use %pickup_name%, %ip%, %password% and %promotion_role% to represent its values.
+* submsg <i>text</i> - set message on !sub command. Use %pickup_name%, %ip%, %password% and %promotion_role% to represent its values.
 * ip <i>text</i> - set ip wich will be shown in startmsg, submsg and on !ip command.
 * password <i>text</i> - set password wich will be shown in startmsg, submsg and on !ip command.
 * maps <i>map_name</i>[, <i>map_name</i>...] - set maps.
@@ -79,3 +79,4 @@
 * blacklist_role <i>role_name</i> - users with this role will not be able to add to specified pickups.
 * whitelist_role <i>role_name</i> - only users with this role will be able to add to specified pickups.
 * require_ready none or <i>time</i> - if set users will have to confirm themselves using '!ready' command.
+* help_answer <i>text</i> - set an answer on !help command.
