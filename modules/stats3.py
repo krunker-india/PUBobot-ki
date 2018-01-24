@@ -53,6 +53,7 @@ def _channelcfg_to_dict(l):
 	d["require_ready"] = l[26]
 	d["ranked"] = l[27]
 	d["start_pm_msg"] = l[28]
+	d["help_answer"] = l[29]
 	return d
 
 def _pickupcfg_to_dict(l):
@@ -77,6 +78,7 @@ def _pickupcfg_to_dict(l):
 	d["captain_role"] = l[17]
 	d["require_ready"] = l[18]
 	d["ranked"] = l[19]
+	d["help_answer"] = l[20]
 	return d
 
 def get_pickups(channel_id):
