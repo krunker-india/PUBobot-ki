@@ -795,7 +795,7 @@ class Channel():
 									who = "<@{0}>".format(match.beta_team[0].id)
 								else:
 									who = "Beta"
-							msg += "{0}'s turn to pick."
+							msg += " {0}'s turn to pick.".format(who)
 						client.notice(self.channel, msg)
 					return
 			client.reply(self.channel, member, "Specified player are not in unpicked players list.")
