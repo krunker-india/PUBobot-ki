@@ -664,7 +664,7 @@ class Channel():
 	def who(self, member, args):
 		templist=[]
 		for pickup in ( pickup for pickup in self.pickups if pickup.players != [] and (pickup.name.lower() in args or args == [])):
-			templist.append('[**{0}** ({1}/{2})] {3}'.format(pickup.name, len(pickup.players), pickup.cfg['maxplayers'], '/'.join([i.nick or i.name for i in pickup.players])))
+			templist.append('[**{0}** ({1}/{2})] {3}'.format(pickup.name, len(pickup.players), pickup.cfg['maxplayers'], '/'.join(["`"+(i.nick or i.name).replace("`","")+"`" for i in pickup.players])))
 		if templist != []:
 			client.notice(self.channel, ' '.join(templist))
 		else:
