@@ -7,7 +7,7 @@
 !expire <i>time</i> - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.   
 !default_expire <i>time</i> or 'afk' - Set your personal default !expire time or set autoremove on afk status.   
 !sub - request sub for last game.   
-!allowoffline - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users).   
+!allowoffline (!ao) - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users).   
 
 ### INFO:
 !who [<i>pickup</i>[ <i>pickup</i> ...]] - list of users added to a pickups.   
