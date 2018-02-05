@@ -422,7 +422,7 @@ class Channel():
 			elif lower[0]=="default_expire":
 				self.default_expire(member,lower[1:msglen])
 
-			elif lower[0]=="allowoffline":
+			elif lower[0]=="allowoffline" or lower[0]=="ao":
 				self.switch_allowoffline(member)
 
 			elif lower[0]=="remove_player" and msglen == 2:
