@@ -767,7 +767,7 @@ class Channel():
 		elif member in match.beta_team[0:1]:
 			team = match.beta_team
 			if match.pick_order:
-				if match.pick_order[match.pick_step] == "b":
+				if match.pick_order[match.pick_step] == "a":
 					client.reply(self.channel, member, "Not your turn to pick.")
 		else:
 			client.reply(self.channel, member, "You are not a captain.")
