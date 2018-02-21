@@ -257,7 +257,7 @@ def top(channel_id, timegap=False, pickup=False):
 		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, ))
 
 	l = c.fetchall()
-	if len(l)
+	if len(l):
 		top = ["{0}: {1}".format(i[0], i[1]) for i in l]
 		return ', '.join(top)
 	return None
