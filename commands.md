@@ -7,7 +7,7 @@
 !expire <i>time</i> - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.   
 !default_expire <i>time</i> or 'afk' - Set your personal default !expire time or set autoremove on afk status.   
 !sub - request sub for last game.   
-!allowoffline (!ao) - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users).   
+!allowoffline or !ao - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users).   
 
 ### INFO:
 !who [<i>pickup</i>[ <i>pickup</i> ...]] - list of users added to a pickups.   
@@ -15,7 +15,7 @@
 !pickup_groups - list of pickup groups configured on the channel.   
 !expire - shows you how much time left before you will be removed from all pickups.   
 !lastgame [<i>@nick</i> or <i>pickup</i>] - show last pickup, or last pickup by specified argument.   
-!top [weekly or monthly or yearly] - shows you most active players.   
+!top [<i>pickup<i>] [weekly or monthly or yearly] - shows you most active players.   
 !stats [<i>nick</i> or <i>pickup</i>] - shows you overall stats or stats for specified argument.   
 !ip [<i>pickup</i> or default] - shows you ip of last pickup or specified pickup.   
 !map <i>pickup</i> - print a random map for specified pickup.   

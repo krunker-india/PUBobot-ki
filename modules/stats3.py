@@ -246,14 +246,21 @@ def stats(channel_id, text=False):
 			percent = int((float(user_total) / total) * 100)
 			return "Stats for **{0}**. Played {1} ({2}%): {3}".format(user_name, user_total, percent, ", ".join(pickups))
 
-def top(channel_id, timegap=False):
-	if not timegap:
-		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, ))
-	else:
+def top(channel_id, timegap=False, pickup=False):
+	if timegap and pickup:
+		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and pickup_name = ? and at > ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10 COLLATE NOCASE", (channel_id, pickup, timegap))
+	elif timegap:
 		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and at > ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, timegap))
+	elif pickup:
+		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and pickup_name = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10 COLLATE NOCASE", (channel_id, pickup))
+	else:
+		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, ))
+
 	l = c.fetchall()
-	top = ["{0}: {1}".format(i[0], i[1]) for i in l]
-	return ', '.join(top)
+	if len(l)
+		top = ["{0}: {1}".format(i[0], i[1]) for i in l]
+		return ', '.join(top)
+	return None
 
 def noadd(channel_id, user_id, user_name, duratation, author_name, reason=''):
 	c.execute("SELECT * FROM bans WHERE user_id = ? AND channel_id = ? AND active = 1", (user_id, channel_id))

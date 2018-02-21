@@ -5,7 +5,7 @@ import time, datetime, re, traceback, random
 from modules import client, config, console, stats3, scheduler, utils
 
 max_expire_time = 6*60*60 #6 hours
-max_bantime = 30*24*60*60 #30 days
+max_bantime = 30*24*60*60*12*3 #30 days * 12 * 3
 max_match_alive_time = 4*60*60 #4 hours
 team_smileys = [":fox:", ":wolf:", ":dog:", ":bear:", ":panda_face:", ":tiger:", ":lion:", ":pig:", ":octopus:", ":boar:", ":spider:", ":scorpion:", ":crab:", ":eagle:", ":shark:", ":bat:", ":gorilla:", ":rhino:", ":dragon_face:", ":deer:"]
 
@@ -1107,30 +1107,39 @@ class Channel():
 		client.notice(self.channel, s)
 
 	def gettop(self, member, arg):
+		pickup = False
+		if len(arg):
+			if arg[0] not in ["daily", "weekly", "monthly", "yearly"]:
+				pickup = arg[0]
+				arg.pop(0)
+
 		if arg == []:
-			top10=stats3.top(self.id)
-			client.notice(self.channel, "Top 10 of all time: "+top10)
+			timegap = False
+			reply = "Top 10 of all time"
 		elif arg[0] == "daily":
 			timegap = int(time.time()) - 86400
-			top10=stats3.top(self.id, timegap)
-			client.notice(self.channel, "Top 10 of the day: "+top10)
+			reply = "Top 10 of the day"
 		elif arg[0] == "weekly":
 			timegap = int(time.time()) - 604800
-			top10=stats3.top(self.id, timegap)
-			client.notice(self.channel, "Top 10 of the week: "+top10)
-
+			reply = "Top 10 of the week"
 		elif arg[0] == "monthly":
 			timegap = int(time.time()) - 2629744
-			top10=stats3.top(self.id, timegap)
-			client.notice(self.channel, "Top 10 of the month: "+top10)
-
+			reply = "Top 10 of the month"
 		elif arg[0] == "yearly":
 			timegap = int(time.time()) - 31556926
-			top10=stats3.top(self.id, timegap)
-			client.notice(self.channel, "Top 10 of the year: "+top10)
-
+			reply = "Top 10 of the year"
 		else:
 			client.reply(self.channel, member, "Bad argument.")
+			return
+		
+		top10=stats3.top(self.id, timegap, pickup)
+		if top10:
+			if pickup:
+				client.reply(self.channel, member, "{0} for {1}: {2}".format(reply, pickup, top10))
+			else:
+				client.reply(self.channel, member, "{0}: {1}".format(reply, top10))
+		else:
+			client.reply(self.channel, member, "Nothing found.")
 
 	def getnoadds(self, member, args):
 		if args == []:
