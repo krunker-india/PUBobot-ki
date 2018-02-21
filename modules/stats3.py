@@ -248,11 +248,11 @@ def stats(channel_id, text=False):
 
 def top(channel_id, timegap=False, pickup=False):
 	if timegap and pickup:
-		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and pickup_name = ? and at > ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10 COLLATE NOCASE", (channel_id, pickup, timegap))
+		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and pickup_name = ? and at > ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, pickup, timegap))
 	elif timegap:
 		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and at > ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, timegap))
 	elif pickup:
-		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and pickup_name = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10 COLLATE NOCASE", (channel_id, pickup))
+		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? and pickup_name = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, pickup))
 	else:
 		c.execute("SELECT user_name, count(user_id) FROM player_pickups WHERE channel_id = ? GROUP BY user_id ORDER by count(user_id) DESC LIMIT 10", (channel_id, ))
 

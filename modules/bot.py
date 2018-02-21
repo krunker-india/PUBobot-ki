@@ -477,7 +477,7 @@ class Channel():
 				self.getstats(member,msgtup[1:2])
 
 			elif lower[0]=="top":
-				self.gettop(member, lower[1:msglen])
+				self.gettop(member, msgtup[1:msglen])
 
 			elif lower[0]=="add_pickups":
 				self.add_pickups(member, msgtup[1:msglen], access_level)
