@@ -90,8 +90,8 @@ class Match():
 				self.alpha_team = []
 				self.beta_team = []
 				while len(unpicked) > 1:
-					self.alpha_team.append(unpicked.pop(0))
-					self.beta_team.append(unpicked.pop(0))
+					self.alpha_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
+					self.beta_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
 				if len(unpicked):
 					self.alpha_team.append(unpicked.pop(0))
 		else: #for 1v1 pickups
