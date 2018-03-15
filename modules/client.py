@@ -58,6 +58,18 @@ def find_role_by_name(channel, name):
 			return role
 	return None
 
+def edit_role(server,role,**fields):
+	global Client
+	#print(fields)
+	#Client.loop.run_until_complete(Client.edit_role(server, role, mentionable=True))
+	import asyncio
+	#asyncio.run_coroutine_threadsafe(Client.edit_role(server, role, mentionable=True), Client.loop)
+	asyncio.ensure_future(
+		Client.edit_role(server, role, mentionable=True),
+		loop=Client.loop
+	)
+
+
 def notice(channel, msg):
 	send_queue.append(['msg', channel, msg])
 

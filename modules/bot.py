@@ -317,6 +317,7 @@ class Channel():
 		self.channel = channel
 		self.id = channel.id
 		self.name = "{0}>{1}".format(channel.server.name,channel.name)
+		self.server = channel.server
 		self.cfg = cfg
 		self.update_channel_config('channel_name', channel.name)
 		self.update_channel_config('server_name', channel.server.name)
@@ -1013,7 +1014,17 @@ class Channel():
 				promotion_role = self.get_value('promotion_role', pickup)
 				players_left = pickup.cfg['maxplayers']-len(pickup.players)
 				if promotion_role:
+					roles = self.server.roles
+					role_obj = next(x for x in roles if x.id==promotion_role)
+					print(role_obj.mentionable,role_obj.name)
+					role_mentionable=role_obj.mentionable
+					if not role_mentionable:
+						print('edit role')
+						client.edit_role(self.server,role_obj,mentionable=True)
 					client.notice(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
+					#if not role_mentionable:
+						#print('edit role back')
+						#client.edit_role(self.server, role_obj, mentionable=False)
 				else:
 					client.notice(self.channel, "Please !add {0}, {1} players to go!".format(pickup.name, players_left))
 			else:
