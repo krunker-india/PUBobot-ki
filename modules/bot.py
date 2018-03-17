@@ -1016,15 +1016,20 @@ class Channel():
 				if promotion_role:
 					roles = self.server.roles
 					role_obj = next(x for x in roles if x.id==promotion_role)
-					print(role_obj.mentionable,role_obj.name)
 					role_mentionable=role_obj.mentionable
 					if not role_mentionable:
-						print('edit role')
-						client.edit_role(self.server,role_obj,mentionable=True)
+						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
+						client.edit_role(**kwargs)
+						remove_role_players = []
+						for player in [x for x in pickup.players if role_obj in x.roles]:
+							remove_role_players.append(player)
+							client.remove_roles(player,role_obj)
 					client.notice(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
-					#if not role_mentionable:
-						#print('edit role back')
-						#client.edit_role(self.server, role_obj, mentionable=False)
+					if not role_mentionable:
+						for player in remove_role_players:
+							client.add_roles(player, role_obj)
+						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
+						client.edit_role(**kwargs)
 				else:
 					client.notice(self.channel, "Please !add {0}, {1} players to go!".format(pickup.name, players_left))
 			else:
