@@ -90,8 +90,8 @@ class Match():
 				self.alpha_team = []
 				self.beta_team = []
 				while len(unpicked) > 1:
-					self.alpha_team.append(unpicked.pop(0))
-					self.beta_team.append(unpicked.pop(0))
+					self.alpha_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
+					self.beta_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
 				if len(unpicked):
 					self.alpha_team.append(unpicked.pop(0))
 		else: #for 1v1 pickups
@@ -349,18 +349,20 @@ class Channel():
 		players = list(pickup.players)
 		affected_channels = list()
 
-		pmsg = self.get_value('start_pm_msg', pickup) or "**%pickup_name%** pickup has been started @ %channel%."
-		pmsg = pmsg.replace("%channel%", "<#{0}>".format(self.id))
-		pmsg = pmsg.replace("%pickup_name%", pickup.name)
-		pmsg = pmsg.replace("%ip%", self.get_value('ip', pickup) or "")
-		pmsg = pmsg.replace("%password%", self.get_value('password', pickup) or "")
+		pmsg = self.get_value('start_pm_msg', pickup)
+		if pmsg:
+			pmsg = pmsg.replace("%channel%", "<#{0}>".format(self.id))
+			pmsg = pmsg.replace("%pickup_name%", pickup.name)
+			pmsg = pmsg.replace("%ip%", self.get_value('ip', pickup) or "")
+			pmsg = pmsg.replace("%password%", self.get_value('password', pickup) or "")
 
 		for i in players:
 			if i in allowoffline:
 				allowoffline.remove(i)
 			if i.id in scheduler.tasks.keys():
 				scheduler.cancel_task(i.id)
-			client.private_reply(self, i, pmsg)
+			if pmsg:
+				client.private_reply(self, i, pmsg)
 			for pu in ( pu for pu in list(active_pickups) if i.id in [x.id for x in pu.players]):
 				pu.players.remove(i)
 				if not len(pu.players):
