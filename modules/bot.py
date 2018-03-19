@@ -442,7 +442,13 @@ class Channel():
 
 			elif lower[0]=="promote":
 				self.promote_pickup(member,lower[1:2])
-		
+
+			elif lower[0]=="subscribe":
+				self.subscribe(member,lower[1:msglen],False)
+
+			elif lower[0]=="unsubscribe":
+				self.subscribe(member,lower[1:msglen],True)
+				
 			elif lower[0]=="lastgame":
 				self.lastgame(member,msgtup[1:msglen])
 
@@ -1044,6 +1050,31 @@ class Channel():
 
 		else:
 			client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['promotion_delay'])-self.newtime+self.oldtime)))))
+
+	def subscribe(self,member,args,unsub):
+		print(args,type(args))
+		if len(args)<1:
+			client.notice(self.channel, "Specify pickup(s).")
+			return
+		for arg in args:
+			pickup = False
+			for i in self.pickups:
+				if i.name.lower() == arg:
+					pickup = i
+					break
+			if not pickup:
+				client.notice(self.channel, "Pickup '{0}' not found on this channel.".format(arg))
+				continue
+			promotion_role = self.get_value('promotion_role', pickup)
+			if promotion_role:
+				roles = self.server.roles
+				role_obj = next(x for x in roles if x.id == promotion_role)
+				if not unsub:
+					client.add_roles(member, role_obj)
+				else:
+					client.remove_roles(member, role_obj)
+			else:
+				client.notice(self.channel, "Promotion role for '{0}' not set.".format(arg))
 
 	def expire(self, member,timelist):
 		added = False
