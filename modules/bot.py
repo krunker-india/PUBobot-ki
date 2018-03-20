@@ -1026,7 +1026,7 @@ class Channel():
 					try:
 						role_obj = next(x for x in roles if x.id==promotion_role)
 					except StopIteration:
-						client.notice(self.channel, "Role doesn't exists.")
+						client.notice(self.channel, "Role doesn't exist.")
 						return
 					role_mentionable=role_obj.mentionable
 					if not role_mentionable:
@@ -1075,7 +1075,7 @@ class Channel():
 				try:
 					role_obj = next(x for x in roles if x.id == promotion_role)
 				except StopIteration:
-					client.notice(self.channel, "Role doesn't exists.")
+					client.notice(self.channel, "Role doesn't exist.")
 					continue
 				if not unsub:
 					client.add_roles(member, role_obj)
