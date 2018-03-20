@@ -448,7 +448,7 @@ class Channel():
 
 			elif lower[0]=="unsubscribe":
 				self.subscribe(member,lower[1:msglen],True)
-				
+
 			elif lower[0]=="lastgame":
 				self.lastgame(member,msgtup[1:msglen])
 
@@ -1023,7 +1023,11 @@ class Channel():
 				players_left = pickup.cfg['maxplayers']-len(pickup.players)
 				if promotion_role:
 					roles = self.server.roles
-					role_obj = next(x for x in roles if x.id==promotion_role)
+					try:
+						role_obj = next(x for x in roles if x.id==promotion_role)
+					except StopIteration:
+						client.notice(self.channel, "Role doesn't exists.")
+						return
 					role_mentionable=role_obj.mentionable
 					if not role_mentionable:
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
@@ -1068,7 +1072,11 @@ class Channel():
 			promotion_role = self.get_value('promotion_role', pickup)
 			if promotion_role:
 				roles = self.server.roles
-				role_obj = next(x for x in roles if x.id == promotion_role)
+				try:
+					role_obj = next(x for x in roles if x.id == promotion_role)
+				except StopIteration:
+					client.notice(self.channel, "Role doesn't exists.")
+					continue
 				if not unsub:
 					client.add_roles(member, role_obj)
 				else:
