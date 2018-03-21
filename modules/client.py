@@ -58,6 +58,15 @@ def find_role_by_name(channel, name):
 			return role
 	return None
 
+def edit_role(**fields):
+	send_queue.append(['edit_role', fields])
+
+def remove_roles(member, *roles):
+	send_queue.append(['remove_roles', member, roles])
+
+def add_roles(member, *roles):
+	send_queue.append(['add_roles', member, roles])
+
 def notice(channel, msg):
 	send_queue.append(['msg', channel, msg])
 

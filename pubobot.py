@@ -51,6 +51,30 @@ def bot_run():
 							console.display("Leaving {0}...".format(serv.name))
 							yield from c.leave_server(serv)
 							break
+				elif data[0] == 'edit_role':
+					kwargs = data[1]
+					console.display('EDIT ROLE| /{0}'.format(kwargs))
+					if not client.silent:
+						try:
+							yield from c.edit_role(**kwargs)
+						except:
+							console.display("ERROR| Could not edit role. "+str(sys.exc_info()))
+				elif data[0] == 'remove_roles':
+					member, roles = data[1], data[2]
+					console.display('REMOVE ROLES| /{0}: {1}'.format(member, roles))
+					if not client.silent:
+						try:
+							yield from c.remove_roles(member,*roles)
+						except:
+							console.display("ERROR| Could not remove role. " + str(sys.exc_info()))
+				elif data[0] == 'add_roles':
+					member, roles = data[1], data[2]
+					console.display('ADD ROLES| /{0}: {1}'.format(member, roles))
+					if not client.silent:
+						try:
+							yield from c.add_roles(member,*roles)
+						except:
+							console.display("ERROR| Could not add role. " + str(sys.exc_info()))
 		else:
 			console.display("ERROR| Connection to server has been closed unexpectedly.")
 			console.terminate()
