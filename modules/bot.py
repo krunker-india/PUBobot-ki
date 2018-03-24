@@ -1358,8 +1358,12 @@ class Channel():
 					target = client.get_member_by_id(self.channel, targetid)
 					if target:
 						phrase = ' '.join(args[1:len(args)])
+						if phrase.lower == "none":
+							phrase = None
+							client.reply(self.channel, member, "Phrase has been removed.")
+						else:
+							client.reply(self.channel, member, "Phrase has been set.")
 						stats3.set_phrase(self.id, target.id, phrase)
-						client.reply(self.channel, member, "Phrase has been set.")
 					else:
 						client.reply(self.channel, member, "Could not found specified Member on the server, is the highlight valid?")
 				else:
