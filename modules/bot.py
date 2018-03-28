@@ -1358,7 +1358,7 @@ class Channel():
 					target = client.get_member_by_id(self.channel, targetid)
 					if target:
 						phrase = ' '.join(args[1:len(args)])
-						if phrase.lower == "none":
+						if phrase.lower() == "none":
 							phrase = None
 							client.reply(self.channel, member, "Phrase has been removed.")
 						else:
