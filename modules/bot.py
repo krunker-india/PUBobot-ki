@@ -1029,18 +1029,23 @@ class Channel():
 					try:
 						role_obj = next(x for x in roles if x.id==promotion_role)
 					except StopIteration:
-						client.notice(self.channel, "Role doesn't exist.")
+						client.notice(self.channel, "Specified promotion role doesn't exist on the server.")
 						return
-					role_mentionable=role_obj.mentionable
-					if not role_mentionable:
+
+					edit_role = False
+					if role_obj.mentionable:
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
-						await client.edit_role(**kwargs)
+						try:
+							await client.edit_role(**kwargs)
+							edit_role = True
+						except: pass
+					if edit_role:
 						remove_role_players = []
 						for player in [x for x in pickup.players if role_obj in x.roles]:
 							remove_role_players.append(player)
 							await client.remove_roles(player,role_obj)
 					client.notice(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
-					if not role_mentionable:
+					if edit_role:
 						for player in remove_role_players:
 							await client.add_roles(player, role_obj)
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
