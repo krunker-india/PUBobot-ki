@@ -385,7 +385,7 @@ class Channel():
 		Match(pickup, players)
 		self.lastgame_pickup = pickup
 
-	def processmsg(self, content, member): #parse PRIVMSG event
+	async def processmsg(self, content, member): #parse PRIVMSG event
 		msgtup = content.split(" ")
 		lower = [i.lower() for i in msgtup]
 		msglen = len(lower)
@@ -441,13 +441,13 @@ class Channel():
 				self.replypickups(member)
 
 			elif lower[0]=="promote":
-				self.promote_pickup(member,lower[1:2])
+				await self.promote_pickup(member,lower[1:2])
 
 			elif lower[0]=="subscribe":
-				self.subscribe(member,lower[1:msglen],False)
+				await self.subscribe(member,lower[1:msglen],False)
 
 			elif lower[0]=="unsubscribe":
-				self.subscribe(member,lower[1:msglen],True)
+				await self.subscribe(member,lower[1:msglen],True)
 
 			elif lower[0]=="lastgame":
 				self.lastgame(member,msgtup[1:msglen])
@@ -550,6 +550,9 @@ class Channel():
 
 			elif lower[0]=="help":
 				self.help_answer(member, lower[1:])
+
+			elif lower[0]=="hello":
+				client.reply(self.channel, member, "Hellou!")
 			
 	### COMMANDS ###
 
@@ -995,7 +998,7 @@ class Channel():
 			client.notice(self.channel, "No pickups configured on this channel.")
 
 #next also fix !sub
-	def promote_pickup(self, member, args):
+	async def promote_pickup(self, member, args):
 		if not len(self.pickups):
 			client.reply(self.channel, member, "This channel does not have any pickups configured.")
 			return
@@ -1031,17 +1034,17 @@ class Channel():
 					role_mentionable=role_obj.mentionable
 					if not role_mentionable:
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
-						client.edit_role(**kwargs)
+						await client.edit_role(**kwargs)
 						remove_role_players = []
 						for player in [x for x in pickup.players if role_obj in x.roles]:
 							remove_role_players.append(player)
-							client.remove_roles(player,role_obj)
+							await client.remove_roles(player,role_obj)
 					client.notice(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
 					if not role_mentionable:
 						for player in remove_role_players:
-							client.add_roles(player, role_obj)
+							await client.add_roles(player, role_obj)
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
-						client.edit_role(**kwargs)
+						await client.edit_role(**kwargs)
 				else:
 					client.notice(self.channel, "Please !add {0}, {1} players to go!".format(pickup.name, players_left))
 			else:
@@ -1055,7 +1058,7 @@ class Channel():
 		else:
 			client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['promotion_delay'])-self.newtime+self.oldtime)))))
 
-	def subscribe(self,member,args,unsub):
+	async def subscribe(self,member,args,unsub):
 		print(args,type(args))
 		if len(args)<1:
 			client.notice(self.channel, "Specify pickup(s).")
@@ -1078,9 +1081,9 @@ class Channel():
 					client.notice(self.channel, "Role doesn't exist.")
 					continue
 				if not unsub:
-					client.add_roles(member, role_obj)
+					await client.add_roles(member, role_obj)
 				else:
-					client.remove_roles(member, role_obj)
+					await client.remove_roles(member, role_obj)
 			else:
 				client.notice(self.channel, "Promotion role for '{0}' not set.".format(arg))
 
