@@ -9,6 +9,7 @@ import re
 def init():
 	global conn, c
 	conn = sqlite3.connect("database.sqlite3")
+	conn.row_factory = sqlite3.Row
 	c = conn.cursor()
 	check_tables()
 
@@ -18,76 +19,15 @@ def get_channels():
 	chans = c.fetchall()
 	l = []
 	for chan in chans:
-		d = _channelcfg_to_dict(chan)
-		l.append(d)
+		l.append(dict(chan))
 	return l
-
-def _channelcfg_to_dict(l):
-	d = dict()
-	d["server_id"] = l[0]
-	d["server_name"] = l[1]
-	d["channel_id"] = l[2]
-	d["channel_name"] = l[3]
-	d["premium"] = l[4]
-	d["first_init"] = l[5]
-	d["admin_id"] = l[6]
-	d["admin_role"] = l[7]
-	d["moderator_role"] = l[8]
-	d["captains_role"] = l[9]
-	d["noadd_role"] = l[10]
-	d["prefix"] = l[11]
-	d["default_bantime"] = l[12]
-	d["++_req_players"] = l[13]
-	d["startmsg"] = l[14]
-	d["submsg"] = l[15]
-	d["ip"] = l[16]
-	d["password"] = l[17]
-	d["maps"] = l[18]
-	d["pick_captains"] = l[19]
-	d["pick_teams"] = l[20]
-	d["pick_order"] = l[21]
-	d["promotion_role"] = l[22]
-	d["promotion_delay"] = l[23]
-	d["blacklist_role"] = l[24]
-	d["whitelist_role"] = l[25]
-	d["require_ready"] = l[26]
-	d["ranked"] = l[27]
-	d["start_pm_msg"] = l[28]
-	d["help_answer"] = l[29]
-	return d
-
-def _pickupcfg_to_dict(l):
-	d = dict()
-	d["channel_id"] = l[0]
-	d["pickup_name"] = l[1]
-	d["maxplayers"] = l[2]
-	d["minplayers"] = l[3]
-	d["startmsg"] = l[4]
-	d["start_pm_msg"] = l[5]
-	d["submsg"] = l[6]
-	d["ip"] = l[7]
-	d["password"] = l[8]
-	d["maps"] = l[9]
-	d["pick_captains"] = l[10]
-	d["captains_role"] = l[11]
-	d["pick_teams"] = l[12]
-	d["pick_order"] = l[13]
-	d["promotion_role"] = l[14]
-	d["blacklist_role"] = l[15]
-	d["whitelist_role"] = l[16]
-	d["captain_role"] = l[17]
-	d["require_ready"] = l[18]
-	d["ranked"] = l[19]
-	d["help_answer"] = l[20]
-	return d
 
 def get_pickups(channel_id):
 	c.execute("SELECT * from pickup_configs WHERE channel_id = ?", (channel_id, ))
 	pickups = c.fetchall()
 	l = []
 	for pickup in pickups:
-		d = _pickupcfg_to_dict(pickup)
-		l.append(d)
+		l.append(dict(pickup))
 	return l
 
 def get_pickup_groups(channel_id):
@@ -111,15 +51,14 @@ def new_channel(server_id, server_name, channel_id, channel_name, admin_id):
 	conn.commit()
 	c.execute("SELECT * from channels WHERE channel_id = ?", (channel_id, ))
 	chan = c.fetchone()
-	d = _channelcfg_to_dict(chan)
-	return d
+	return dict(chan)
 
 def new_pickup(channel_id, pickup_name, maxplayers):
 	c.execute("INSERT INTO pickup_configs (channel_id, pickup_name, maxplayers) VALUES (?, ?, ?)", (channel_id, pickup_name, maxplayers))
 	conn.commit()
 	c.execute("SELECT * from pickup_configs WHERE channel_id = ? AND pickup_name = ?", (channel_id, pickup_name))
 	result = c.fetchone()
-	return _pickupcfg_to_dict(result)
+	return dict(result)
 	
 
 def delete_pickup(channel_id, pickup_name):
