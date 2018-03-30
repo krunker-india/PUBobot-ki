@@ -39,6 +39,7 @@ async def send(): #send messages in queue
 	if len(send_queue):
 		dest, msg = send_queue.pop(0)
 		try:
+			console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
 			await c.send_message(dest, msg)
 		except Exception as e:
 			console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))

@@ -384,7 +384,7 @@ def update_pickups(channel_id, pickups):
 
 def check_tables():
 	c.execute("SELECT name FROM sqlite_master WHERE type='table'")
-	tables = c.fetchall()
+	tables = [i[0] for i in c.fetchall()]
 	
 	if 'bans' not in tables:
 		c.execute("CREATE TABLE IF NOT EXISTS `bans` ( `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `active` BLOB, `at` INTEGER, `duratation` INTEGER, `reason` TEXT, `author_name` TEXT, `unban_author_name` TEXT )")
