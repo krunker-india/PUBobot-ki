@@ -101,6 +101,8 @@ async def on_ready():
 
 @c.event
 async def on_message(message):
+	if message.author.bot:
+		return
 	if message.channel.is_private and message.author.id != c.user.id:
 		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 		notice(message.channel, config.cfg.HELPINFO)
@@ -138,8 +140,7 @@ async def on_message(message):
 async def on_member_update(before, after):
 	#console.display("DEBUG| {0} changed status from {1}  to -{2}-".format(after.name, before.status, after.status))
 	if str(after.status) in ['idle', 'offline']:
-		pass
-	#	await bot.update_member(after)
+		bot.update_member(after)
 
 ### connect to discord ###
 def run():
