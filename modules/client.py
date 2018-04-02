@@ -71,6 +71,9 @@ async def remove_roles(member, *roles):
 async def add_roles(member, *roles):
 	await c.add_roles(member,*roles)
 
+async def send_message(dest, msg): #send msg asap, dont put it in queue
+	await c.send_message(dest, msg)
+
 def notice(channel, msg):
 	send_queue.append([channel, msg])
 

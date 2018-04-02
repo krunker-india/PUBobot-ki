@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import time, datetime, re, traceback, random
+from discord import errors
 from modules import client, config, console, stats3, scheduler, utils
 
 max_expire_time = 6*60*60 #6 hours
@@ -453,7 +454,7 @@ class Channel():
 				self.lastgame(member,msgtup[1:msglen])
 
 			elif lower[0]=="sub":
-				self.sub_request(member)
+				await self.sub_request(member)
 
 			elif lower[0] in ["cointoss", "ct"]:
 				self.cointoss(member, lower[1:2])
@@ -712,7 +713,7 @@ class Channel():
 		else:
 			client.notice(self.channel, "No pickups found.")
 
-	def sub_request(self, member):
+	async def sub_request(self, member):
 		if not self.lastgame_pickup:
 			client.reply(self.channel, member, "No pickups played yet.")
 			return
@@ -732,7 +733,30 @@ class Channel():
 			submsg = submsg.replace("%ip%", ip or "")
 			submsg = submsg.replace("%password%", password or "") 
 			submsg = submsg.replace("%promotion_role%", promotion_role or "")
-			client.notice(self.channel, submsg)
+
+			edit_role = False
+			if promotion_role:
+				roles = self.server.roles
+				try:
+					role_obj = next(x for x in roles if x.id==promotion_role)
+				except StopIteration:
+					client.notice(self.channel, "Specified promotion role doesn't exist on the server.")
+					return
+
+				if not role_obj.mentionable:
+					kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
+					try:
+						await client.edit_role(**kwargs)
+						edit_role = True
+					except: pass
+
+			await client.send_message(self.channel, submsg)
+
+			if edit_role:
+				for player in remove_role_players:
+					await client.add_roles(player, role_obj)
+				kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
+				await client.edit_role(**kwargs)
 
 			self.oldtime=self.newtime
 		else:
@@ -1033,7 +1057,7 @@ class Channel():
 						return
 
 					edit_role = False
-					if role_obj.mentionable:
+					if not role_obj.mentionable:
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
 						try:
 							await client.edit_role(**kwargs)
@@ -1044,7 +1068,7 @@ class Channel():
 						for player in [x for x in pickup.players if role_obj in x.roles]:
 							remove_role_players.append(player)
 							await client.remove_roles(player,role_obj)
-					client.notice(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
+					await client.send_message(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
 					if edit_role:
 						for player in remove_role_players:
 							await client.add_roles(player, role_obj)
@@ -1085,10 +1109,13 @@ class Channel():
 				except StopIteration:
 					client.notice(self.channel, "Role doesn't exist.")
 					continue
-				if not unsub:
-					await client.add_roles(member, role_obj)
-				else:
-					await client.remove_roles(member, role_obj)
+				try:
+					if not unsub:
+						await client.add_roles(member, role_obj)
+					else:
+						await client.remove_roles(member, role_obj)
+				except errors.Forbidden:
+					client.reply(self.channel, member, "Insufficient rights to do the promotion role manipulation.")
 			else:
 				client.notice(self.channel, "Promotion role for '{0}' not set.".format(arg))
 
