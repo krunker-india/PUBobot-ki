@@ -68,7 +68,6 @@ class Match():
 			self.players_ready = [False for i in players]
 
 		self.alpha_icon, self.beta_icon = random.sample(team_smileys, 2)
-		print(str(self.pick_teams))
 		if len(players) > 2:
 			if self.pick_teams == 'no_teams' or self.pick_teams == None:
 				self.alpha_team = None
@@ -275,16 +274,13 @@ class Match():
 
 	def ready_show(self):
 		l = []
-		print(self.players)
 		for idx in range(0, len(self.players)):
-			print(self.players[idx].name)
 			if self.players_ready[idx]:
 				status = ":ok:"
 			else:
 				status = ":zzz:"
 			l.append("{0} {1}".format(self.players[idx].nick or self.players[idx].name, status))
 
-		print(l)
 		client.notice(self.channel, " | ".join(l))
 
 	def	ready_fallback(self): #if ready event failed
@@ -379,8 +375,8 @@ class Channel():
 			i.to_remove = []
 			i.update_topic()
 
-		console.display("DEBUG| active_pickups: {0}".format(str([i.name for i in active_pickups])))
-		console.display("DEBUG| allowoffline: {0}".format(str([i.name for i in allowoffline])))
+		#console.display("DEBUG| active_pickups: {0}".format(str([i.name for i in active_pickups])))
+		#console.display("DEBUG| allowoffline: {0}".format(str([i.name for i in allowoffline])))
 		pickup.players = []
 		self.update_topic()
 		Match(pickup, players)
@@ -1087,7 +1083,6 @@ class Channel():
 			client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['promotion_delay'])-self.newtime+self.oldtime)))))
 
 	async def subscribe(self,member,args,unsub):
-		print(args,type(args))
 		if len(args)<1:
 			client.notice(self.channel, "Specify pickup(s).")
 			return
