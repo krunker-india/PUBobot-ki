@@ -734,6 +734,7 @@ class Channel():
 			submsg = submsg.replace("%password%", password or "") 
 			submsg = submsg.replace("%promotion_role%", promotion_role or "")
 
+			promotion_role = self.get_value('promotion_role', self.lastgame_pickup)
 			edit_role = False
 			if promotion_role:
 				roles = self.server.roles
@@ -753,8 +754,6 @@ class Channel():
 			await client.send_message(self.channel, submsg)
 
 			if edit_role:
-				for player in remove_role_players:
-					await client.add_roles(player, role_obj)
 				kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
 				await client.edit_role(**kwargs)
 
