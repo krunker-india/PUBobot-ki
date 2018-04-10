@@ -1086,6 +1086,8 @@ class Channel():
 		if len(args)<1:
 			client.notice(self.channel, "Specify pickup(s).")
 			return
+
+		found_roles = []
 		for arg in args:
 			pickup = False
 			for i in self.pickups:
@@ -1093,25 +1095,36 @@ class Channel():
 					pickup = i
 					break
 			if not pickup:
-				client.notice(self.channel, "Pickup '{0}' not found on this channel.".format(arg))
-				continue
+				client.reply(self.channel, member, "Pickup '{0}' not found on this channel.".format(arg))
+				return
 			promotion_role = self.get_value('promotion_role', pickup)
 			if promotion_role:
 				roles = self.server.roles
 				try:
 					role_obj = next(x for x in roles if x.id == promotion_role)
+					if role_obj not in found_roles:
+						if not (unsub ^ bool(role_obj in member.roles)): #inverted xor =)
+							found_roles.append(role_obj)
 				except StopIteration:
-					client.notice(self.channel, "Role doesn't exist.")
-					continue
-				try:
-					if not unsub:
-						await client.add_roles(member, role_obj)
-					else:
-						await client.remove_roles(member, role_obj)
-				except errors.Forbidden:
-					client.reply(self.channel, member, "Insufficient rights to do the promotion role manipulation.")
+					client.reply(self.channel, member, "Promotion role for '{0}' pickups doesn't exist on the server.".format(i.name))
+					return
 			else:
-				client.notice(self.channel, "Promotion role for '{0}' not set.".format(arg))
+				client.reply(self.channel, member, "Promotion role for '{0}' pickup is not set.".format(i.name))
+				return
+
+		if not len(found_roles):
+			client.reply(self.channel, member, "No changes to apply.")
+			return
+
+		try:
+			if unsub:
+				await client.remove_roles(member, *found_roles)
+				client.reply(self.channel, member, "Done, removed {0} roles from you.".format(len(found_roles)))
+			else:
+				await client.add_roles(member, *found_roles)
+				client.reply(self.channel, member, "Done, added {0} roles to you.".format(len(found_roles)))
+		except errors.Forbidden:
+			client.reply(self.channel, member, "Insufficient server rights to do the promotion roles manipulation.")
 
 	def expire(self, member,timelist):
 		added = False
