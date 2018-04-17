@@ -387,7 +387,7 @@ class Channel():
 		lower = [i.lower() for i in msgtup]
 		msglen = len(lower)
 		role_ids = [i.id for i in member.roles]
-		if self.cfg['admin_role'] in role_ids or member.id == self.cfg['admin_id']:
+		if self.cfg['admin_role'] in role_ids or member.id == self.cfg['admin_id'] or self.channel.permissions_for(member).administrator:
 			access_level = 2
 		elif self.cfg['moderator_role'] in role_ids:
 			access_level = 1
