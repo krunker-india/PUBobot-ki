@@ -57,7 +57,7 @@ class Match():
 						self.captains.append(p)
 						candidates.remove(p)
 					else:
-						p = random.choice(self.players)
+						p = random.choice([x for x in self.players if x not in self.captains])
 						self.captains.append(p)
 			else:
 				self.captains = random.sample(self.players, 2)
