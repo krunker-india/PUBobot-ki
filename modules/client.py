@@ -1,47 +1,32 @@
 #!/usr/bin/python2
 # encoding: utf-8
-import discord
+import discord, traceback
 from modules import console, config, bot, stats3
 
-def init(c):
-	global silent, lastsend, send_queue, Client, ready
-	
-	silent = False
-	send_queue = [] # Queue for sending messages
-	lastsend = 0
-	Client = c
+def init():
+	global ready, send_queue
 	ready = False
-	
-def process_connection():
-	global username, ready
+	send_queue = []
 
-	console.display('SYSTEM| Logged in as: {0}, ID: {1}'.format(Client.user.name, Client.user.id))
+def process_connection():
+	global ready
+
+	console.display('SYSTEM| Logged in as: {0}, ID: {1}'.format(c.user.name, c.user.id))
 
 	channels = stats3.get_channels()
 	for cfg in channels:
-		discord_channel = Client.get_channel(cfg['channel_id'])
+		discord_channel = c.get_channel(cfg['channel_id'])
 		if  discord_channel == None:
 			console.display("SYSTEM| Could not find channel '{0}>{1}#' with CHANNELID '{2}'! Scipping...".format(cfg['server_name'], cfg['channel_name'], cfg['channel_id']))
 			#todo: delete channel
 		else:
-			c = bot.Channel(discord_channel, cfg)
-			bot.channels.append(c)
-			console.display("SYSTEM| '{0}>{1}#' channel init successfull".format(c.cfg['server_name'], c.cfg['channel_name']))
+			chan = bot.Channel(discord_channel, cfg)
+			bot.channels.append(chan)
+			console.display("SYSTEM| '{0}>{1}#' channel init successfull".format(chan.cfg['server_name'], chan.cfg['channel_name']))
 	ready = True
 
-def send(frametime):
-	global lastsend, connected
-	if len(send_queue) > 0 and frametime - lastsend > 1:
-		destination, data = send_queue.pop(0)
-		console.display('SEND| /{0}: {1}'.format(destination, data))
-		#only display messages in silent mode
-		if not silent:
-			Client.send_message(destination, data)
-			
-		lastsend = frametime
-
 def get_empty_servers():
-	for serv in Client.servers:
+	for serv in c.servers:
 		n=0
 		for chan in serv.channels:
 			if chan.id in [i.cfg['channel_id'] for i in bot.channels]:
@@ -49,6 +34,25 @@ def get_empty_servers():
 				break
 		if not n:
 			console.display("server name: {0}, id: {1}".format(serv.name, serv.id))
+
+async def send(): #send messages in queue
+	if len(send_queue):
+		dest, msg = send_queue.pop(0)
+		try:
+			console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
+			await c.send_message(dest, msg)
+		except Exception as e:
+			console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))
+
+async def close(): #on quit
+	if c.is_logged_in:
+		try:
+			await c.logout()
+			print("Successfully logged out.")
+		except Exception as e:
+			print("Error on logging out. {0}".format(str(e)))
+	else:
+		print("Connection is allready closed.")
 
 ### api for bot.py ###
 def find_role_by_name(channel, name):
@@ -58,27 +62,26 @@ def find_role_by_name(channel, name):
 			return role
 	return None
 
-def edit_role(**fields):
-	send_queue.append(['edit_role', fields])
+async def edit_role(**fields):
+	await c.edit_role(**fields)
 
-def remove_roles(member, *roles):
-	send_queue.append(['remove_roles', member, roles])
+async def remove_roles(member, *roles):
+	await c.remove_roles(member, *roles)
 
-def add_roles(member, *roles):
-	send_queue.append(['add_roles', member, roles])
+async def add_roles(member, *roles):
+	await c.add_roles(member,*roles)
+
+async def send_message(dest, msg): #send msg asap, dont put it in queue
+	await c.send_message(dest, msg)
 
 def notice(channel, msg):
-	send_queue.append(['msg', channel, msg])
+	send_queue.append([channel, msg])
 
 def reply(channel, member, msg):
-	send_queue.append(['msg', channel, "<@{0}>, {1}".format(member.id, msg)])
+	send_queue.append([channel, "<@{0}>, {1}".format(member.id, msg)])
 	
 def private_reply(channel, member, msg):
-	#pass
-	send_queue.append(['msg', member, msg])
-
-def set_topic(channel, newtopic):
-	send_queue.append(['topic', newtopic])
+	send_queue.append([member, msg])
 	
 def get_member_by_nick(channel, nick):
 	return discord.utils.find(lambda m: m.name == nick, channel.server.members)
@@ -86,3 +89,79 @@ def get_member_by_nick(channel, nick):
 def get_member_by_id(channel, highlight):
 	memberid = highlight.lstrip('<@!').rstrip('>')
 	return discord.utils.find(lambda m: m.id == memberid, channel.server.members)
+
+### discord events ###
+c = discord.Client()
+
+@c.event
+async def on_ready():
+	global ready
+	if not ready:
+		process_connection()
+		ready = True
+	else:
+		console.display("DEBUG| Unexpected on_ready event!")
+	await c.change_presence(game=discord.Game(name='pm !help'))
+
+@c.event
+async def on_message(message):
+	if message.author.bot:
+		return
+	if message.channel.is_private and message.author.id != c.user.id:
+		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
+		notice(message.channel, config.cfg.HELPINFO)
+	elif message.content == '!enable_pickups':
+		if message.channel.permissions_for(message.author).manage_channels:
+			if message.channel.id not in [x.id for x in bot.channels]:
+				newcfg = stats3.new_channel(message.server.id, message.server.name, message.channel.id, message.channel.name, message.author.id)
+				bot.channels.append(bot.Channel(message.channel, newcfg))
+				reply(message.channel, message.author, config.cfg.FIRST_INIT_MESSAGE)
+			else:
+				reply(message.channel, message.author, "this channel allready have pickups configured!")
+		else:
+			reply(message.channel, message.author, "You must have permission to manage channels to enable pickups.")
+	elif message.content == '!disable_pickups':
+		if message.channel.permissions_for(message.author).manage_channels:
+			for chan in bot.channels:
+				if chan.id == message.channel.id:
+					stats3.delete_channel(message.channel.id)
+					bot.channels.remove(chan)
+					reply(message.channel, message.author, "pickups on this channel have been disabled.")
+					return
+			reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
+		else:
+			reply(message.channel, message.author, "You must have permission to manage channels to disable pickups.") 
+	else:
+		for channel in bot.channels:
+			if message.channel.id == channel.id:
+				console.display("CHAT| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
+				try:
+					await channel.processmsg(message.content, message.author)
+				except:
+					console.display("ERROR| Error processing message: {0}".format(traceback.format_exc()))
+
+@c.event
+async def on_member_update(before, after):
+	#console.display("DEBUG| {0} changed status from {1}  to -{2}-".format(after.name, before.status, after.status))
+	if str(after.status) in ['idle', 'offline']:
+		bot.update_member(after)
+
+### connect to discord ###
+def run():
+	while True:
+		try:
+			if config.cfg.DISCORD_TOKEN != "":
+				console.display("SYSTEM| logging in with token...")
+				c.loop.run_until_complete(c.login(config.cfg.DISCORD_TOKEN))
+			else:
+				console.display("SYSTEM| logging in with username and password...")
+				c.loop.run_until_complete(c.login(config.cfg.USERNAME, config.cfg.PASSWORD))
+			c.loop.run_until_complete(c.connect())
+		except KeyboardInterrupt:
+			console.display("ERROR| Keyboard interrupt.")
+			console.terminate()
+			c.loop.run_until_complete(close())
+			print("QUIT NOW.")
+			break
+		except Exception as e:
+			console.display("ERROR| Disconnected from the server: "+str(e)+"\nReconnecting in 15 seconds...")
