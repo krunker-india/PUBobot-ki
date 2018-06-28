@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import time, datetime, re, traceback, random
+from discord import errors
 from modules import client, config, console, stats3, scheduler, utils
 
 max_expire_time = 6*60*60 #6 hours
@@ -56,7 +57,7 @@ class Match():
 						self.captains.append(p)
 						candidates.remove(p)
 					else:
-						p = random.choice(self.players)
+						p = random.choice([x for x in self.players if x not in self.captains])
 						self.captains.append(p)
 			else:
 				self.captains = random.sample(self.players, 2)
@@ -67,7 +68,6 @@ class Match():
 			self.players_ready = [False for i in players]
 
 		self.alpha_icon, self.beta_icon = random.sample(team_smileys, 2)
-		print(str(self.pick_teams))
 		if len(players) > 2:
 			if self.pick_teams == 'no_teams' or self.pick_teams == None:
 				self.alpha_team = None
@@ -274,16 +274,13 @@ class Match():
 
 	def ready_show(self):
 		l = []
-		print(self.players)
 		for idx in range(0, len(self.players)):
-			print(self.players[idx].name)
 			if self.players_ready[idx]:
 				status = ":ok:"
 			else:
 				status = ":zzz:"
 			l.append("{0} {1}".format(self.players[idx].nick or self.players[idx].name, status))
 
-		print(l)
 		client.notice(self.channel, " | ".join(l))
 
 	def	ready_fallback(self): #if ready event failed
@@ -378,19 +375,19 @@ class Channel():
 			i.to_remove = []
 			i.update_topic()
 
-		console.display("DEBUG| active_pickups: {0}".format(str([i.name for i in active_pickups])))
-		console.display("DEBUG| allowoffline: {0}".format(str([i.name for i in allowoffline])))
+		#console.display("DEBUG| active_pickups: {0}".format(str([i.name for i in active_pickups])))
+		#console.display("DEBUG| allowoffline: {0}".format(str([i.name for i in allowoffline])))
 		pickup.players = []
 		self.update_topic()
 		Match(pickup, players)
 		self.lastgame_pickup = pickup
 
-	def processmsg(self, content, member): #parse PRIVMSG event
+	async def processmsg(self, content, member): #parse PRIVMSG event
 		msgtup = content.split(" ")
 		lower = [i.lower() for i in msgtup]
 		msglen = len(lower)
 		role_ids = [i.id for i in member.roles]
-		if self.cfg['admin_role'] in role_ids or member.id == self.cfg['admin_id']:
+		if self.cfg['admin_role'] in role_ids or member.id == self.cfg['admin_id'] or self.channel.permissions_for(member).administrator:
 			access_level = 2
 		elif self.cfg['moderator_role'] in role_ids:
 			access_level = 1
@@ -441,19 +438,19 @@ class Channel():
 				self.replypickups(member)
 
 			elif lower[0]=="promote":
-				self.promote_pickup(member,lower[1:2])
+				await self.promote_pickup(member,lower[1:2])
 
 			elif lower[0]=="subscribe":
-				self.subscribe(member,lower[1:msglen],False)
+				await self.subscribe(member,lower[1:msglen],False)
 
 			elif lower[0]=="unsubscribe":
-				self.subscribe(member,lower[1:msglen],True)
+				await self.subscribe(member,lower[1:msglen],True)
 
 			elif lower[0]=="lastgame":
 				self.lastgame(member,msgtup[1:msglen])
 
 			elif lower[0]=="sub":
-				self.sub_request(member)
+				await self.sub_request(member)
 
 			elif lower[0] in ["cointoss", "ct"]:
 				self.cointoss(member, lower[1:2])
@@ -529,9 +526,6 @@ class Channel():
 
 			elif lower[0]=="phrase":
 				self.set_phrase(member, msgtup[1:msglen], access_level)
-	#		
-	#		elif lower[0]=="help":
-	#			client.private_reply(self.channel, member, config.cfg.HELPINFO)
 	
 			elif lower[0]=="commands":
 				client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
@@ -709,7 +703,7 @@ class Channel():
 		else:
 			client.notice(self.channel, "No pickups found.")
 
-	def sub_request(self, member):
+	async def sub_request(self, member):
 		if not self.lastgame_pickup:
 			client.reply(self.channel, member, "No pickups played yet.")
 			return
@@ -729,7 +723,29 @@ class Channel():
 			submsg = submsg.replace("%ip%", ip or "")
 			submsg = submsg.replace("%password%", password or "") 
 			submsg = submsg.replace("%promotion_role%", promotion_role or "")
-			client.notice(self.channel, submsg)
+
+			promotion_role = self.get_value('promotion_role', self.lastgame_pickup)
+			edit_role = False
+			if promotion_role:
+				roles = self.server.roles
+				try:
+					role_obj = next(x for x in roles if x.id==promotion_role)
+				except StopIteration:
+					client.notice(self.channel, "Specified promotion role doesn't exist on the server.")
+					return
+
+				if not role_obj.mentionable:
+					kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
+					try:
+						await client.edit_role(**kwargs)
+						edit_role = True
+					except: pass
+
+			await client.send_message(self.channel, submsg)
+
+			if edit_role:
+				kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
+				await client.edit_role(**kwargs)
 
 			self.oldtime=self.newtime
 		else:
@@ -995,7 +1011,7 @@ class Channel():
 			client.notice(self.channel, "No pickups configured on this channel.")
 
 #next also fix !sub
-	def promote_pickup(self, member, args):
+	async def promote_pickup(self, member, args):
 		if not len(self.pickups):
 			client.reply(self.channel, member, "This channel does not have any pickups configured.")
 			return
@@ -1010,7 +1026,7 @@ class Channel():
 						pickup = i
 						break
 				if not pickup:
-					client.reply(self.channel, "Pickup '{0}' not found on this channel.".format(args[0]))
+					client.reply(self.channel, member, "Pickup '{0}' not found on this channel.".format(args[0]))
 					return
 
 			else:
@@ -1026,22 +1042,27 @@ class Channel():
 					try:
 						role_obj = next(x for x in roles if x.id==promotion_role)
 					except StopIteration:
-						client.notice(self.channel, "Role doesn't exist.")
+						client.notice(self.channel, "Specified promotion role doesn't exist on the server.")
 						return
-					role_mentionable=role_obj.mentionable
-					if not role_mentionable:
+
+					edit_role = False
+					if not role_obj.mentionable:
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
-						client.edit_role(**kwargs)
+						try:
+							await client.edit_role(**kwargs)
+							edit_role = True
+						except: pass
+					if edit_role:
 						remove_role_players = []
 						for player in [x for x in pickup.players if role_obj in x.roles]:
 							remove_role_players.append(player)
-							client.remove_roles(player,role_obj)
-					client.notice(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
-					if not role_mentionable:
+							await client.remove_roles(player,role_obj)
+					await client.send_message(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
+					if edit_role:
 						for player in remove_role_players:
-							client.add_roles(player, role_obj)
+							await client.add_roles(player, role_obj)
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
-						client.edit_role(**kwargs)
+						await client.edit_role(**kwargs)
 				else:
 					client.notice(self.channel, "Please !add {0}, {1} players to go!".format(pickup.name, players_left))
 			else:
@@ -1055,11 +1076,12 @@ class Channel():
 		else:
 			client.reply(self.channel, member,"You can't promote too often! You have to wait {0}.".format(str(datetime.timedelta(seconds=int(int(self.cfg['promotion_delay'])-self.newtime+self.oldtime)))))
 
-	def subscribe(self,member,args,unsub):
-		print(args,type(args))
+	async def subscribe(self,member,args,unsub):
 		if len(args)<1:
 			client.notice(self.channel, "Specify pickup(s).")
 			return
+
+		found_roles = []
 		for arg in args:
 			pickup = False
 			for i in self.pickups:
@@ -1067,22 +1089,36 @@ class Channel():
 					pickup = i
 					break
 			if not pickup:
-				client.notice(self.channel, "Pickup '{0}' not found on this channel.".format(arg))
-				continue
+				client.reply(self.channel, member, "Pickup '{0}' not found on this channel.".format(arg))
+				return
 			promotion_role = self.get_value('promotion_role', pickup)
 			if promotion_role:
 				roles = self.server.roles
 				try:
 					role_obj = next(x for x in roles if x.id == promotion_role)
+					if role_obj not in found_roles:
+						if not (unsub ^ bool(role_obj in member.roles)): #inverted xor =)
+							found_roles.append(role_obj)
 				except StopIteration:
-					client.notice(self.channel, "Role doesn't exist.")
-					continue
-				if not unsub:
-					client.add_roles(member, role_obj)
-				else:
-					client.remove_roles(member, role_obj)
+					client.reply(self.channel, member, "Promotion role for '{0}' pickups doesn't exist on the server.".format(i.name))
+					return
 			else:
-				client.notice(self.channel, "Promotion role for '{0}' not set.".format(arg))
+				client.reply(self.channel, member, "Promotion role for '{0}' pickup is not set.".format(i.name))
+				return
+
+		if not len(found_roles):
+			client.reply(self.channel, member, "No changes to apply.")
+			return
+
+		try:
+			if unsub:
+				await client.remove_roles(member, *found_roles)
+				client.reply(self.channel, member, "Done, removed {0} roles from you.".format(len(found_roles)))
+			else:
+				await client.add_roles(member, *found_roles)
+				client.reply(self.channel, member, "Done, added {0} roles to you.".format(len(found_roles)))
+		except errors.Forbidden:
+			client.reply(self.channel, member, "Insufficient server rights to do the promotion roles manipulation.")
 
 	def expire(self, member,timelist):
 		added = False

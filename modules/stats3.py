@@ -1,16 +1,25 @@
 #!/usr/bin/python2
-import sqlite3, operator
+import sqlite3, operator, re
 from datetime import timedelta
 from time import time
-import re
+from os.path import isfile
+
+from modules import console
 
 #INIT
-
+version = 1.0
 def init():
 	global conn, c
+	dbexists = isfile("database.sqlite3")
 	conn = sqlite3.connect("database.sqlite3")
+	conn.row_factory = sqlite3.Row
 	c = conn.cursor()
-	check_tables()
+	if dbexists:
+		check_db()
+	else:
+		console.display("DATATBASE| Creating new database...")
+		create_tables()
+
 
 def get_channels():
 	l = []
@@ -18,76 +27,15 @@ def get_channels():
 	chans = c.fetchall()
 	l = []
 	for chan in chans:
-		d = _channelcfg_to_dict(chan)
-		l.append(d)
+		l.append(dict(chan))
 	return l
-
-def _channelcfg_to_dict(l):
-	d = dict()
-	d["server_id"] = l[0]
-	d["server_name"] = l[1]
-	d["channel_id"] = l[2]
-	d["channel_name"] = l[3]
-	d["premium"] = l[4]
-	d["first_init"] = l[5]
-	d["admin_id"] = l[6]
-	d["admin_role"] = l[7]
-	d["moderator_role"] = l[8]
-	d["captains_role"] = l[9]
-	d["noadd_role"] = l[10]
-	d["prefix"] = l[11]
-	d["default_bantime"] = l[12]
-	d["++_req_players"] = l[13]
-	d["startmsg"] = l[14]
-	d["submsg"] = l[15]
-	d["ip"] = l[16]
-	d["password"] = l[17]
-	d["maps"] = l[18]
-	d["pick_captains"] = l[19]
-	d["pick_teams"] = l[20]
-	d["pick_order"] = l[21]
-	d["promotion_role"] = l[22]
-	d["promotion_delay"] = l[23]
-	d["blacklist_role"] = l[24]
-	d["whitelist_role"] = l[25]
-	d["require_ready"] = l[26]
-	d["ranked"] = l[27]
-	d["start_pm_msg"] = l[28]
-	d["help_answer"] = l[29]
-	return d
-
-def _pickupcfg_to_dict(l):
-	d = dict()
-	d["channel_id"] = l[0]
-	d["pickup_name"] = l[1]
-	d["maxplayers"] = l[2]
-	d["minplayers"] = l[3]
-	d["startmsg"] = l[4]
-	d["start_pm_msg"] = l[5]
-	d["submsg"] = l[6]
-	d["ip"] = l[7]
-	d["password"] = l[8]
-	d["maps"] = l[9]
-	d["pick_captains"] = l[10]
-	d["captains_role"] = l[11]
-	d["pick_teams"] = l[12]
-	d["pick_order"] = l[13]
-	d["promotion_role"] = l[14]
-	d["blacklist_role"] = l[15]
-	d["whitelist_role"] = l[16]
-	d["captain_role"] = l[17]
-	d["require_ready"] = l[18]
-	d["ranked"] = l[19]
-	d["help_answer"] = l[20]
-	return d
 
 def get_pickups(channel_id):
 	c.execute("SELECT * from pickup_configs WHERE channel_id = ?", (channel_id, ))
 	pickups = c.fetchall()
 	l = []
 	for pickup in pickups:
-		d = _pickupcfg_to_dict(pickup)
-		l.append(d)
+		l.append(dict(pickup))
 	return l
 
 def get_pickup_groups(channel_id):
@@ -111,15 +59,14 @@ def new_channel(server_id, server_name, channel_id, channel_name, admin_id):
 	conn.commit()
 	c.execute("SELECT * from channels WHERE channel_id = ?", (channel_id, ))
 	chan = c.fetchone()
-	d = _channelcfg_to_dict(chan)
-	return d
+	return dict(chan)
 
 def new_pickup(channel_id, pickup_name, maxplayers):
 	c.execute("INSERT INTO pickup_configs (channel_id, pickup_name, maxplayers) VALUES (?, ?, ?)", (channel_id, pickup_name, maxplayers))
 	conn.commit()
 	c.execute("SELECT * from pickup_configs WHERE channel_id = ? AND pickup_name = ?", (channel_id, pickup_name))
 	result = c.fetchone()
-	return _pickupcfg_to_dict(result)
+	return dict(result)
 	
 
 def delete_pickup(channel_id, pickup_name):
@@ -382,67 +329,140 @@ def update_pickups(channel_id, pickups):
 		c.execute("INSERT OR REPLACE INTO pickup_configs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (channel_id, i.name, i.maxplayers, i.minplayers, i.startmsg, i.maps, i.teams_pick_system, i.promotion_role, i.blacklist_role, i.whitelist_role))
 	conn.commit()
 
-def check_tables():
+def check_db():
 	c.execute("SELECT name FROM sqlite_master WHERE type='table'")
-	tables = c.fetchall()
-	
-	if 'bans' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `bans` ( `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `active` BLOB, `at` INTEGER, `duratation` INTEGER, `reason` TEXT, `author_name` TEXT, `unban_author_name` TEXT )")
+	tables = [i[0] for i in c.fetchall()]
 
-	if 'channel_players' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `channel_players` ( `channel_id` TEXT, `user_id` TEXT, `points` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`) )")
+	if "utility" not in tables:
+		c.execute("""CREATE TABLE `utility`
+			( `variable` TEXT,
+			`value` TEXT,
+			PRIMARY KEY(`variable`) )""")
 
-	if 'channels' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `channels` ( `server_id` TEXT, `server_name` TEXT, `channel_id` TEXT, `channel_name` TEXT, `premium` BOOL, `first_init` INTEGER, `admin_id` TEXT, `admin_role` TEXT, `moderator_role` TEXT, `captains_role` TEXT, `noadd_role` TEXT, `prefix` TEXT DEFAULT '!', `default_bantime` INTEGER DEFAULT 7200, `++_req_players` INTEGER DEFAULT 5, `startmsg` TEXT, `submsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `pick_captains` INTEGER, `pick_teams` TEXT DEFAULT 'no_teams', `pick_order` TEXT, `promotion_role` TEXT, `promotion_delay` INTEGER DEFAULT 18000, `blacklist_role` TEXT, `whitelist_role` TEXT, `require_ready` INTEGER, `ranked` INTEGER, `start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.', PRIMARY KEY(`channel_id`) )")
+	c.execute("SELECT value FROM utility WHERE variable='version'")
+	db_version = c.fetchone()
 
-	if 'pickup_configs' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `pickup_configs` ( `channel_id` TEXT, `pickup_name` TEXT, `maxplayers` INTEGER, `minplayers` INTEGER, `startmsg` TEXT, `start_pm_msg` TEXT, `submsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `pick_captains` INTEGER, `captains_role` TEXT, `pick_teams` TEXT, `pick_order` TEXT, `promotion_role` TEXT, `blacklist_role` TEXT, `whitelist_role` TEXT, `captain_role` TEXT, `require_ready` INTEGER, `ranked` INTEGER, PRIMARY KEY(`channel_id`, `pickup_name`) )")
+	if not db_version or float(db_version[0]) < version:
+		console.display("DATABASE| Ubdating database from '{0}' to '{1}'...".format(db_version, version))
+		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
+		conn.commit()
 
-	if 'pickups' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `pickups` ( `pickup_id` INTEGER PRIMARY KEY, `channel_id` TEXT, `pickup_name` TEXT, `at` INTEGER, `players` TEXT, `alpha_players` TEXT, `beta_players` TEXT, `winner_team` TEXT )")
+def create_tables():
+	c.execute("""CREATE TABLE `utility`
+		( `variable` TEXT,
+		`value` TEXT,
+		PRIMARY KEY(`variable`) )""")
 
-	if 'player_pickups' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `player_pickups` ( `pickup_id` INTEGER, `channel_id` TEXT, `user_id` TEXT, `user_name` TEXT, `pickup_name` TEXT, `at` INTEGER, `team` TEXT, `is_winner` BLOB, `is_lastpick` BLOB)")
+	c.execute("""CREATE TABLE `bans` 
+		( `channel_id` TEXT,
+		`user_id` TEXT,
+		`user_name` TEXT,
+		`active` BLOB,
+		`at` INTEGER,
+		`duratation` INTEGER,
+		`reason` TEXT,
+		`author_name` TEXT,
+		`unban_author_name` TEXT )""")
 
-	if 'players' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `players` ( `user_id` TEXT, `default_expire` INTEGER, `disable_pm` BLOB, PRIMARY KEY(`user_id`) )")
+	c.execute("""CREATE TABLE `channel_players` 
+		( `channel_id` TEXT,
+		`user_id` TEXT,
+		`points` INTEGER,
+		`phrase` TEXT,
+		PRIMARY KEY(`channel_id`, `user_id`) )""")
 
-	if 'pickup_groups' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `pickup_groups` ( `channel_id` TEXT, `group_name` TEXT, `pickup_names` TEXT, PRIMARY KEY(`channel_id`, `group_name`) )")
+	c.execute("""CREATE TABLE `channels` 
+		( `server_id` TEXT,
+		`server_name` TEXT,
+		`channel_id` TEXT,
+		`channel_name` TEXT,
+		`premium` BOOL,
+		`first_init` INTEGER,
+		`admin_id` TEXT,
+		`admin_role` TEXT,
+		`moderator_role` TEXT,
+		`captains_role` TEXT,
+		`noadd_role` TEXT,
+		`prefix` TEXT DEFAULT '!',
+		`default_bantime` INTEGER DEFAULT 7200,
+		`++_req_players` INTEGER DEFAULT 5,
+		`startmsg` TEXT,
+		`submsg` TEXT,
+		`ip` TEXT,
+		`password` TEXT,
+		`maps` TEXT,
+		`pick_captains` INTEGER,
+		`pick_teams` TEXT DEFAULT 'no_teams',
+		`pick_order` TEXT,
+		`promotion_role` TEXT,
+		`promotion_delay` INTEGER DEFAULT 18000,
+		`blacklist_role` TEXT,
+		`whitelist_role` TEXT,
+		`require_ready` INTEGER,
+		`ranked` INTEGER,
+		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
+		PRIMARY KEY(`channel_id`) )""")
 
-	if 'nukem_quotes' not in tables:
-		c.execute("CREATE TABLE IF NOT EXISTS `nukem_quotes` ( `quote` TEXT )")
-		c.executescript("""
-			INSERT INTO nukem_quotes VALUES ("AAhhh... much better!");
-			INSERT INTO nukem_quotes VALUES ("Bitchin'!");
-			INSERT INTO nukem_quotes VALUES ("Come get some!");
-			INSERT INTO nukem_quotes VALUES ("Do, or do not, there is no try.");
-			INSERT INTO nukem_quotes VALUES ("Eat shit and die.");
-			INSERT INTO nukem_quotes VALUES ("Get that crap outta here!");
-			INSERT INTO nukem_quotes VALUES ("Go ahead, make my day.");
-			INSERT INTO nukem_quotes VALUES ("Hail to the king, baby!");
-			INSERT INTO nukem_quotes VALUES ("Heh, heh, heh... what a mess!");
-			INSERT INTO nukem_quotes VALUES ("Holy cow!");
-			INSERT INTO nukem_quotes VALUES ("Holy shit!");
-			INSERT INTO nukem_quotes VALUES ("I'm gonna get medieval on your asses!");
-			INSERT INTO nukem_quotes VALUES ("I'm gonna kick your ass, bitch!");
-			INSERT INTO nukem_quotes VALUES ("Let God sort 'em out!");
-			INSERT INTO nukem_quotes VALUES ("Ooh, that's gotta hurt.");
-			INSERT INTO nukem_quotes VALUES ("See you in Hell!");
-			INSERT INTO nukem_quotes VALUES ("Piece of Cake.");
-			INSERT INTO nukem_quotes VALUES ("Suck it down!");
-			INSERT INTO nukem_quotes VALUES ("Terminated!");
-			INSERT INTO nukem_quotes VALUES ("Your face, your ass - what's the difference?");
-			INSERT INTO nukem_quotes VALUES ("Nobody fucks up our pickups... and lives!");
-			INSERT INTO nukem_quotes VALUES ("My boot, your face; the perfect couple.");
-			""")
+	c.execute("""CREATE TABLE `pickup_configs` 
+		( `channel_id` TEXT,
+		`pickup_name` TEXT,
+		`maxplayers` INTEGER,
+		`minplayers` INTEGER,
+		`startmsg` TEXT,
+		`start_pm_msg` TEXT,
+		`submsg` TEXT,
+		`ip` TEXT,
+		`password` TEXT,
+		`maps` TEXT,
+		`pick_captains` INTEGER,
+		`captains_role` TEXT,
+		`pick_teams` TEXT,
+		`pick_order` TEXT,
+		`promotion_role` TEXT,
+		`blacklist_role` TEXT,
+		`whitelist_role` TEXT,
+		`captain_role` TEXT,
+		`require_ready` INTEGER,
+		`ranked` INTEGER,
+		PRIMARY KEY(`channel_id`, `pickup_name`) )""")
 
-	try:
-		c.execute('ALTER TABLE channels ADD COLUMN help_answer TEXT;')
-		c.execute('ALTER TABLE pickup_configs ADD COLUMN help_answer TEXT;')
-	except:
-		pass
+	c.execute("""CREATE TABLE `pickups` 
+		( `pickup_id` INTEGER PRIMARY KEY,
+		`channel_id` TEXT,
+		`pickup_name` TEXT,
+		`at` INTEGER,
+		`players` TEXT,
+		`alpha_players` TEXT,
+		`beta_players` TEXT,
+		`winner_team` TEXT )""")
 
+	c.execute("""CREATE TABLE `player_pickups` 
+		( `pickup_id` INTEGER,
+		`channel_id` TEXT,
+		`user_id` TEXT,
+		`user_name` TEXT,
+		`pickup_name` TEXT,
+		`at` INTEGER,
+		`team` TEXT,
+		`is_winner` BLOB,
+		`is_lastpick` BLOB)""")
+
+	c.execute("""CREATE TABLE `players` 
+		( `user_id` TEXT,
+		`default_expire` INTEGER,
+		`disable_pm` BLOB,
+		PRIMARY KEY(`user_id`) )""")
+
+	c.execute("""CREATE TABLE `pickup_groups` 
+		( `channel_id` TEXT,
+		`group_name` TEXT,
+		`pickup_names` TEXT,
+		PRIMARY KEY(`channel_id`, `group_name`) )""")
+
+	c.execute("""CREATE TABLE `nukem_quotes` ( `quote` TEXT )""")
+	c.executemany("""INSERT INTO nukem_quotes ('quote') VALUES (?)""", [["AAhhh... much better!"], ["Bitchin'!"], ["Come get some!"], ["Do, or do not, there is no try."], ["Eat shit and die."], ["Get that crap outta here!"], ["Go ahead, make my day."], ["Hail to the king, baby!"], ["Heh, heh, heh... what a mess!"], ["Holy cow!"], ["Holy shit!"], ["I'm gonna get medieval on your asses!"], ["I'm gonna kick your ass, bitch!"], ["Let God sort 'em out!"], ["Ooh, that's gotta hurt."], ["See you in Hell!"], ["Piece of Cake."], ["Suck it down!"], ["Terminated!"], ["Your face, your ass - what's the difference?"], ["Nobody fucks up our pickups... and lives!"], ["My boot, your face; the perfect couple."]])
+
+	c.execute("INSERT INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 	conn.commit()
 
 def close():

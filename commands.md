@@ -8,6 +8,8 @@
 !default_expire <i>time</i> or 'afk' - Set your personal default !expire time or set autoremove on afk status.   
 !sub - request sub for last game.   
 !allowoffline or !ao - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users).   
+!subscribe <i>pickup</i>[ <i>pickup</i> ..]] - adds the promotion role of specified pickup(s) to you.   
+!unsubscribe <i>pickup</i>[ <i>pickup</i> ..]] - removes the promotion role of specified pickup(s) from you.   
 
 ### INFO:
 !who [<i>pickup</i>[ <i>pickup</i> ...]] - list of users added to a pickups.   
