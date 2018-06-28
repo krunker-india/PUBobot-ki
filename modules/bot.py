@@ -526,9 +526,6 @@ class Channel():
 
 			elif lower[0]=="phrase":
 				self.set_phrase(member, msgtup[1:msglen], access_level)
-	#		
-	#		elif lower[0]=="help":
-	#			client.private_reply(self.channel, member, config.cfg.HELPINFO)
 	
 			elif lower[0]=="commands":
 				client.reply(self.channel, member, config.cfg.COMMANDS_LINK)
@@ -547,9 +544,6 @@ class Channel():
 
 			elif lower[0]=="help":
 				self.help_answer(member, lower[1:])
-
-			elif lower[0]=="hello":
-				client.reply(self.channel, member, "Hellou!")
 			
 	### COMMANDS ###
 
