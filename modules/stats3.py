@@ -3,11 +3,12 @@ import sqlite3, operator, re
 from datetime import timedelta
 from time import time
 from os.path import isfile
+from decimal import Decimal
 
 from modules import console
 
 #INIT
-version = 1.0
+version = 2
 def init():
 	global conn, c
 	dbexists = isfile("database.sqlite3")
@@ -341,10 +342,18 @@ def check_db():
 
 	c.execute("SELECT value FROM utility WHERE variable='version'")
 	db_version = c.fetchone()
+	if db_version:
+		db_version = Decimal(db_version[0])
+	else:
+		db_version = -1
 
-	if not db_version or float(db_version[0]) < version:
-		console.display("DATABASE| Ubdating database from '{0}' to '{1}'...".format(db_version, version))
+	if db_version < version:
+		console.display("DATABASE| Updating database from '{0}' to '{1}'...".format(db_version, version))
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
+		if db_version < 2:
+			c.execute("""ALTER TABLE `pickup_configs`
+			ADD COLUMN `allow_offline` INTEGER DEFAULT 0
+			""")
 		conn.commit()
 
 def create_tables():
@@ -424,6 +433,7 @@ def create_tables():
 		`captain_role` TEXT,
 		`require_ready` INTEGER,
 		`ranked` INTEGER,
+		`allow_offline` INTEGER DEFAULT 0,
 		PRIMARY KEY(`channel_id`, `pickup_name`) )""")
 
 	c.execute("""CREATE TABLE `pickups` 

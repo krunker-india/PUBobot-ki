@@ -485,6 +485,9 @@ class Channel():
 			elif lower[0]=="top":
 				self.gettop(member, msgtup[1:msglen])
 
+			elif lower[0] == "set_ao_for_all":
+				self.set_ao_for_all(member, msgtup[1:msglen], access_level)
+
 			elif lower[0]=="add_pickups":
 				self.add_pickups(member, msgtup[1:msglen], access_level)
 
@@ -1250,6 +1253,14 @@ class Channel():
 			client.notice(self.channel, "\r\n".join(l))
 		else:
 			client.reply(self.channel, member, "No noadds found.")
+
+	def set_ao_for_all(self, member, targs, access_level):
+		if access_level <= 1:
+			client.reply(self.channel, member, "You have no right for this!")
+			return
+
+		raise NotImplementedError
+
 #next
 	def add_pickups(self, member, targs, access_level):
 		if access_level > 1:
