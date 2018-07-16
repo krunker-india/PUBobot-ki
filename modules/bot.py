@@ -2054,9 +2054,9 @@ def update_member(member): #on status change
 				global_remove(member, 'idle')
 
 def global_remove(member, reason):
-	#removes player from pickups on all channels
+	#removes player from pickups on all channels where offline is not allowed
 	affected_channels = []
-	for p in list(active_pickups):
+	for p in [ap for ap in active_pickups if not ap.cfg['allow_offline']]:
 		if member.id in [i.id for i in p.players]:
 			p.players.remove(member)
 			if len(p.players) == 0:
