@@ -51,7 +51,7 @@
 !reset_stats - delete all channel statistics.   
 !cfg - show global channel configuration variables.   
 !pickup_cfg <i>pickup</i> - show specified pickup configuration variables.   
-!set_ao_for_all <i>name</i> - set !ao for all users of specific pickup kind.   
+!set_ao_for_all <i>name</i> 0|1 - allow/disallow offline for all users of specific pickup kind.
 
 !set_default variable value - set a global variable value. Availible variables: admin_role, moderator_role, captains_role, prefix, default_bantime, ++_req_players, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, promotion_role, promotion_delay, blacklist_role, whitelist_role, require_ready.   
 
