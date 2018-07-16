@@ -485,6 +485,9 @@ class Channel():
 			elif lower[0]=="top":
 				self.gettop(member, msgtup[1:msglen])
 
+			elif lower[0] == "set_ao_for_all":
+				self.set_ao_for_all(member, msgtup[1:msglen], access_level)
+
 			elif lower[0]=="add_pickups":
 				self.add_pickups(member, msgtup[1:msglen], access_level)
 
@@ -1250,6 +1253,23 @@ class Channel():
 			client.notice(self.channel, "\r\n".join(l))
 		else:
 			client.reply(self.channel, member, "No noadds found.")
+
+	def set_ao_for_all(self, member, targs, access_level):
+		if access_level <= 1:
+			client.reply(self.channel, member, "You have no right for this!")
+			return
+
+		pickup_name, ao = targs
+		ao = int(ao)
+		pickup = self.find_pickip(pickup_name)
+		self.update_pickup_config(pickup, 'allow_offline', ao)
+
+		client.reply(self.channel, member, 'Offline is {} for all {} pickups'.format(
+			'allowed' if ao else 'disallowed by default',
+			pickup_name
+		))
+
+
 #next
 	def add_pickups(self, member, targs, access_level):
 		if access_level > 1:
@@ -2014,7 +2034,15 @@ class Channel():
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(seconds, variable, ", ".join(i.name for i in pickups)))
 
 		else:
-			client.reply(self.channel, member, "Variable '{0}' is not configurable.".format(variable))			
+			client.reply(self.channel, member, "Variable '{0}' is not configurable.".format(variable))
+
+	def find_pickip(self, pickup_name):
+		# should have used a dict for pickups, because this is obviously going to take O(n)
+		for p in self.pickups:
+			if p.channel.id == self.channel.id and p.name == pickup_name:
+				return p
+		raise ValueError('there is no pickup with this name')
+
 
 def update_member(member): #on status change
 	if member not in allowoffline:
@@ -2026,9 +2054,15 @@ def update_member(member): #on status change
 				global_remove(member, 'idle')
 
 def global_remove(member, reason):
-	#removes player from pickups on all channels
+	# removes player from pickups on all channels
 	affected_channels = []
-	for p in list(active_pickups):
+
+	if reason == 'scheduler':
+		affected_pickups = list(active_pickups)
+	else:
+		affected_pickups = [p for p in active_pickups if not p.cfg['allow_offline']]
+
+	for p in affected_pickups:
 		if member.id in [i.id for i in p.players]:
 			p.players.remove(member)
 			if len(p.players) == 0:
