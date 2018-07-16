@@ -1261,9 +1261,14 @@ class Channel():
 
 		pickup_name, ao = targs
 		ao = int(ao)
-		stats3.pickups_config_set_ao_for_all(self.channel.id, pickup_name, ao)
-		client.reply(self.channel, member, 'Yes sir!')
-		raise NotImplementedError
+		pickup = self.find_pickip(pickup_name)
+		self.update_pickup_config(pickup, 'allow_offline', ao)
+
+		client.reply(self.channel, member, 'Offline is {} for all {} pickups'.format(
+			'allowed' if ao else 'disallowed by default',
+			pickup_name
+		))
+
 
 #next
 	def add_pickups(self, member, targs, access_level):
@@ -2029,7 +2034,15 @@ class Channel():
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(seconds, variable, ", ".join(i.name for i in pickups)))
 
 		else:
-			client.reply(self.channel, member, "Variable '{0}' is not configurable.".format(variable))			
+			client.reply(self.channel, member, "Variable '{0}' is not configurable.".format(variable))
+
+	def find_pickip(self, pickup_name):
+		# should have used a dict for pickups, because this is obviously going to take O(n)
+		for p in self.pickups:
+			if p.channel.id == self.channel.id and p.name == pickup_name:
+				return p
+		raise ValueError('there is no pickup with this name')
+
 
 def update_member(member): #on status change
 	if member not in allowoffline:

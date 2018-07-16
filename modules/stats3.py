@@ -40,13 +40,6 @@ def get_pickups(channel_id):
 	return l
 
 
-def pickups_config_set_ao_for_all(channel_id, pickup_name, ao):
-	c.execute("UPDATE `pickup_configs` SET `allow_offline` = ? "
-			  "WHERE channel_id = ? AND pickup_name = ?",
-			  (ao, channel_id, pickup_name))
-	conn.commit()
-
-
 def get_pickup_groups(channel_id):
 	c.execute("SELECT group_name, pickup_names FROM pickup_groups WHERE channel_id = ?", (channel_id, ))
 	pg = c.fetchall()
