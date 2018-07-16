@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 # encoding: utf-8
-import discord, traceback
+import discord, traceback, time
 from modules import console, config, bot, stats3
 
 def init():
@@ -105,8 +105,8 @@ async def on_ready():
 
 @c.event
 async def on_message(message):
-	if message.author.bot:
-		return
+#	if message.author.bot:
+#		return
 	if message.channel.is_private and message.author.id != c.user.id:
 		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
 		notice(message.channel, config.cfg.HELPINFO)
@@ -165,3 +165,4 @@ def run():
 			break
 		except Exception as e:
 			console.display("ERROR| Disconnected from the server: "+str(e)+"\nReconnecting in 15 seconds...")
+			time.sleep(15)
