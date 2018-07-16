@@ -1259,6 +1259,10 @@ class Channel():
 			client.reply(self.channel, member, "You have no right for this!")
 			return
 
+		pickup_name, ao = targs
+		ao = int(ao)
+		stats3.pickups_config_set_ao_for_all(self.channel.id, pickup_name, ao)
+		client.reply(self.channel, member, 'Yes sir!')
 		raise NotImplementedError
 
 #next
