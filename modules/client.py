@@ -57,9 +57,11 @@ async def close(): #on quit
 ### api for bot.py ###
 def find_role_by_name(channel, name):
 	name = name.lower()
-	for role in channel.server.roles:
-		if name == role.name.lower():
-			return role
+	server = c.get_server(channel.server.id)
+	if server:
+		for role in server.roles:
+			if name == role.name.lower():
+				return role
 	return None
 
 async def edit_role(**fields):

@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 2
+version = 3
 def init():
 	global conn, c
 	dbexists = isfile("database.sqlite3")
@@ -355,6 +355,13 @@ def check_db():
 			c.execute("""ALTER TABLE `pickup_configs`
 			ADD COLUMN `allow_offline` INTEGER DEFAULT 0
 			""")
+		if db_version < 3:
+			c.execute("""ALTER TABLE `pickup_configs`
+			ADD COLUMN `promotemsg` TEXT
+			""")
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `promotemsg` TEXT
+			""")
 		conn.commit()
 
 def create_tables():
@@ -398,6 +405,7 @@ def create_tables():
 		`++_req_players` INTEGER DEFAULT 5,
 		`startmsg` TEXT,
 		`submsg` TEXT,
+		`promotemsg` TEXT,
 		`ip` TEXT,
 		`password` TEXT,
 		`maps` TEXT,
@@ -421,6 +429,7 @@ def create_tables():
 		`startmsg` TEXT,
 		`start_pm_msg` TEXT,
 		`submsg` TEXT,
+		`promotemsg` TEXT,
 		`ip` TEXT,
 		`password` TEXT,
 		`maps` TEXT,

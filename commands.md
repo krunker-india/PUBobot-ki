@@ -68,6 +68,7 @@
 * startmsg <i>text</i> - set message on a pickup start. Use %ip% and %password% in <i>text</i> to represent ip and password.
 * start_pm_msg <i>text</i> - set private message on a pickup start. Use %pickup_name%, %ip%, %password% and %channel% to represent its values.
 * submsg <i>text</i> - set message on !sub command. Use %pickup_name%, %ip%, %password% and %promotion_role% to represent its values.
+* promotemsg <i>text</i> - set message on !promote command. Use %promotion_role%, %pickup_name% and %required_players% to represent its values.
 * ip <i>text</i> - set ip wich will be shown in startmsg, submsg and on !ip command.
 * password <i>text</i> - set password wich will be shown in startmsg, submsg and on !ip command.
 * maps <i>map_name</i>[, <i>map_name</i>...] - set maps.
