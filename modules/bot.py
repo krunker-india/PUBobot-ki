@@ -1034,6 +1034,9 @@ class Channel():
 					client.reply(self.channel, member, "Pickup '{0}' not found on this channel.".format(args[0]))
 					return
 
+			elif len(self.pickups)==1:
+				pickup=self.pickups[0]
+
 			else:
 				pickups = sorted(self.pickups, key=lambda x: len(x.players), reverse=True)
 				if len(pickups[0].players):
@@ -1062,19 +1065,28 @@ class Channel():
 						for player in [x for x in pickup.players if role_obj in x.roles]:
 							remove_role_players.append(player)
 							await client.remove_roles(player,role_obj)
-					await client.send_message(self.channel, "<@&{0}> please !add {1}, {2} players to go!".format(promotion_role, pickup.name, players_left))
-					if edit_role:
+
+				promotemsg = self.get_value('promotemsg', pickup) or "%promotion_role% please !add %pickup_name%, %required_players% players to go!"
+				if promotion_role:
+					promotemsg = promotemsg.replace("%promotion_role%",  "<@&"+promotion_role+">")
+				else:
+					promotemsg = promotemsg.replace("%promotion_role%",  "")
+				promotemsg = promotemsg.replace("%pickup_name%", pickup.name)
+				promotemsg = promotemsg.replace("%required_players%", str(players_left))
+				await client.send_message(self.channel, promotemsg)
+				if edit_role:
 						for player in remove_role_players:
 							await client.add_roles(player, role_obj)
 						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
 						await client.edit_role(**kwargs)
-				else:
-					client.notice(self.channel, "Please !add {0}, {1} players to go!".format(pickup.name, players_left))
+				
 			else:
-				if self.cfg['promotion_role']:
-					client.notice(self.channel, "<@&{0}> please !add to pickups!".format(self.cfg['promotion_role']))
+				promotemsg = self.cfg['promotemsg'] or "%promotion_role% please !add to pickups!"
+				if self.cfg["promotion_role"]:
+					promotemsg = promotemsg.replace("%promotion_role%",  "<@&"+self.cfg["promotion_role"]+">")
 				else:
-					client.notice(self.channel, "Please !add to pickups!")
+					promotemsg = promotemsg.replace("%promotion_role%",  "")
+				client.notice(self.channel, promotemsg)
 
 			self.oldtime=self.newtime
 
@@ -1698,6 +1710,13 @@ class Channel():
 				self.update_channel_config(variable, value)
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
 
+		elif variable == "promotemsg":
+			if value.lower() == "none":
+				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
+			else:
+				self.update_channel_config(variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+
 		elif variable == "ip":
 			if value.lower() == "none":
 				self.update_channel_config(variable, None)
@@ -1880,6 +1899,16 @@ class Channel():
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
 
 		elif variable == "submsg":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			else:
+				for i in pickups:
+					self.update_pickup_config(i, variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+
+		elif variable == "promotemsg":
 			if value.lower() == "none":
 				for i in pickups:
 					self.update_pickup_config(i, variable, None)
