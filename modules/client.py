@@ -64,6 +64,14 @@ def find_role_by_name(channel, name):
 				return role
 	return None
 
+def find_role_by_id(channel, role_id):
+	server = c.get_server(channel.server.id)
+	if server:
+		for role in server.roles:
+			if role_id == role.id:
+				return role
+	return None
+
 async def edit_role(**fields):
 	await c.edit_role(**fields)
 
