@@ -1046,25 +1046,20 @@ class Channel():
 				promotion_role = self.get_value('promotion_role', pickup)
 				players_left = pickup.cfg['maxplayers']-len(pickup.players)
 				if promotion_role:
-					roles = self.server.roles
-					try:
-						role_obj = next(x for x in roles if x.id==promotion_role)
-					except StopIteration:
-						client.notice(self.channel, "Specified promotion role doesn't exist on the server.")
-						return
-
+					role_obj = client.find_role_by_id(self.channel, promotion_role)
 					edit_role = False
-					if not role_obj.mentionable:
-						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
-						try:
-							await client.edit_role(**kwargs)
-							edit_role = True
-						except: pass
-					if edit_role:
-						remove_role_players = []
-						for player in [x for x in pickup.players if role_obj in x.roles]:
-							remove_role_players.append(player)
-							await client.remove_roles(player,role_obj)
+					if role_obj:					
+						if not role_obj.mentionable:
+							kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
+							try:
+								await client.edit_role(**kwargs)
+								edit_role = True
+							except: pass
+						if edit_role:
+							remove_role_players = []
+							for player in [x for x in pickup.players if role_obj in x.roles]:
+								remove_role_players.append(player)
+								await client.remove_roles(player,role_obj)
 
 				promotemsg = self.get_value('promotemsg', pickup) or "%promotion_role% please !add %pickup_name%, %required_players% players to go!"
 				if promotion_role:
