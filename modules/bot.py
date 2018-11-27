@@ -2069,6 +2069,13 @@ class Channel():
 				return p
 		raise ValueError('there is no pickup with this name')
 
+def delete_channel(channel):
+	for match in list(active_matches):
+		if match.pickup.channel.id == channel.id:
+			active_matches.remove(match)
+
+	channels.remove(channel)
+	stats3.delete_channel(channel.id)
 
 def update_member(member): #on status change
 	if member not in allowoffline:

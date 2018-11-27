@@ -134,8 +134,7 @@ async def on_message(message):
 		if message.channel.permissions_for(message.author).manage_channels:
 			for chan in bot.channels:
 				if chan.id == message.channel.id:
-					stats3.delete_channel(message.channel.id)
-					bot.channels.remove(chan)
+					bot.delete_channel(chan)
 					reply(message.channel, message.author, "pickups on this channel have been disabled.")
 					return
 			reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
