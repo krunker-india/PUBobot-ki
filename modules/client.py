@@ -134,8 +134,7 @@ async def on_message(message):
 		if message.channel.permissions_for(message.author).manage_channels:
 			for chan in bot.channels:
 				if chan.id == message.channel.id:
-					stats3.delete_channel(message.channel.id)
-					bot.channels.remove(chan)
+					bot.delete_channel(chan)
 					reply(message.channel, message.author, "pickups on this channel have been disabled.")
 					return
 			reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
@@ -162,10 +161,10 @@ def run():
 		try:
 			if config.cfg.DISCORD_TOKEN != "":
 				console.display("SYSTEM| logging in with token...")
-				c.loop.run_until_complete(c.login(config.cfg.DISCORD_TOKEN))
+				c.loop.run_until_complete(c.start(config.cfg.DISCORD_TOKEN))
 			else:
 				console.display("SYSTEM| logging in with username and password...")
-				c.loop.run_until_complete(c.login(config.cfg.USERNAME, config.cfg.PASSWORD))
+				c.loop.run_until_complete(c.start(config.cfg.USERNAME, config.cfg.PASSWORD))
 			c.loop.run_until_complete(c.connect())
 		except KeyboardInterrupt:
 			console.display("ERROR| Keyboard interrupt.")
