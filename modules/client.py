@@ -161,10 +161,10 @@ def run():
 		try:
 			if config.cfg.DISCORD_TOKEN != "":
 				console.display("SYSTEM| logging in with token...")
-				c.loop.run_until_complete(c.login(config.cfg.DISCORD_TOKEN))
+				c.loop.run_until_complete(c.start(config.cfg.DISCORD_TOKEN))
 			else:
 				console.display("SYSTEM| logging in with username and password...")
-				c.loop.run_until_complete(c.login(config.cfg.USERNAME, config.cfg.PASSWORD))
+				c.loop.run_until_complete(c.start(config.cfg.USERNAME, config.cfg.PASSWORD))
 			c.loop.run_until_complete(c.connect())
 		except KeyboardInterrupt:
 			console.display("ERROR| Keyboard interrupt.")
