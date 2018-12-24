@@ -1105,15 +1105,14 @@ class Channel():
 				return
 			promotion_role = self.get_value('promotion_role', pickup)
 			if promotion_role:
-				roles = self.server.roles
-				try:
-					role_obj = next(x for x in roles if x.id == promotion_role)
-					if role_obj not in found_roles:
-						if not (unsub ^ bool(role_obj in member.roles)): #inverted xor =)
-							found_roles.append(role_obj)
-				except StopIteration:
-					client.reply(self.channel, member, "Promotion role for '{0}' pickups doesn't exist on the server.".format(i.name))
+				role_obj = client.find_role_by_id(self.channel, promotion_role)
+				if not role_obj:
+					client.reply(self.channel, member, "Promotion role for '{0}' pickup is not set.".format(i.name))
 					return
+
+				if not (unsub ^ bool(role_obj in member.roles)): #inverted xor =)
+					found_roles.append(role_obj)
+
 			else:
 				client.reply(self.channel, member, "Promotion role for '{0}' pickup is not set.".format(i.name))
 				return
