@@ -536,7 +536,7 @@ class Channel():
 				self.get_leaderboard()
 
 			elif lower[0]=="rank":
-				self.get_rank_details(member, lower[1:2])
+				self.get_rank_details(member, lower[1:len(lower)])
 
 			elif lower[0]=="ranks_table":
 				self.show_ranks_table()
@@ -1129,7 +1129,7 @@ class Channel():
 
 	def get_rank_details(self, member, args):
 		if len(args):
-			details, matches = stats3.get_rank_details(self.id, nick=args[0])
+			details, matches = stats3.get_rank_details(self.id, nick=" ".joi(args))
 		else:
 			details, matches = stats3.get_rank_details(self.id, user_id=member.id)
 
