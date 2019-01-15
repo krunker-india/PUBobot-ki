@@ -38,3 +38,29 @@ def split_large_message(text, delimiter="\n", charlimit=1999):
 		else:
 			result.append(tempstr)
 	return result
+
+ranks = {
+	2000: " 〈★〉",
+	1950: "〈A+〉",
+	1900: "〈A〉",
+	1850: "〈A-〉",
+	1800: "〈B+〉",
+	1750: "〈B〉",
+	1700: "〈B-〉",
+	1650: "〈C+〉",
+	1600: "〈C〉",
+	1550: "〈C-〉",
+	1500: "〈D+〉",
+	1450: "〈D-〉",
+	1400: "〈E+〉",
+	1350: "〈E〉",
+	1300: "〈E-〉",
+	1200: "〈F+〉",
+	1100: "〈F〉",
+	1000: "〈F-〉",
+	0: "〈G〉"}
+
+def rating_to_icon(rating):
+	for i in sorted(ranks.keys(), reverse=True):
+		if rating >= i:
+			return(ranks[i])

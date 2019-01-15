@@ -3,6 +3,7 @@
 
 import time, datetime, re, traceback, random
 from discord import errors
+from itertools import combinations
 from modules import client, config, console, stats3, scheduler, utils
 
 max_expire_time = 6*60*60 #6 hours
@@ -11,12 +12,11 @@ max_match_alive_time = 4*60*60 #4 hours
 team_smileys = [":fox:", ":wolf:", ":dog:", ":bear:", ":panda_face:", ":tiger:", ":lion:", ":pig:", ":octopus:", ":boar:", ":spider:", ":scorpion:", ":crab:", ":eagle:", ":shark:", ":bat:", ":gorilla:", ":rhino:", ":dragon_face:", ":deer:"]
 
 def init():
-	global channels, channels_list, active_pickups, active_matches, matches_step, allowoffline
+	global channels, channels_list, active_pickups, active_matches, allowoffline
 	channels = []
 	channels_list = []
 	active_pickups = []
 	active_matches = []
-	matches_step = 0
 	allowoffline = [] #users with !allowoffline
 
 class Match():
@@ -24,15 +24,20 @@ class Match():
 	def __init__(self, pickup, players):
 		global matches_step
 		active_matches.append(self)
-		#set the temporary id
-		matches_step += 1
-		self.id = matches_step
+		#set match id
+		stats3.last_match += 1
+		self.id = stats3.last_match
 		#these values cannot be changed until match end, so we need to save them
 		self.maxplayers = pickup.cfg['maxplayers']
 		self.pick_teams = pickup.channel.get_value('pick_teams', pickup)
 		self.require_ready = pickup.channel.get_value('require_ready', pickup)
 		self.pick_order = pickup.cfg['pick_order']
 		self.ranked = pickup.channel.get_value('ranked', pickup)
+		if self.ranked:
+			self.ranks = stats3.get_ranks(pickup.channel.id, [i.id for i in players])
+			self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
+		else:
+			self.players = list(players)
 		self.captains_role = pickup.channel.get_value('captains_role', pickup)
 		maps = pickup.channel.get_value('maps', pickup)
 		if maps:
@@ -43,12 +48,15 @@ class Match():
 		self.state = "none" #none, waiting_ready, teams_picking or waiting_report
 		self.pickup = pickup
 		self.channel = pickup.channel.channel
-		self.players = list(players)
 		self.winner = None
+		self.unpicked = []
 		self.lastpick = None #fatkid
 
 		if self.pickup.channel.get_value('pick_captains', pickup) and len(players) > 2:
-			if self.captains_role:
+			if self.ranked:
+				candidates = sorted(self.players, key=lambda p: [self.captains_role in [role.id for role in p.roles], self.ranks[p.id]], reverse=True)
+				self.captains = [candidates[0], candidates[1]]
+			elif self.captains_role:
 				self.captains = []
 				candidates = list(filter(lambda x: self.captains_role in [role.id for role in x.roles], self.players))
 				while len(self.captains) < 2:
@@ -85,15 +93,33 @@ class Match():
 					self.unpicked.remove(self.captains[1])
 					
 			elif self.pick_teams == 'auto':
-				unpicked = list(self.players) #todo: sort by rank
-				self.lastpick = unpicked[len(unpicked)-1]
-				self.alpha_team = []
-				self.beta_team = []
-				while len(unpicked) > 1:
-					self.alpha_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
-					self.beta_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
-				if len(unpicked):
-					self.alpha_team.append(unpicked.pop(0))
+				#form balanced teams by rank
+				if self.ranked:
+					teamlen = int(len(self.players)/2)
+					perfect_rank = sum(self.ranks.values())/2
+					best_diff = 10000
+					best_team = None
+					for team in combinations(self.players, teamlen):
+						rank = sum([self.ranks[i.id] for i in team])
+						if abs(perfect_rank-rank) < best_diff:
+							best_diff = abs(perfect_rank-rank)
+							best_team = team
+
+					self.alpha_team = best_team
+					self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
+
+				#generate random teams
+				else:
+					unpicked = list(self.players)
+					self.alpha_team = []
+					self.beta_team = []
+					self.lastpick = unpicked[len(unpicked)-1]
+					while len(unpicked) > 1:
+						self.alpha_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
+						self.beta_team.append(unpicked.pop(random.randint(0,len(unpicked)-1)))
+					if len(unpicked):
+						self.alpha_team.append(unpicked.pop(0))
+
 		else: #for 1v1 pickups
 			self.pick_teams = 'auto'
 			self.alpha_team = [self.players[0]]
@@ -113,30 +139,45 @@ class Match():
 				client.notice(self.channel, "{0} was not ready in time!\r\nReverting **{1}** to gathering state...".format(", ".join(not_ready), self.pickup.name))
 				self.ready_fallback()
 		elif alive_time > max_match_alive_time:
-			client.notice(self.channel, "Match [*{0}*] has timed out.".format(str(self.id)))
+			client.notice(self.channel, "Match *({0})* has timed out.".format(str(self.id)))
 			self.cancel_match()
 
 	def _teams_to_str(self):
-		alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
-		beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
+		if self.ranked:
+			alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(self.ranks[i.id]), i.id) for i in self.alpha_team])
+			beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(self.ranks[i.id]), i.id) for i in self.beta_team])
+		else:
+			alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
+			beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
 		if len(self.players) > 4:
-			return "{0} [{1}] {0}\r\n          :fire: **VERSUS** :fire:\r\n{2} [{3}] {2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str)
+			return "{0} ❲{1}❳ {0}\r\n          :fire: **VERSUS** :fire:\r\n{2} ❲{3}❳ {2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str)
 		elif len(self.players) == 2:
 			return "{0} :fire:**VERSUS**:fire: {1}".format(alpha_str, beta_str)
 		else:
-			return "{0} [{1}] :fire:**VERSUS**:fire: [{3}] {2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str)
+			return "{0} ❲{1}❳ :fire:**VERSUS**:fire: ❲{3}❳ {2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str)
 			
 	def _teams_picking_to_str(self):
 		if len(self.alpha_team):
-			alpha_str = "[{0}]".format(" + ".join(["**{0}**".format(i.nick or i.name) for i in self.alpha_team]))
+			if self.ranked:
+				alpha_str = "❲{0}❳".format(" + ".join(
+					["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in self.alpha_team]))
+			else:
+				alpha_str = "❲{0}❳".format(" + ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.alpha_team]))
 		else:
-			alpha_str = "[alpha]"
+			alpha_str = "❲alpha❳"
 		if len(self.beta_team):
-			beta_str = "[{0}]".format(" + ".join(["**{0}**".format(i.nick or i.name) for i in self.beta_team]))
+			if self.ranked:
+				beta_str = "❲{0}❳".format(" + ".join(
+					["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in self.beta_team]))
+			else:
+				beta_str = "❲{0}❳".format(" + ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.beta_team]))
 		else:
-			beta_str = "[beta]"
-		unpicked_str = ", ".join(["**{0}**".format(i.nick or i.name) for i in self.unpicked])
-		return "{0} {1} :vs: {2} {3}\r\nUnpicked: {4}.".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
+			beta_str = "❲beta❳"
+		if self.ranked:
+			unpicked_str = "\n    ".join(["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in sorted(self.unpicked, key=lambda p: self.ranks[p.id], reverse=True)])
+		else:
+			unpicked_str = "\n    ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.unpicked])
+		return "{0} {1} {0}\n          :fire:**VERSUS**:fire:\n{3} {2} {3}\nUnpicked:\n    {4}".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
 
 	def _startmsg_to_str(self):
 		ipstr = self.pickup.channel.get_value("startmsg", self.pickup)
@@ -244,12 +285,12 @@ class Match():
 				self.print_startmsg_teams_picking_finish()
 				self.finish_match()
 
-		elif state == 'waiting_report':
+		elif self.state == 'waiting_report':
 			self.print_startmsg_report_finish()
 			self.finish_match()
 
 	def finish_match(self):
-		stats3.register_pickup(self.pickup.channel.id, self.pickup.name, self.players, self.lastpick, self.beta_team, self.alpha_team, self.winner)
+		stats3.register_pickup(self)
 		self.pickup.channel.lastgame_cache = stats3.lastgame(self.pickup.channel.id)
 		active_matches.remove(self)
 
@@ -470,8 +511,17 @@ class Channel():
 			elif lower[0]=="teams":
 				self.print_teams(member)
 
+			elif lower[0]=="matches":
+				self.get_matches()
+
 			elif lower[0]=="cancel_match":
 				self.cancel_match(member, lower[1:2], access_level)
+
+			elif lower[0] in ["reportwin", "rw"]:
+				self.report_match(member, args=lower[1:3], access_level=access_level)
+
+			elif lower[0] in ["reportlose", "rl"]:
+				self.report_match(member)
 
 			elif lower[0] in ["ready", "r"]:
 				self.set_ready(member, True)
@@ -481,6 +531,21 @@ class Channel():
 
 			elif lower[0]=="stats":
 				self.getstats(member,msgtup[1:2])
+
+			elif lower[0] in ['leaderboard', 'lb']:
+				self.get_leaderboard()
+
+			elif lower[0]=="rank":
+				self.get_rank_details(member, lower[1:2])
+
+			elif lower[0]=="ranks_table":
+				self.show_ranks_table()
+
+			elif lower[0]=="undo_ranks":
+				self.undo_ranks(member, lower[1:2], access_level)
+
+			elif lower[0]=="reset_ranks":
+				self.reset_ranks(member, access_level)
 
 			elif lower[0]=="top":
 				self.gettop(member, msgtup[1:msglen])
@@ -825,7 +890,7 @@ class Channel():
 									who = "<@{0}>".format(match.beta_team[0].id)
 								else:
 									who = "Beta"
-							msg += " {0}'s turn to pick.".format(who)
+							msg += "\n{0}'s turn to pick!".format(who)
 						client.notice(self.channel, msg)
 					return
 			client.reply(self.channel, member, "Specified player are not in unpicked players list.")
@@ -856,8 +921,10 @@ class Channel():
 				team = match.alpha_team
 			elif args[1] == 'beta':
 				team = match.beta_team
+			elif args[1] == 'unpicked':
+				team = match.unpicked
 			else:
-				client.reply(self.channel, member, "Team argument must be **alpha** or **beta**.")
+				client.reply(self.channel, member, "Team argument must be **alpha**, **beta** or **unpicked**.")
 				return
 
 			if player in match.unpicked:
@@ -867,7 +934,7 @@ class Channel():
 			elif player in match.alpha_team:
 				match.alpha_team.remove(player)
 			team.append(player)
-			if len(match.unpicked) == 0:
+			if match.state == "teams_picking" and len(match.unpicked) == 0:
 				match.next_state()
 			else:
 				client.notice(self.channel, match._teams_picking_to_str())
@@ -973,6 +1040,144 @@ class Channel():
 				return
 
 		client.reply(self.channel, member, "Could not find an active match with id '{0}'".format(args[0]))
+
+	def report_match(self, member, args=None, access_level=None):
+		#!reportwin
+		if args != None:
+			if access_level < 1:
+				client.reply(self.channel, member, "Insufficient permissions.")
+				return
+
+			if len(args) < 2:
+				client.reply(self.channel, member, "You must specify *match_id* and winner team.")
+				return
+			match_id, winner = args[0:2]
+
+			if winner not in ['alpha', 'beta']:
+				client.reply(self.channel, member, "Winner team must be 'alpha' or 'beta'.")
+				return
+
+			match = None
+			for i in active_matches:
+				if str(i.id) == match_id and i.pickup.channel.id == self.id:
+					match = i
+					break
+			if not match:
+				client.reply(self.channel, member, "Could not find an active match with {0} id.".format(match_id))
+				return
+			if match.state != "waiting_report":
+				client.reply(self.channel, member, "This match is not on waiting report state yet.")
+				return
+
+		#!reportlose
+		else:
+			match = None
+			for i in active_matches:
+				if i.pickup.channel.id == self.id and member in i.players:
+					match = i
+					if match.state != "waiting_report":
+						client.reply(self.channel, member, "This match is not on waiting report state yet.")
+						return
+					if match.beta_team[0] == member:
+						winner = 'alpha'
+					elif match.alpha_team[0] == member:
+						winner = 'beta'
+					else:
+						client.reply(self.channel, member, "You must be captain of the team to report its loss.")
+						return
+					break
+			if not match:
+				client.reply(self.channel, member, "You are not in an active match.")
+				return
+
+		if len(match.alpha_team) == 0 or len(match.beta_team) == 0:
+			client.reply(self.channel, member, "Each team must contain atleast one player.")
+			return
+
+		match.winner = winner
+		match.next_state()
+
+	def get_matches(self):
+		l = []
+		for match in active_matches:
+			if match.pickup.channel.id == self.id:
+				l.append("*({0})* **{1}** | {2} | `{3}`".format(match.id, match.pickup.name, match.state, ", ".join([i.nick or i.name for i in match.players])))
+		if len(l):
+			client.notice(self.channel, "\n".join(l))
+		else:
+			client.notice(self.channel, "There is no active matches right now.")
+
+	def get_leaderboard(self):
+		data = stats3.get_ladder(self.id) #[rank, nick, wins, loses]
+		if len(data):
+
+			l = ["{0:^3}|{1:^11}|{2:^25.25}|{3:^9}| {4}".format(
+				n+1,
+				str(data[n][0]) + utils.rating_to_icon(data[n][0]),
+				data[n][1],
+				data[n][2]+data[n][3],
+				"{0}/{1} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
+			) for n in range(0, len(data))]
+
+			s = "```markdown\n № | Rating〈Ξ〉 |         Nickame         | Matches |   W/L\n{0}\n{1}```".format(
+				"-"*60,
+				"\n".join(l))
+
+			client.notice(self.channel, s)
+		else:
+			client.notice(self.channel, "No rating data on this channel.")
+
+	def get_rank_details(self, member, args):
+		if len(args):
+			details, matches = stats3.get_rank_details(self.id, nick=args[0])
+		else:
+			details, matches = stats3.get_rank_details(self.id, user_id=member.id)
+
+		if details:
+			details_str = "№ {0} | Rating {1} | {2} Matches | {3}/{4} ({5})% W/L".format(
+				details[0],
+				str(details[2]) + utils.rating_to_icon(details[2]),
+				details[3]+details[4],
+				details[3],
+				details[4],
+				int(details[3]*100/((details[3]+details[4]) or 1)))
+			s = "```markdown\n**{nick:^{length}.{length}}**\n".format(nick=details[1], length=len(details_str)-4)
+			s += details_str
+			s += "\n{0}".format("-"*len(details_str))
+			for i in matches:
+				ago = datetime.timedelta(seconds=int(time.time() - int(i[1])))
+				s += "\n... ({0}) {1} ago, {2}, {3:+} rating".format(i[0], ago, i[2], i[3])
+			s += "```"
+			client.notice(self.channel, s)
+
+		else:
+			client.notice(self.channel, "No rating data found.")
+
+	def show_ranks_table(self):
+		s = "```markdown\nrating | rank\n-------------\n"
+		s += "\n".join(["{0:^6} | {1:^4}".format(i[0], i[1]) for i in sorted(utils.ranks.items(), key=lambda i: i[0], reverse=True)])
+		s += "```"
+		client.notice(self.channel, s)
+
+	def undo_ranks(self, member, args, access_level):
+		if access_level < 1:
+			client.reply(self.channel, member, "You have no right for this.")
+			return
+
+		if not len(args) or not args[0].isdigit():
+			client.reply(self.channel, member, "You must specify a match id.")
+			return
+
+		reply = stats3.undo_ranks(self.id, int(args[0]))
+		client.notice(self.channel, reply)
+		
+	def reset_ranks(self, member, access_level):
+		if access_level < 2:
+			client.reply(self.channel, member, "You must posses administrator rights to use this command.")
+			return
+		else:
+			stats3.reset_ranks(self.id)
+			client.reply(self.channel, member, "All rating data has been flushed.")
 
 	def set_ready(self, member, isready):
 		match = self._match_by_player(member)
@@ -1749,7 +1954,35 @@ class Channel():
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
 			else:
 				client.reply(self.channel, member, "pick_captains value must be 0 or 1.")
-				
+
+		elif variable == "ranked":
+			if value in ["0", "1"]:
+				self.update_channel_config(variable, bool(int(value)))
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+			else:
+				client.reply(self.channel, member, "ranked value must be none, 0 or 1.")
+
+		elif variable == "ranked_calibrate":
+			if value in ["0", "1"]:
+				self.update_channel_config(variable, bool(int(value)))
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+			else:
+				client.reply(self.channel, member, "ranked_calibrate value must be none, 0 or 1.")
+
+		elif variable == "ranked_multiplayer":
+			if value.lower() == "none":
+				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
+			else:
+				try:
+					number = int(value)
+				except:
+					client.reply("Value must be a number")
+				if 8 <= number < 256:
+					self.update_channel_config(variable, number)
+					client.reply(self.channel, member, "Done.")
+				else:
+					client.reply(self.channel, member, "ranked_multiplayer number must be a number between 8 and 256.")
+
 		elif variable == "promotion_role":
 			if value.lower() == "none":
 				self.update_channel_config(variable, None)
@@ -1966,6 +2199,18 @@ class Channel():
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
 			else:
 				client.reply(self.channel, member, "pick_captains value must be none, 0 or 1.")
+
+		elif variable == "ranked":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			elif value in ["0", "1"]:
+				for i in pickups:
+					self.update_pickup_config(i, variable, bool(int(value)))
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+			else:
+				client.reply(self.channel, member, "ranked value must be none, 0 or 1.")
 
 		elif variable == "pick_order":
 			value = value.lower()
