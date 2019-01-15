@@ -137,17 +137,17 @@ def register_pickup(match):
 
 	for player in [ player for player in match.players if player not in match.unpicked ]:
 		user_name = player.nick or player.name
-		is_lastpick = player == match.lastpick #True or False
-		if player in match.alpha_team:
-			team_num = 0
-			team = 'alpha'
-		elif player in match.beta_team:
-			team_num = 1
-			team = 'beta'
-		else:
-			team = None
+		team = None
+		if match.alpha_team and match.beta_team:
+			is_lastpick = player == match.lastpick #True or False
+			if player in match.alpha_team:
+				team_num = 0
+				team = 'alpha'
+			elif player in match.beta_team:
+				team_num = 1
+				team = 'beta'
 
-		if match.ranked and match.winner:
+		if match.ranked and match.winner and team:
 			c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, wins, loses, phrase) VALUES (?, ?, ?, 1400, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name))
 
 			#if we need to calibrate this player add additional rank gain/loss boost
