@@ -91,8 +91,7 @@ def reply(channel, member, msg):
 	send_queue.append([channel, "<@{0}>, {1}".format(member.id, msg)])
 	
 def private_reply(channel, member, msg):
-	pass
-	#send_queue.append([member, msg])
+	send_queue.append([member, msg])
 	
 def get_member_by_nick(channel, nick):
 	return discord.utils.find(lambda m: m.name == nick, channel.server.members)
