@@ -138,8 +138,8 @@ def register_pickup(match):
 	for player in [ player for player in match.players if player not in match.unpicked ]:
 		user_name = player.nick or player.name
 		team = None
+		is_lastpick = player == match.lastpick #True or False
 		if match.alpha_team and match.beta_team:
-			is_lastpick = player == match.lastpick #True or False
 			if player in match.alpha_team:
 				team_num = 0
 				team = 'alpha'
