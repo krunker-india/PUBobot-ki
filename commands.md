@@ -31,6 +31,18 @@
 !capfor alpha or beta - become a captain of specified team.   
 !teams - show teams for current pickup.   
 
+### RANKING
+!leaderboard or !lb - show top 10 players by rating.   
+!rank - show your rating stats.   
+!reportlose or !rl - report loss on your current match (avalible for captains only).   
+!matches - show all active matches on the channel.   
+!ranks_table - show rank to rating table.   
+##### For moderators and above:
+!reportwin or !rw <i>match_id</i> alpha or beta - report win on specified match for specified team.   
+!undo_ranks <i>match_id</i> - undo all rating changes for a previously reported match.   
+##### For admins:
+!reset_ranks - reset all rating data on the channel. <b>Warning, this action is irreversible!</b>   
+
 ### MODERATION:
 !noadd <i>@nick</i> [<i>time</i>] [<i>reason</i>] - disallow user to play pickups.   
 !noadds - show list of users who are disallowed to play pickups.   
@@ -53,9 +65,9 @@
 !pickup_cfg <i>pickup</i> - show specified pickup configuration variables.   
 !set_ao_for_all <i>name</i> 0|1 - allow/disallow offline for all users of specific pickup kind.
 
-!set_default variable value - set a global variable value. Availible variables: admin_role, moderator_role, captains_role, prefix, default_bantime, ++_req_players, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, promotion_role, promotion_delay, blacklist_role, whitelist_role, require_ready.   
+!set_default variable value - set a global variable value. Availible variables: admin_role, moderator_role, captains_role, prefix, default_bantime, ++_req_players, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, promotion_role, promotion_delay, blacklist_role, whitelist_role, require_ready, ranked, ranked_calibrate, ranked_multiplayer, help_answer.   
 
-!set_pickups <i>pickup</i>[ <i>pickup</i>...] variable value - set variables for specified pickups. Availible variables: maxplayers, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, pick_order, promotion_role, blacklist_role, whitelist_role, captains_role, require_ready.   
+!set_pickups <i>pickup</i>[ <i>pickup</i>...] variable value - set variables for specified pickups. Availible variables: maxplayers, startmsg, submsg, ip, password, maps, pick_captains, pick_teams, pick_order, promotion_role, blacklist_role, whitelist_role, captains_role, require_ready, ranked, help_answer.   
 
 ##### CONFIGURATION VARIABLES:
 * For any variable set 'none' value to disable.
@@ -75,7 +87,7 @@
 * pick_captains 0 or 1 - set if bot should suggest captains.
 * pick_teams <i>value</i> -  set teams pick system the bot should use. Value must be in 'no_teams', 'auto' or 'manual'.
  * no_teams - bot will only print players list and captains if needed.
- * auto - bot will print random teams.
+ * auto - bot will print teams balanced by rating on ranked pickups or random teams.
  * manual - users will have to pick teams using teams picking commands.
 * pick_order <i>order</i> - force specified teams picking order. Example value: 'abababba'.
 * promotion_role <i>role_name</i> - set promotion_role to highlight on !promote and !sub commands.
@@ -83,4 +95,7 @@
 * blacklist_role <i>role_name</i> - users with this role will not be able to add to specified pickups.
 * whitelist_role <i>role_name</i> - only users with this role will be able to add to specified pickups.
 * require_ready none or <i>time</i> - if set users will have to confirm themselves using '!ready' command.
+* ranked 0 or 1 - set pickup(s) to have rating system and make players have to report their matches.
+* ranked_calibrate 0 or 1 - set to enable rating boost on first 10 user's matches, default on. Only for 'set_default'.
+* ranked_multiplayer 8 to 256 - change rating K-factor (gain/loss multiplyer), default 32. Only for 'set_default'.
 * help_answer <i>text</i> - set an answer on !help command.

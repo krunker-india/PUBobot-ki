@@ -39,7 +39,7 @@ async def send(): #send messages in queue
 	if len(send_queue):
 		dest, msg = send_queue.pop(0)
 		try:
-			console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
+			#console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
 			await c.send_message(dest, msg)
 		except Exception as e:
 			console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))
@@ -91,7 +91,8 @@ def reply(channel, member, msg):
 	send_queue.append([channel, "<@{0}>, {1}".format(member.id, msg)])
 	
 def private_reply(channel, member, msg):
-	send_queue.append([member, msg])
+	pass
+	#send_queue.append([member, msg])
 	
 def get_member_by_nick(channel, nick):
 	return discord.utils.find(lambda m: m.name == nick, channel.server.members)

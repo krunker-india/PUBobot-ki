@@ -8,9 +8,9 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 3
+version = 4
 def init():
-	global conn, c
+	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
 	conn = sqlite3.connect("database.sqlite3")
 	conn.row_factory = sqlite3.Row
@@ -21,6 +21,12 @@ def init():
 		console.display("DATATBASE| Creating new database...")
 		create_tables()
 
+	c.execute("SELECT pickup_id from pickups ORDER BY pickup_id DESC LIMIT 1")
+	result = c.fetchone()
+	if result:
+		last_match = result[0]
+	else:
+		last_match = -1
 
 def get_channels():
 	l = []
@@ -89,49 +95,85 @@ def reset_stats(channel_id):
 	c.execute("DELETE FROM player_pickups WHERE channel_id = ?", (channel_id, ))
 	conn.commit()
 
-def register_pickup(channel_id, pickup_name, players, lastpick, beta_team, alpha_team, winner_team):
+def undo_ranks(channel_id, match_id):
+	c.execute("SELECT user_id, user_name, rank_change, is_winner FROM player_pickups WHERE channel_id = ? AND pickup_id = ? AND is_ranked = 1", (channel_id, match_id))
+	l = c.fetchall()
+	if len(l):
+		c.execute("UPDATE player_pickups SET is_ranked = 0 WHERE channel_id = ? AND pickup_id = ?", (channel_id, match_id))
+		for user_id, user_name, rank_change, is_winner in l:
+			c.execute("UPDATE channel_players SET rank=rank-(?), wins=wins-?, loses=loses-? WHERE channel_id = ? AND user_id = ?", (rank_change, int(is_winner), 1-int(is_winner), channel_id, user_id))
+		conn.commit()
+		return("\n".join(["`{0}` - **{1:+}** points".format(i[1], 0-i[2]) for i in l]))
+	else:
+		return("No changes made.")
+
+def reset_ranks(channel_id):
+	c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL WHERE channel_id = ?", (channel_id,))
+	conn.commit()
+
+def register_pickup(match):
 	at = int(time())
-	playersstr = " " + " ".join([i.nick or i.name for i in players]) + " "
-	if beta_team:
-		betastr = " ".join([i.nick or i.name for i in beta_team])
+
+	playersstr = " " + " ".join([i.nick or i.name for i in match.players]) + " "
+	if match.alpha_team and match.beta_team:
+		alphastr = " ".join([i.nick or i.name for i in match.alpha_team])
+		betastr = " ".join([i.nick or i.name for i in match.beta_team])
 	else:
 		betastr = None
-	if alpha_team:
-		alphastr = " ".join([i.nick or i.name for i in alpha_team])
-	else:
 		alphastr = None
 
-	#insert pickup
-	c.execute("INSERT INTO pickups (channel_id, pickup_name, at, players, alpha_players, beta_players, winner_team) VALUES (?, ?, ?, ?, ?, ?, ?)", (channel_id, pickup_name, at, playersstr, alphastr, betastr, winner_team))
-	#update player_games and players
-	for player in players:
-		team = None
-		is_winner = None
-		if beta_team and alpha_team:
-			if player in beta_team:
-				team = 'beta'
-				if winner_team == team:
-					is_winner = True
-				elif winner_team == 'alpha':
-					is_winner = False
-				else:
-					is_winner = None
-			elif player in alpha_team:
-				team = 'alpha'
-				if winner_team == team:
-					is_winner = True
-				elif winner_team == 'beta':
-					is_winner = False
-				else:
-					is_winner = None
-		if lastpick:
-			if player == lastpick:
-				is_lastpick = True
-			else:
-				is_lastpick = False
+	c.execute("INSERT INTO pickups (pickup_id, channel_id, pickup_name, at, players, alpha_players, beta_players, is_ranked, winner_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, match.pickup.name, at, playersstr, alphastr, betastr, match.ranked, match.winner))
+
+	if match.ranked and match.winner:
+		alpha_rank = int(sum([ match.ranks[player.id] for player in match.alpha_team ])/len(match.alpha_team))
+		beta_rank = int(sum([ match.ranks[player.id] for player in match.beta_team ])/len(match.beta_team))
+
+		#[alpha, beta]
+		expected_scores = [1/(1+10**((beta_rank-alpha_rank)/400)), 1/(1+10**((alpha_rank-beta_rank)/400))]
+		if match.winner == 'alpha':
+			scores = [1, 0]
 		else:
-			is_lastpick = None
-		c.execute("INSERT OR IGNORE INTO player_pickups (channel_id, user_id, user_name, pickup_name, at, team, is_winner, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (channel_id, player.id, player.name, pickup_name, at, team, is_winner, is_lastpick))
+			scores = [0, 1]
+
+	for player in [ player for player in match.players if player not in match.unpicked ]:
+		user_name = player.nick or player.name
+		is_lastpick = player == match.lastpick #True or False
+		if player in match.alpha_team:
+			team_num = 0
+			team = 'alpha'
+		elif player in match.beta_team:
+			team_num = 1
+			team = 'beta'
+		else:
+			team = None
+
+		if match.ranked and match.winner:
+			c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, wins, loses, phrase) VALUES (?, ?, ?, 1400, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name))
+
+			#if we need to calibrate this player add additional rank gain/loss boost
+			rank_k = match.pickup.channel.cfg['ranked_multiplayer']
+			if match.pickup.channel.cfg['ranked_calibrate']:
+				c.execute("SELECT wins, loses FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
+				result = c.fetchone()
+				wins = result[0] or 0
+				loses = result[1] or 0
+				if wins + loses < 10:
+					rank_k = rank_k * (10-(wins+loses))
+
+			is_ranked = True
+			rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
+			rank_after = match.ranks[player.id] + rank_change
+			is_winner = bool(scores[team_num])
+
+			c.execute("UPDATE channel_players SET nick = ?, rank = ?, wins=?, loses=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, wins+scores[team_num], loses+abs(scores[team_num]-1), match.pickup.channel.id, player.id))
+		else:
+			is_ranked = False
+			rank_change = None
+			rank_after = None
+			is_winner = None
+
+		c.execute("INSERT OR IGNORE INTO player_pickups (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick))
+
 	conn.commit()
 
 def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
@@ -146,6 +188,36 @@ def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
 			c.execute("SELECT pickup_id, at, pickup_name, players, alpha_players, beta_players, winner_team FROM pickups WHERE channel_id = '{0}' and players LIKE '% {1} %' ORDER BY pickup_id DESC LIMIT 1".format(channel_id, text))
 			result = c.fetchone()
 	return result
+
+def get_ranks(channel_id, user_ids):
+	d = dict()
+	c.execute("SELECT user_id, rank FROM channel_players WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel_id, *user_ids))
+	results = c.fetchall()
+	for user_id, rank in results:
+		if rank:
+			d[user_id] = rank
+	for user_id in user_ids:
+		if user_id not in d.keys():
+			d[user_id] = 1400
+	return d
+
+def get_rank_details(channel_id, user_id=False, nick=False):
+	c.execute("SELECT user_id, nick, rank, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank DESC", (channel_id,))
+	lb = c.fetchall()
+	for i in lb:
+		if i[0] == user_id or i[1].lower() == nick:
+			c.execute("SELECT pickup_id, at, pickup_name, rank_change FROM player_pickups WHERE user_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], ))
+			matches = c.fetchall()
+			place = lb.index(i)+1
+			i = list(i)
+			i[0] = place #replace user_id with ladder position
+			print(i)
+			return([i, matches])
+	return([None, None])
+
+def get_ladder(channel_id, limit=10):
+	c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank desc LIMIT ?", (channel_id, limit))
+	return c.fetchall()
 
 def stats(channel_id, text=False):
 	if not text: #return overall stats
@@ -362,6 +434,31 @@ def check_db():
 			c.execute("""ALTER TABLE `channels`
 			ADD COLUMN `promotemsg` TEXT
 			""")
+
+		if db_version < 4:
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `ranked_multiplayer` INTEGER DEFAULT 32;
+			""")
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `ranked_calibrate` INTEGER DEFAULT 1;
+			""")
+
+			c.execute("""ALTER TABLE `pickups`
+			ADD COLUMN `is_ranked` BOOL""")
+
+			c.execute("""ALTER TABLE `player_pickups`
+			ADD COLUMN `is_ranked` BOOL""")
+			c.execute("""ALTER TABLE `player_pickups`
+			ADD COLUMN `rank_after` INTEGER""")
+			c.execute("""ALTER TABLE `player_pickups`
+			ADD COLUMN `rank_change` INTEGER""")
+
+			#rename points to rank and add wins and loses counters
+			c.executescript("""ALTER TABLE channel_players RENAME TO tmp_channel_players;
+			CREATE TABLE channel_players(`channel_id` TEXT, `user_id` TEXT, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT);
+			INSERT INTO channel_players(channel_id, user_id, phrase) SELECT channel_id, user_id, phrase FROM tmp_channel_players;
+			DROP TABLE tmp_channel_players""")
+				
 		conn.commit()
 
 def create_tables():
@@ -384,7 +481,10 @@ def create_tables():
 	c.execute("""CREATE TABLE `channel_players` 
 		( `channel_id` TEXT,
 		`user_id` TEXT,
-		`points` INTEGER,
+		`nick` TEXT,
+		`rank` INTEGER,
+		`wins` INTEGER,
+		`loses` INTEGER,
 		`phrase` TEXT,
 		PRIMARY KEY(`channel_id`, `user_id`) )""")
 
@@ -418,6 +518,8 @@ def create_tables():
 		`whitelist_role` TEXT,
 		`require_ready` INTEGER,
 		`ranked` INTEGER,
+		`ranked_multiplayer` INTEGER DEFAULT 32,
+		`ranked_calibrate` INTEGER DEFAULT 1,
 		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
 		PRIMARY KEY(`channel_id`) )""")
 
@@ -454,6 +556,7 @@ def create_tables():
 		`players` TEXT,
 		`alpha_players` TEXT,
 		`beta_players` TEXT,
+		`is_ranked` BOOL,
 		`winner_team` TEXT )""")
 
 	c.execute("""CREATE TABLE `player_pickups` 
@@ -464,7 +567,10 @@ def create_tables():
 		`pickup_name` TEXT,
 		`at` INTEGER,
 		`team` TEXT,
+		`is_ranked` BOOL,
 		`is_winner` BLOB,
+		`rank_after` INTEGER,
+		`rank_change` INTEGER,
 		`is_lastpick` BLOB)""")
 
 	c.execute("""CREATE TABLE `players` 
