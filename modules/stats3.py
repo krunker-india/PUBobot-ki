@@ -455,7 +455,7 @@ def check_db():
 
 			#rename points to rank and add wins and loses counters
 			c.executescript("""ALTER TABLE channel_players RENAME TO tmp_channel_players;
-			CREATE TABLE channel_players(`channel_id` TEXT, `user_id` TEXT, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT);
+			CREATE TABLE channel_players(`channel_id` TEXT, `user_id` TEXT, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`));
 			INSERT INTO channel_players(channel_id, user_id, phrase) SELECT channel_id, user_id, phrase FROM tmp_channel_players;
 			DROP TABLE tmp_channel_players""")
 				
