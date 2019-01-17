@@ -249,7 +249,7 @@ def stats(channel_id, text=False):
 			return "Stats for **{0}**. Played: {1} ({2}%).".format(l[0], l[1], percent)
 		else:
 			# try to find by user_name
-			c.execute("SELECT user_id, user_name FROM player_pickups WHERE channel_id = ? AND user_name = ? COLLATE NOCASE LIMIT 1", (channel_id, text))
+			c.execute("SELECT user_id, user_name FROM player_pickups WHERE channel_id = ? AND user_name = ? COLLATE NOCASE ORDER BY rowid DESC LIMIT 1", (channel_id, text))
 			l = c.fetchone()
 			if l != None:
 				user_id = l[0]
