@@ -1131,7 +1131,7 @@ class Channel():
 
 	def get_rank_details(self, member, args):
 		if len(args):
-			details, matches = stats3.get_rank_details(self.id, nick=" ".joi(args))
+			details, matches = stats3.get_rank_details(self.id, nick=" ".join(args))
 		else:
 			details, matches = stats3.get_rank_details(self.id, user_id=member.id)
 
