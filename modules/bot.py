@@ -532,21 +532,6 @@ class Channel():
 			elif lower[0]=="stats":
 				self.getstats(member,msgtup[1:2])
 
-			elif lower[0] in ['leaderboard', 'lb']:
-				self.get_leaderboard()
-
-			elif lower[0]=="rank":
-				self.get_rank_details(member, lower[1:2])
-
-			elif lower[0]=="ranks_table":
-				self.show_ranks_table()
-
-			elif lower[0]=="undo_ranks":
-				self.undo_ranks(member, lower[1:2], access_level)
-
-			elif lower[0]=="reset_ranks":
-				self.reset_ranks(member, access_level)
-
 			elif lower[0]=="top":
 				self.gettop(member, msgtup[1:msglen])
 
@@ -612,6 +597,23 @@ class Channel():
 
 			elif lower[0]=="help":
 				self.help_answer(member, lower[1:])
+
+			elif self.cfg["ranked"]:
+
+				if lower[0] in ['leaderboard', 'lb']:
+					self.get_leaderboard()
+
+				elif lower[0]=="rank":
+					self.get_rank_details(member, lower[1:len(lower)])
+
+				elif lower[0]=="ranks_table":
+					self.show_ranks_table()
+
+				elif lower[0]=="undo_ranks":
+					self.undo_ranks(member, lower[1:2], access_level)
+
+				elif lower[0]=="reset_ranks":
+					self.reset_ranks(member, access_level)
 			
 	### COMMANDS ###
 
@@ -1129,7 +1131,7 @@ class Channel():
 
 	def get_rank_details(self, member, args):
 		if len(args):
-			details, matches = stats3.get_rank_details(self.id, nick=args[0])
+			details, matches = stats3.get_rank_details(self.id, nick=" ".join(args))
 		else:
 			details, matches = stats3.get_rank_details(self.id, user_id=member.id)
 

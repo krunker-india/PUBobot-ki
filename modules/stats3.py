@@ -249,7 +249,7 @@ def stats(channel_id, text=False):
 			return "Stats for **{0}**. Played: {1} ({2}%).".format(l[0], l[1], percent)
 		else:
 			# try to find by user_name
-			c.execute("SELECT user_id, user_name FROM player_pickups WHERE channel_id = ? AND user_name = ? COLLATE NOCASE LIMIT 1", (channel_id, text))
+			c.execute("SELECT user_id, user_name FROM player_pickups WHERE channel_id = ? AND user_name = ? COLLATE NOCASE ORDER BY rowid DESC LIMIT 1", (channel_id, text))
 			l = c.fetchone()
 			if l != None:
 				user_id = l[0]
@@ -455,7 +455,7 @@ def check_db():
 
 			#rename points to rank and add wins and loses counters
 			c.executescript("""ALTER TABLE channel_players RENAME TO tmp_channel_players;
-			CREATE TABLE channel_players(`channel_id` TEXT, `user_id` TEXT, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT);
+			CREATE TABLE channel_players(`channel_id` TEXT, `user_id` TEXT, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`));
 			INSERT INTO channel_players(channel_id, user_id, phrase) SELECT channel_id, user_id, phrase FROM tmp_channel_players;
 			DROP TABLE tmp_channel_players""")
 				
