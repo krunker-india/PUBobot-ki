@@ -152,13 +152,12 @@ def register_pickup(match):
 
 			#if we need to calibrate this player add additional rank gain/loss boost
 			rank_k = match.pickup.channel.cfg['ranked_multiplayer']
-			if match.pickup.channel.cfg['ranked_calibrate']:
-				c.execute("SELECT wins, loses FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
-				result = c.fetchone()
-				wins = result[0] or 0
-				loses = result[1] or 0
-				if wins + loses < 10:
-					rank_k = rank_k * (10-(wins+loses))
+			c.execute("SELECT wins, loses FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
+			result = c.fetchone()
+			wins = result[0] or 0
+			loses = result[1] or 0
+			if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 10:
+				rank_k = rank_k * (10-(wins+loses))
 
 			is_ranked = True
 			rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
