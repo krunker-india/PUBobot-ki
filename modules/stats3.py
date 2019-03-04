@@ -205,7 +205,7 @@ def get_rank_details(channel_id, user_id=False, nick=False):
 	lb = c.fetchall()
 	for i in lb:
 		if i[0] == user_id or i[1].lower() == nick:
-			c.execute("SELECT pickup_id, at, pickup_name, rank_change FROM player_pickups WHERE user_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], ))
+			c.execute("SELECT pickup_id, at, pickup_name, rank_change FROM player_pickups WHERE user_id = ? AND channel_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], channel_id))
 			matches = c.fetchall()
 			place = lb.index(i)+1
 			i = list(i)
