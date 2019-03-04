@@ -36,13 +36,15 @@ def get_empty_servers():
 			console.display("server name: {0}, id: {1}".format(serv.name, serv.id))
 
 async def send(): #send messages in queue
+	global send_queue
 	if len(send_queue):
-		dest, msg = send_queue.pop(0)
-		try:
-			#console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
-			await c.send_message(dest, msg)
-		except Exception as e:
-			console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))
+		for dest, msg in send_queue:
+			try:
+				#console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
+				await c.send_message(dest, msg)
+			except Exception as e:
+				console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))
+		send_queue = []
 
 async def close(): #on quit
 	if c.is_logged_in:
