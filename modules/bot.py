@@ -52,10 +52,17 @@ class Match():
 		self.unpicked = []
 		self.lastpick = None #fatkid
 
-		if self.pickup.channel.get_value('pick_captains', pickup) and len(players) > 2:
+		pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
+		if pick_captains and len(players) > 2:
 			if self.ranked:
-				candidates = sorted(self.players, key=lambda p: [self.captains_role in [role.id for role in p.roles], self.ranks[p.id]], reverse=True)
-				self.captains = [candidates[0], candidates[1]]
+				if pick_captains == 1:
+					candidates = sorted(self.players, key=lambda p: [self.captains_role in [role.id for role in p.roles], self.ranks[p.id]], reverse=True)
+					self.captains = [candidates[0], candidates[1]]
+				else:  # pick_captains == 2:
+					candidates = sorted(self.players, key=lambda p: [self.ranks[p.id]], reverse=True)
+					i = random.randrange(len(candidates)-1)
+					self.captains = [candidates[i], candidates[i+1]]
+
 			elif self.captains_role:
 				self.captains = []
 				candidates = list(filter(lambda x: self.captains_role in [role.id for role in x.roles], self.players))
@@ -1951,11 +1958,11 @@ class Channel():
 				client.reply(self.channel, member, "teams_pick_system value must be no_teams, just_captains, captains_pick, manual_pick or random_teams.")
 
 		elif variable == "pick_captains":
-			if value in ["0", "1"]:
-				self.update_channel_config(variable, bool(int(value)))
+			if value in ["0", "1", "2"]:
+				self.update_channel_config(variable, int(value))
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
 			else:
-				client.reply(self.channel, member, "pick_captains value must be 0 or 1.")
+				client.reply(self.channel, member, "pick_captains value must be 0 or 1 or 2.")
 
 		elif variable == "ranked":
 			if value in ["0", "1"]:
@@ -2195,12 +2202,12 @@ class Channel():
 				for i in pickups:
 					self.update_pickup_config(i, variable, None)
 				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
-			elif value in ["0", "1"]:
+			elif value in ["0", "1", "2"]:
 				for i in pickups:
-					self.update_pickup_config(i, variable, bool(int(value)))
+					self.update_pickup_config(i, variable, int(value))
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
 			else:
-				client.reply(self.channel, member, "pick_captains value must be none, 0 or 1.")
+				client.reply(self.channel, member, "pick_captains value must be none, 0 or 1 or 2.")
 
 		elif variable == "ranked":
 			if value.lower() == "none":
