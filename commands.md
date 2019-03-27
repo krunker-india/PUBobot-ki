@@ -86,9 +86,9 @@
 * maps <i>map_name</i>[, <i>map_name</i>...] - set maps.
 * pick_captains 0 or 1 - set if bot should suggest captains.
 * pick_teams <i>value</i> -  set teams pick system the bot should use. Value must be in 'no_teams', 'auto' or 'manual'.
- * no_teams - bot will only print players list and captains if needed.
- * auto - bot will print teams balanced by rating on ranked pickups or random teams.
- * manual - users will have to pick teams using teams picking commands.
+  * no_teams - bot will only print players list and captains if needed.
+  * auto - bot will print teams balanced by rating on ranked pickups or random teams.
+  * manual - users will have to pick teams using teams picking commands.
 * pick_order <i>order</i> - force specified teams picking order. Example value: 'abababba'.
 * promotion_role <i>role_name</i> - set promotion_role to highlight on !promote and !sub commands.
 * promotion_delay <i>time</i> - set time delay between !promote and !sub commands can be used.
