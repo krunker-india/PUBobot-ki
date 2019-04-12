@@ -254,9 +254,6 @@ class Match():
 		if self.map:
 			startmsg += "\r\nSuggested map: **{0}**.".format(self.map)
 		client.notice(self.channel, startmsg)
-
-	def print_startmsg_report_finish(self):
-		client.notice(self.channel, "Match *({0})* has been finished.".format(self.id))
 		
 	def next_state(self):
 		if self.state == 'none':
@@ -293,15 +290,28 @@ class Match():
 				self.finish_match()
 
 		elif self.state == 'waiting_report':
-			self.print_startmsg_report_finish()
 			self.finish_match()
 
 	def finish_match(self):
-		stats3.register_pickup(self)
+		new_ranks = stats3.register_pickup(self)
 		self.pickup.channel.lastgame_cache = stats3.lastgame(self.pickup.channel.id)
 		active_matches.remove(self)
+		if self.state == 'waiting_report':
+			client.notice(self.channel, "Match *({0})* has been finished.".format(self.id))
+			if len(new_ranks):
+				summary = '\n'.join(
+					[ "{0} {1}{2} -> {3}{4}".format(
+						new_ranks[i][0],
+						self.ranks[i],
+						utils.rating_to_icon(self.ranks[i]),
+						new_ranks[i][1],
+						utils.rating_to_icon(new_ranks[i][1])
+					) for i in new_ranks.keys() ]
+				)
+				client.notice(self.channel, "```python\n"+summary+"```")
 
 	def cancel_match(self):
+		client.notice(self.channel, "{0} your match has been canceled.".format(', '.join(["<@{0}>".format(i.id) for i in self.players])))
 		active_matches.remove(self)
 
 	def ready_ready(self, player): #on !ready commands
@@ -1045,7 +1055,6 @@ class Channel():
 		for i in active_matches:
 			if str(i.id) == args[0]:
 				i.cancel_match()
-				client.reply(self.channel, member, "Match *({0})* has been canceled.".format(str(i.id)))
 				return
 
 		client.reply(self.channel, member, "Could not find an active match with id '{0}'".format(args[0]))

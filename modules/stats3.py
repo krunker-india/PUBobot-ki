@@ -112,6 +112,7 @@ def reset_ranks(channel_id):
 	conn.commit()
 
 def register_pickup(match):
+	new_ranks = dict()
 	at = int(time())
 
 	playersstr = " " + " ".join([i.nick or i.name for i in match.players]) + " "
@@ -165,6 +166,8 @@ def register_pickup(match):
 			is_winner = bool(scores[team_num])
 
 			c.execute("UPDATE channel_players SET nick = ?, rank = ?, wins=?, loses=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, wins+scores[team_num], loses+abs(scores[team_num]-1), match.pickup.channel.id, player.id))
+			new_ranks[player.id] = [user_name, rank_after]
+
 		else:
 			is_ranked = False
 			rank_change = None
@@ -174,6 +177,7 @@ def register_pickup(match):
 		c.execute("INSERT OR IGNORE INTO player_pickups (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick))
 
 	conn.commit()
+	return new_ranks
 
 def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
 	if not text: #return lastest game
