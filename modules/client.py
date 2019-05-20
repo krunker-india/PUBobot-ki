@@ -101,8 +101,11 @@ def get_member_by_nick(channel, nick):
 
 def get_member_by_id(channel, highlight):
 	memberid = highlight.lstrip('<@!').rstrip('>')
-	server = c.get_server(channel.guild.id)
-	return discord.utils.find(lambda m: m.id == memberid, server.members)
+	if memberid.isdigit():
+		server = c.get_server(channel.guild.id)
+		return discord.utils.find(lambda m: m.id == memberid, server.members)
+	else:
+		return None
 
 ### discord events ###
 c = discord.Client()

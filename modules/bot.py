@@ -887,6 +887,10 @@ class Channel():
 
 		if len(args):
 			targetid = args[0].lstrip("<@!").rstrip(">")
+			if not targetid.isdigit():
+				client.reply(self.channel, member, "You must specify a highlight!")
+				return
+			targetid = int(targetid)
 			for i in match.unpicked:
 				if i.id == targetid:
 					team.append(i)
