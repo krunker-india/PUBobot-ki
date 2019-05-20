@@ -42,8 +42,8 @@ def get_channels():
 		l.append(dict(chan))
 
 	for i in l:
-		i['channel_id'] = int(i['channel_id'])
-		i['server_id'] = int(i['server_id'])
+		i['channel_id'] = i['channel_id']
+		i['server_id'] = i['server_id']
 
 	return l
 

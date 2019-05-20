@@ -3,7 +3,7 @@ PUBobot-discord is a multichannel discord bot for pickup games organisation.
 Bot keeps statistic database, have features to automatically remove AFK users, disallow users to play pickups, fun phrases, teams picking and more!
 
 # Requirements
-Python 3.5+, sqlite3 module for python, discord api v0.10+.
+Python 3.6+, sqlite3 module for python, discord api v1.0+.
 
 # Running
 1. Fill your discord bot token or username and password in the 'config.cfg' file.

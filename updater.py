@@ -31,7 +31,7 @@ conn.commit()
 
 #channels
 print("Rebuilding channels table...")
-c.execute("SELECT * FROM `channels`")
+c.execute("SELECT `server_id`, `server_name`, `channel_id`, `channel_name`, `premium`, `first_init`, `admin_id`, `admin_role`, `moderator_role`, `captains_role`, `noadd_role`, `prefix`, `default_bantime`, `++_req_players`, `startmsg` TEXT, `submsg` TEXT, `promotemsg`, `ip`, `password`, `maps`, `pick_captains`, `pick_teams`, `pick_order`, `promotion_role`, `promotion_delay`, `blacklist_role`, `whitelist_role`, `require_ready`, `ranked`, `ranked_multiplayer`,`ranked_calibrate`, `start_pm_msg` FROM `channels`")
 data = c.fetchall()
 c.execute("DROP TABLE `channels`")
 c.execute("CREATE TABLE `channels` ( `server_id` INTEGER, `server_name` TEXT, `channel_id` INTEGER, `channel_name` TEXT, `premium` BOOL, `first_init` INTEGER, `admin_id` INTEGER, `admin_role` INTEGER, `moderator_role` INTEGER, `captains_role` INTEGER, `noadd_role` INTEGER, `prefix` TEXT DEFAULT '!', `default_bantime` INTEGER DEFAULT 7200, `++_req_players` INTEGER DEFAULT 5, `startmsg` TEXT, `submsg` TEXT, `promotemsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `pick_captains` INTEGER, `pick_teams` TEXT DEFAULT 'no_teams', `pick_order` TEXT, `promotion_role` INTEGER, `promotion_delay` INTEGER DEFAULT 18000, `blacklist_role` INTEGER, `whitelist_role` INTEGER, `require_ready` INTEGER, `ranked` INTEGER, `ranked_multiplayer` INTEGER DEFAULT 32, `ranked_calibrate` INTEGER DEFAULT 1, `start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.', PRIMARY KEY(`channel_id`) )")
@@ -40,7 +40,7 @@ conn.commit()
 
 #pickup_configs
 print("Rebuilding pickup_configs table...")
-c.execute("SELECT * FROM `pickup_configs`")
+c.execute("SELECT `channel_id`, `pickup_name`, `maxplayers`, `minplayers`, `startmsg`, `start_pm_msg`, `submsg`, `promotemsg`, `ip`, `password`, `maps`, `pick_captains`, `captains_role`, `pick_teams`, `pick_order`, `promotion_role`, `blacklist_role`, `whitelist_role`, `captain_role`, `require_ready`, `ranked`, `allow_offline` FROM `pickup_configs`")
 data = c.fetchall()
 c.execute("DROP TABLE `pickup_configs`")
 c.execute("CREATE TABLE `pickup_configs` ( `channel_id` INTEGER, `pickup_name` TEXT, `maxplayers` INTEGER, `minplayers` INTEGER, `startmsg` TEXT, `start_pm_msg` TEXT, `submsg` TEXT, `promotemsg` TEXT, `ip` TEXT, `password` TEXT, `maps` TEXT, `pick_captains` INTEGER, `captains_role` INTEGER, `pick_teams` TEXT, `pick_order` TEXT, `promotion_role` INTEGER, `blacklist_role` INTEGER, `whitelist_role` INTEGER, `captain_role` INTEGER, `require_ready` INTEGER, `ranked` INTEGER, `allow_offline` INTEGER DEFAULT 0, PRIMARY KEY(`channel_id`, `pickup_name`) )")

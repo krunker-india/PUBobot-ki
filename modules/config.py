@@ -1,16 +1,16 @@
 #!/usr/bin/python2
 # encoding: utf-8
 
-import shutil, os, imp
+import shutil, os
+from importlib.machinery import SourceFileLoader
 from modules import console, bot
 
 def init(dirname=""):
 	global cfg
 	
 	#load config
-	f = open(dirname + 'config.cfg', 'r')
 	try:
-		cfg = imp.load_source('data', '', f)
+		cfg = SourceFileLoader('cfg', 'config.cfg').load_module()
 	except Exception as e:
 		console.display("ERROR| ERROR PARSING config.cfg FILE!!! {0}".format(str(e)))
 		console.terminate()
