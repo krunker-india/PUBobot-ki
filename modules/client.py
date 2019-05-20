@@ -26,7 +26,7 @@ def process_connection():
 	ready = True
 
 def get_empty_servers():
-	for serv in c.servers:
+	for serv in c.guilds:
 		n=0
 		for chan in serv.channels:
 			if chan.id in [i.cfg['channel_id'] for i in bot.channels]:
@@ -41,13 +41,13 @@ async def send(): #send messages in queue
 		for dest, msg in send_queue:
 			try:
 				#console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
-				await c.send_message(dest, msg)
+				await dest.send(msg)
 			except Exception as e:
 				console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))
 		send_queue = []
 
 async def close(): #on quit
-	if c.is_logged_in:
+	if c.is_closed():
 		try:
 			await c.logout()
 			print("Successfully logged out.")
@@ -59,7 +59,7 @@ async def close(): #on quit
 ### api for bot.py ###
 def find_role_by_name(channel, name):
 	name = name.lower()
-	server = c.get_server(channel.server.id)
+	server = c.get_guild(channel.guild.id)
 	if server:
 		for role in server.roles:
 			if name == role.name.lower():
@@ -67,24 +67,24 @@ def find_role_by_name(channel, name):
 	return None
 
 def find_role_by_id(channel, role_id):
-	server = c.get_server(channel.server.id)
+	server = c.get_guild(channel.guild.id)
 	if server:
 		for role in server.roles:
 			if role_id == role.id:
 				return role
 	return None
 
-async def edit_role(**fields):
-	await c.edit_role(**fields)
+async def edit_role(role, **fields):
+	await role.edit(**fields)
 
 async def remove_roles(member, *roles):
-	await c.remove_roles(member, *roles)
+	await member.remove_roles(*roles)
 
 async def add_roles(member, *roles):
-	await c.add_roles(member,*roles)
+	await member.add_roles(*roles)
 
 async def send_message(dest, msg): #send msg asap, dont put it in queue
-	await c.send_message(dest, msg)
+	await dest.send(msg)
 
 def notice(channel, msg):
 	send_queue.append([channel, msg])
@@ -96,12 +96,12 @@ def private_reply(channel, member, msg):
 	send_queue.append([member, msg])
 	
 def get_member_by_nick(channel, nick):
-	server = c.get_server(channel.server.id)
+	server = c.get_server(channel.guild.id)
 	return discord.utils.find(lambda m: m.name == nick, server.members)
 
 def get_member_by_id(channel, highlight):
 	memberid = highlight.lstrip('<@!').rstrip('>')
-	server = c.get_server(channel.server.id)
+	server = c.get_server(channel.guild.id)
 	return discord.utils.find(lambda m: m.id == memberid, server.members)
 
 ### discord events ###
@@ -115,19 +115,19 @@ async def on_ready():
 		ready = True
 	else:
 		console.display("DEBUG| Unexpected on_ready event!")
-	await c.change_presence(game=discord.Game(name='pm !help'))
+	await c.change_presence(activity=discord.Game(name='pm !help'))
 
 @c.event
 async def on_message(message):
 #	if message.author.bot:
 #		return
-	if message.channel.is_private and message.author.id != c.user.id:
-		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
+	if isinstance(message.channel, discord.abc.PrivateChannel) and message.author.id != c.user.id:
+		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.guild, message.channel, message.author.display_name, message.content))
 		notice(message.channel, config.cfg.HELPINFO)
 	elif message.content == '!enable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
 			if message.channel.id not in [x.id for x in bot.channels]:
-				newcfg = stats3.new_channel(message.server.id, message.server.name, message.channel.id, message.channel.name, message.author.id)
+				newcfg = stats3.new_channel(message.guild.id, message.guild.name, message.channel.id, message.channel.name, message.author.id)
 				bot.channels.append(bot.Channel(message.channel, newcfg))
 				reply(message.channel, message.author, config.cfg.FIRST_INIT_MESSAGE)
 			else:
@@ -147,7 +147,7 @@ async def on_message(message):
 	else:
 		for channel in bot.channels:
 			if message.channel.id == channel.id:
-				console.display("CHAT| {0}>{1}>{2}: {3}".format(message.server, message.channel, message.author.display_name, message.content))
+				console.display("CHAT| {0}>{1}>{2}: {3}".format(message.guild, message.channel, message.author.display_name, message.content))
 				try:
 					await channel.processmsg(message.content, message.author)
 				except:

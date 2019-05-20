@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 4
+version = 5
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -16,7 +16,12 @@ def init():
 	conn.row_factory = sqlite3.Row
 	c = conn.cursor()
 	if dbexists:
-		check_db()
+		try:
+			check_db()
+		except Exception as e:
+			console.display(e)
+			console.terminate()
+			return
 	else:
 		console.display("DATATBASE| Creating new database...")
 		create_tables()
@@ -35,6 +40,11 @@ def get_channels():
 	l = []
 	for chan in chans:
 		l.append(dict(chan))
+
+	for i in l:
+		i['channel_id'] = int(i['channel_id'])
+		i['server_id'] = int(i['server_id'])
+
 	return l
 
 def get_pickups(channel_id):
@@ -425,7 +435,6 @@ def check_db():
 
 	if db_version < version:
 		console.display("DATABASE| Updating database from '{0}' to '{1}'...".format(db_version, version))
-		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		if db_version < 2:
 			c.execute("""ALTER TABLE `pickup_configs`
 			ADD COLUMN `allow_offline` INTEGER DEFAULT 0
@@ -461,7 +470,16 @@ def check_db():
 			CREATE TABLE channel_players(`channel_id` TEXT, `user_id` TEXT, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`));
 			INSERT INTO channel_players(channel_id, user_id, phrase) SELECT channel_id, user_id, phrase FROM tmp_channel_players;
 			DROP TABLE tmp_channel_players""")
-				
+
+		if db_version < 5:
+			#got to change all the ID's to INTEGER from TEXT to migrate to discord.py 1.0+
+			if db_version < 4:
+				c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
+				conn.commit()
+
+			raise(Exception("In order to migrate to discord.py 1.0+ database tables must be rebuilded. Please backup your database (database.sqlite3 file) and run updater.py."))
+
+		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
 
 def create_tables():

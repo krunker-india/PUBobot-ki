@@ -371,11 +371,11 @@ class Channel():
 	def __init__(self, channel, cfg):
 		self.channel = channel
 		self.id = channel.id
-		self.name = "{0}>{1}".format(channel.server.name,channel.name)
-		self.server = channel.server
+		self.name = "{0}>{1}".format(channel.guild.name,channel.name)
+		self.guild = channel.guild
 		self.cfg = cfg
 		self.update_channel_config('channel_name', channel.name)
-		self.update_channel_config('server_name', channel.server.name)
+		self.update_channel_config('server_name', channel.guild.name)
 		if not self.cfg['startmsg']:
 			self.update_channel_config('startmsg', "please connect to steam://connect/%ip%/%password%")
 			self.update_channel_config('submsg', "%promotion_role% SUB NEEDED @ **%pickup_name%**. Please connect to steam://connect/%ip%/%password%")
@@ -809,12 +809,12 @@ class Channel():
 			submsg = submsg.replace("%pickup_name%", self.lastgame_pickup.name)
 			submsg = submsg.replace("%ip%", ip or "")
 			submsg = submsg.replace("%password%", password or "") 
-			submsg = submsg.replace("%promotion_role%", promotion_role or "")
+			submsg = submsg.replace("%promotion_role%", str(promotion_role or ""))
 
 			promotion_role = self.get_value('promotion_role', self.lastgame_pickup)
 			edit_role = False
 			if promotion_role:
-				roles = self.server.roles
+				roles = self.guild.roles
 				try:
 					role_obj = next(x for x in roles if x.id==promotion_role)
 				except StopIteration:
@@ -822,17 +822,15 @@ class Channel():
 					return
 
 				if not role_obj.mentionable:
-					kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
 					try:
-						await client.edit_role(**kwargs)
+						await client.edit_role(role_obj, mentionable = True)
 						edit_role = True
 					except: pass
 
-			await client.send_message(self.channel, submsg)
+			await self.channel.send(submsg)
 
 			if edit_role:
-				kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
-				await client.edit_role(**kwargs)
+				await client.edit_role(role_obj, mentionable = False)
 
 			self.oldtime=self.newtime
 		else:
@@ -1273,9 +1271,8 @@ class Channel():
 					edit_role = False
 					if role_obj:					
 						if not role_obj.mentionable:
-							kwargs = {'server': self.server, 'role': role_obj, 'mentionable': True}
 							try:
-								await client.edit_role(**kwargs)
+								await client.edit_role(role_obj, mentionable = True)
 								edit_role = True
 							except: pass
 						if edit_role:
@@ -1286,22 +1283,21 @@ class Channel():
 
 				promotemsg = self.get_value('promotemsg', pickup) or "%promotion_role% please !add %pickup_name%, %required_players% players to go!"
 				if promotion_role:
-					promotemsg = promotemsg.replace("%promotion_role%",  "<@&"+promotion_role+">")
+					promotemsg = promotemsg.replace("%promotion_role%",  "<@&"+str(promotion_role)+">")
 				else:
 					promotemsg = promotemsg.replace("%promotion_role%",  "")
 				promotemsg = promotemsg.replace("%pickup_name%", pickup.name)
 				promotemsg = promotemsg.replace("%required_players%", str(players_left))
-				await client.send_message(self.channel, promotemsg)
+				await self.channel.send(promotemsg)
 				if edit_role:
 						for player in remove_role_players:
 							await client.add_roles(player, role_obj)
-						kwargs = {'server': self.server, 'role': role_obj, 'mentionable': False}
-						await client.edit_role(**kwargs)
+						await client.edit_role(role_obj, mentionable = False)
 				
 			else:
 				promotemsg = self.cfg['promotemsg'] or "%promotion_role% please !add to pickups!"
 				if self.cfg["promotion_role"]:
-					promotemsg = promotemsg.replace("%promotion_role%",  "<@&"+self.cfg["promotion_role"]+">")
+					promotemsg = promotemsg.replace("%promotion_role%",  "<@&"+str(self.cfg["promotion_role"])+">")
 				else:
 					promotemsg = promotemsg.replace("%promotion_role%",  "")
 				client.notice(self.channel, promotemsg)
