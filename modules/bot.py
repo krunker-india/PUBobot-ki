@@ -1733,11 +1733,11 @@ class Channel():
 					if allpickups and player.id in scheduler.tasks.keys():
 						scheduler.cancel_task(player.id)
 				if args == []:
-					client.notice(self.channel, "{0} was removed from all pickups!".format('<@'+', <@'.join([i.id+'>' for i in removed])))
+					client.notice(self.channel, "{0} was removed from all pickups!".format('<@'+', <@'.join([str(i.id)+'>' for i in removed])))
 				elif len(args) == 1:
-					client.notice(self.channel, "{0} was removed from {1} pickup!".format('<@'+', <@'.join([i.id+'>' for i in removed]), args[0]))
+					client.notice(self.channel, "{0} was removed from {1} pickup!".format('<@'+', <@'.join([str(i.id)+'>' for i in removed]), args[0]))
 				else:
-					client.notice(self.channel, "{0} was removed from {1} pickups!".format('<@'+', <@'.join([i.id+'>' for i in removed]), ', '.join(args)))
+					client.notice(self.channel, "{0} was removed from {1} pickups!".format('<@'+', <@'.join([str(i.id)+'>' for i in removed]), ', '.join(args)))
 				self.update_topic()
 				if comment:
 					client.notice(self.channel, comment)
