@@ -13,7 +13,7 @@ if db_version != '4':
 
 #bans
 print("Rebuilding bans table...")
-c.execute("SELECT * FROM `bans`")
+c.execute("SELECT `channel_id`, `user_id`, `user_name`, `active`, `at`, `duratation`, `reason`, `author_name`, `unban_author_name` FROM `bans`")
 data = c.fetchall()
 c.execute("DROP TABLE `bans`")
 c.execute("CREATE TABLE `bans` ( `channel_id` INTEGER, `user_id` INTEGER, `user_name` TEXT, `active` BLOB, `at` INTEGER, `duratation` INTEGER, `reason` TEXT, `author_name` TEXT, `unban_author_name` TEXT )")
@@ -22,7 +22,7 @@ conn.commit()
 
 #channel_players
 print("Rebuilding channel_players table...")
-c.execute("SELECT * FROM `channel_players`")
+c.execute("SELECT `channel_id`, `user_id`, `nick`, `rank`, `wins`, `loses`, `phrase` FROM `channel_players`")
 data = c.fetchall()
 c.execute("DROP TABLE `channel_players`")
 c.execute("CREATE TABLE `channel_players` ( `channel_id` INTEGER, `user_id` INTEGER, `nick` TEXT, `rank` INTEGER, `wins` INTEGER, `loses` INTEGER, `phrase` TEXT, PRIMARY KEY(`channel_id`, `user_id`) )")
@@ -49,7 +49,7 @@ conn.commit()
 
 #pickup_groups
 print("Rebuilding pickup_groups table...")
-c.execute("SELECT * FROM `pickup_groups`")
+c.execute("SELECT `channel_id`, `group_name`, `pickup_names` FROM `pickup_groups`")
 data = c.fetchall()
 c.execute("DROP TABLE `pickup_groups`")
 c.execute("CREATE TABLE `pickup_groups` ( `channel_id` INTEGER, `group_name` TEXT, `pickup_names` TEXT, PRIMARY KEY(`channel_id`, `group_name`) )")
@@ -58,7 +58,7 @@ conn.commit()
 
 #pickups
 print("Rebuilding pickups table...")
-c.execute("SELECT * FROM pickups")
+c.execute("SELECT `pickup_id`, `channel_id`, `pickup_name`, `at`, `players`, `alpha_players`, `beta_players`, `is_ranked`, `winner_team` FROM pickups")
 data = c.fetchall()
 c.execute("DROP TABLE pickups")
 c.execute("CREATE TABLE `pickups` ( `pickup_id` INTEGER PRIMARY KEY, `channel_id` INTEGER, `pickup_name` TEXT, `at` INTEGER, `players` TEXT, `alpha_players` TEXT, `beta_players` TEXT, `is_ranked` BOOL, `winner_team` TEXT )")
@@ -67,7 +67,7 @@ conn.commit()
 
 #player_pickups
 print("Rebuilding player_pickups table...")
-c.execute("SELECT * FROM player_pickups")
+c.execute("SELECT `pickup_id`, `channel_id`, `user_id`, `user_name`, `pickup_name`, `at`, `team`, `is_ranked`, `is_winner`, `rank_after`, `rank_change`, `is_lastpick` FROM player_pickups")
 data = c.fetchall()
 c.execute("DROP TABLE player_pickups")
 c.execute("CREATE TABLE `player_pickups` ( `pickup_id` INTEGER, `channel_id` INTEGER, `user_id` INTEGER, `user_name` TEXT, `pickup_name` TEXT, `at` INTEGER, `team` TEXT, `is_ranked` BOOL, `is_winner` BLOB, `rank_after` INTEGER, `rank_change` INTEGER, `is_lastpick` BLOB)")
@@ -76,7 +76,7 @@ conn.commit()
 
 #bans
 print("Rebuilding players table...")
-c.execute("SELECT * FROM `players`")
+c.execute("SELECT `user_id`, `default_expire`, `disable_pm` FROM `players`")
 data = c.fetchall()
 c.execute("DROP TABLE `players`")
 c.execute("CREATE TABLE `players` ( `user_id` INTEGER, `default_expire` INTEGER, `disable_pm` BLOB, PRIMARY KEY(`user_id`) )")
