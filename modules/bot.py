@@ -196,7 +196,7 @@ class Match():
 	def _players_to_str(self):
 		players = list(self.players)
 		last_player = players.pop(len(players)-1)
-		players_highlight = '<@'+'>, <@'.join([i.id for i in players])+'>'
+		players_highlight = '<@'+'>, <@'.join([str(i.id) for i in players])+'>'
 		players_highlight += " and <@{0}> ".format(last_player.id)
 		return players_highlight
 
