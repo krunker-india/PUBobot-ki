@@ -96,13 +96,14 @@ def private_reply(channel, member, msg):
 	send_queue.append([member, msg])
 	
 def get_member_by_nick(channel, nick):
-	server = c.get_server(channel.guild.id)
+	server = c.get_guild(channel.guild.id)
 	return discord.utils.find(lambda m: m.name == nick, server.members)
 
 def get_member_by_id(channel, highlight):
 	memberid = highlight.lstrip('<@!').rstrip('>')
 	if memberid.isdigit():
-		server = c.get_server(channel.guild.id)
+		memberid = int(memberid)
+		server = c.get_guild(channel.guild.id)
 		return discord.utils.find(lambda m: m.id == memberid, server.members)
 	else:
 		return None
