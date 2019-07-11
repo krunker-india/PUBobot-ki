@@ -618,7 +618,7 @@ class Channel():
 			elif self.cfg["ranked"]:
 
 				if lower[0] in ['leaderboard', 'lb']:
-					self.get_leaderboard()
+					self.get_leaderboard(lower[1:2])
 
 				elif lower[0]=="rank":
 					self.get_rank_details(member, lower[1:len(lower)])
@@ -1127,8 +1127,14 @@ class Channel():
 		else:
 			client.notice(self.channel, "There is no active matches right now.")
 
-	def get_leaderboard(self):
-		data = stats3.get_ladder(self.id) #[rank, nick, wins, loses]
+	def get_leaderboard(self, page):
+		try:
+			page = int(page[0])
+		except:
+			page = 0
+
+		data = stats3.get_ladder(self.id, page) #[rank, nick, wins, loses]
+		page = page*10
 		if len(data):
 
 			l = ["{0:^3}|{1:^11}|{2:^25.25}|{3:^9}| {4}".format(
@@ -1137,7 +1143,7 @@ class Channel():
 				data[n][1],
 				data[n][2]+data[n][3],
 				"{0}/{1} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
-			) for n in range(0, len(data))]
+			) for n in range(page, page+len(data))]
 
 			s = "```markdown\n № | Rating〈Ξ〉 |         Nickame         | Matches |   W/L\n{0}\n{1}```".format(
 				"-"*60,
@@ -1145,7 +1151,7 @@ class Channel():
 
 			client.notice(self.channel, s)
 		else:
-			client.notice(self.channel, "No rating data on this channel.")
+			client.notice(self.channel, "Nothing found.")
 
 	def get_rank_details(self, member, args):
 		if len(args):

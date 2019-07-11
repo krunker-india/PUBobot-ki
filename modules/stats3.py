@@ -228,9 +228,9 @@ def get_rank_details(channel_id, user_id=False, nick=False):
 			return([i, matches])
 	return([None, None])
 
-def get_ladder(channel_id, limit=10):
-	c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank desc LIMIT ?", (channel_id, limit))
-	return c.fetchall()
+def get_ladder(channel_id, page):
+	c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
+	return c.fetchall()[page*10:]
 
 def stats(channel_id, text=False):
 	if not text: #return overall stats

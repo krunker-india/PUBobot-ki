@@ -32,7 +32,7 @@
 !teams - show teams for current pickup.   
 
 ### RANKING
-!leaderboard or !lb - show top 10 players by rating.   
+!leaderboard [page] or !lb [page] - show top players by rating.   
 !rank - show your rating stats.   
 !reportlose or !rl - report loss on your current match (avalible for captains only).   
 !matches - show all active matches on the channel.   
