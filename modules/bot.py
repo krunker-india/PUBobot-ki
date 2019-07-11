@@ -1129,21 +1129,21 @@ class Channel():
 
 	def get_leaderboard(self, page):
 		try:
-			page = int(page[0])
+			page = int(page[0])-1
 		except:
 			page = 0
 
+		print(page)
 		data = stats3.get_ladder(self.id, page) #[rank, nick, wins, loses]
-		page = page*10
 		if len(data):
 
 			l = ["{0:^3}|{1:^11}|{2:^25.25}|{3:^9}| {4}".format(
-				n+1,
+				(page*10)+(n+1),
 				str(data[n][0]) + utils.rating_to_icon(data[n][0]),
 				data[n][1],
 				data[n][2]+data[n][3],
 				"{0}/{1} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
-			) for n in range(page, page+len(data))]
+			) for n in range(0, len(data))]
 
 			s = "```markdown\n № | Rating〈Ξ〉 |         Nickame         | Matches |   W/L\n{0}\n{1}```".format(
 				"-"*60,
