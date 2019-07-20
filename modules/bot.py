@@ -989,6 +989,12 @@ class Channel():
 					x[idx] = member
 					idx = match.players.index(target)
 					match.players[idx] = member
+
+					#update ranks table if needed
+					if match.ranked:
+						match.ranks = stats3.get_ranks(self.channel.id, [i.id for i in match.players])
+						match.players = list(sorted(match.players, key=lambda p: match.ranks[p.id], reverse=True))
+
 					client.notice(self.channel, match._teams_picking_to_str())
 					return
 			client.reply(self.channel, member, "Specified player not found in the match!")
