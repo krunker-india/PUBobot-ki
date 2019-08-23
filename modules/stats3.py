@@ -489,8 +489,8 @@ def create_tables():
 		PRIMARY KEY(`variable`) )""")
 
 	c.execute("""CREATE TABLE `bans` 
-		( `channel_id` TEXT,
-		`user_id` TEXT,
+		( `channel_id` INTEGER,
+		`user_id` INTEGER,
 		`user_name` TEXT,
 		`active` BLOB,
 		`at` INTEGER,
@@ -500,8 +500,8 @@ def create_tables():
 		`unban_author_name` TEXT )""")
 
 	c.execute("""CREATE TABLE `channel_players` 
-		( `channel_id` TEXT,
-		`user_id` TEXT,
+		( `channel_id` INTEGER,
+		`user_id` INTEGER,
 		`nick` TEXT,
 		`rank` INTEGER,
 		`wins` INTEGER,
@@ -510,17 +510,17 @@ def create_tables():
 		PRIMARY KEY(`channel_id`, `user_id`) )""")
 
 	c.execute("""CREATE TABLE `channels` 
-		( `server_id` TEXT,
+		( `server_id` INTEGER,
 		`server_name` TEXT,
-		`channel_id` TEXT,
+		`channel_id` INTEGER,
 		`channel_name` TEXT,
 		`premium` BOOL,
 		`first_init` INTEGER,
-		`admin_id` TEXT,
-		`admin_role` TEXT,
-		`moderator_role` TEXT,
-		`captains_role` TEXT,
-		`noadd_role` TEXT,
+		`admin_id` INTEGER,
+		`admin_role` INTEGER,
+		`moderator_role` INTEGER,
+		`captains_role` INTEGER,
+		`noadd_role` INTEGER,
 		`prefix` TEXT DEFAULT '!',
 		`default_bantime` INTEGER DEFAULT 7200,
 		`++_req_players` INTEGER DEFAULT 5,
@@ -533,10 +533,10 @@ def create_tables():
 		`pick_captains` INTEGER,
 		`pick_teams` TEXT DEFAULT 'no_teams',
 		`pick_order` TEXT,
-		`promotion_role` TEXT,
+		`promotion_role` INTEGER,
 		`promotion_delay` INTEGER DEFAULT 18000,
-		`blacklist_role` TEXT,
-		`whitelist_role` TEXT,
+		`blacklist_role` INTEGER,
+		`whitelist_role` INTEGER,
 		`require_ready` INTEGER,
 		`ranked` INTEGER,
 		`ranked_multiplayer` INTEGER DEFAULT 32,
@@ -545,7 +545,7 @@ def create_tables():
 		PRIMARY KEY(`channel_id`) )""")
 
 	c.execute("""CREATE TABLE `pickup_configs` 
-		( `channel_id` TEXT,
+		( `channel_id` INTEGER,
 		`pickup_name` TEXT,
 		`maxplayers` INTEGER,
 		`minplayers` INTEGER,
@@ -557,13 +557,13 @@ def create_tables():
 		`password` TEXT,
 		`maps` TEXT,
 		`pick_captains` INTEGER,
-		`captains_role` TEXT,
+		`captains_role` INTEGER,
 		`pick_teams` TEXT,
 		`pick_order` TEXT,
-		`promotion_role` TEXT,
-		`blacklist_role` TEXT,
-		`whitelist_role` TEXT,
-		`captain_role` TEXT,
+		`promotion_role` INTEGER,
+		`blacklist_role` INTEGER,
+		`whitelist_role` INTEGER,
+		`captain_role` INTEGER,
 		`require_ready` INTEGER,
 		`ranked` INTEGER,
 		`allow_offline` INTEGER DEFAULT 0,
@@ -571,7 +571,7 @@ def create_tables():
 
 	c.execute("""CREATE TABLE `pickups` 
 		( `pickup_id` INTEGER PRIMARY KEY,
-		`channel_id` TEXT,
+		`channel_id` INTEGER,
 		`pickup_name` TEXT,
 		`at` INTEGER,
 		`players` TEXT,
@@ -582,8 +582,8 @@ def create_tables():
 
 	c.execute("""CREATE TABLE `player_pickups` 
 		( `pickup_id` INTEGER,
-		`channel_id` TEXT,
-		`user_id` TEXT,
+		`channel_id` INTEGER,
+		`user_id` INTEGER,
 		`user_name` TEXT,
 		`pickup_name` TEXT,
 		`at` INTEGER,
@@ -595,13 +595,13 @@ def create_tables():
 		`is_lastpick` BLOB)""")
 
 	c.execute("""CREATE TABLE `players` 
-		( `user_id` TEXT,
+		( `user_id` INTEGER,
 		`default_expire` INTEGER,
 		`disable_pm` BLOB,
 		PRIMARY KEY(`user_id`) )""")
 
 	c.execute("""CREATE TABLE `pickup_groups` 
-		( `channel_id` TEXT,
+		( `channel_id` INTEGER,
 		`group_name` TEXT,
 		`pickup_names` TEXT,
 		PRIMARY KEY(`channel_id`, `group_name`) )""")
