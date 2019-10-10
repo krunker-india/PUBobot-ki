@@ -9,7 +9,7 @@ from modules import client, config, console, stats3, scheduler, utils
 max_expire_time = 6*60*60 #6 hours
 max_bantime = 30*24*60*60*12*3 #30 days * 12 * 3
 max_match_alive_time = 4*60*60 #4 hours
-team_smileys = [":fox:", ":wolf:", ":dog:", ":bear:", ":panda_face:", ":tiger:", ":lion:", ":pig:", ":octopus:", ":boar:", ":spider:", ":scorpion:", ":crab:", ":eagle:", ":shark:", ":bat:", ":gorilla:", ":rhino:", ":dragon_face:", ":deer:"]
+team_emojis = [":fox:", ":wolf:", ":dog:", ":bear:", ":panda_face:", ":tiger:", ":lion:", ":pig:", ":octopus:", ":boar:", ":spider:", ":scorpion:", ":crab:", ":eagle:", ":shark:", ":bat:", ":gorilla:", ":rhino:", ":dragon_face:", ":deer:"]
 
 def init():
 	global channels, channels_list, active_pickups, active_matches, allowoffline
@@ -82,7 +82,11 @@ class Match():
 		if self.require_ready:
 			self.players_ready = [False for i in players]
 
-		self.alpha_icon, self.beta_icon = random.sample(team_smileys, 2)
+		if pickup.cfg['teamicons']:
+			self.alpha_icon, self.beta_icon = random.sample(team_emojis, 2)
+		else:
+			self.alpha_icon, self.beta_icon = pickup.cfg['team_emojis'].split(' ')
+
 		if len(players) > 2:
 			if self.pick_teams == 'no_teams' or self.pick_teams == None:
 				self.alpha_team = None
@@ -1970,6 +1974,16 @@ class Channel():
 				self.update_channel_config(variable, value)
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
 
+		elif variable == "team_emojis":
+			if value.lower() == "none":
+				self.update_channel_config(variable, None)
+				client.reply(self.channel, member, "Removed {0} default value".format(variable))
+			elif len(value.split(' ')) == 2:
+				self.update_channel_config(variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+			else:
+				client.reply(self.channel, member, "{0} value must be exactly two emojis.".format(variable))
+
 		elif variable == "pick_teams":
 			value = value.lower()
 			if value in ["no_teams", "manual", "auto"]:
@@ -2204,6 +2218,18 @@ class Channel():
 				for i in pickups:
 					self.update_pickup_config(i, variable, value)
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+
+		elif variable == "team_emojis":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			elif len(value.split(' ')) == 2:
+				for i in pickups:
+					self.update_pickup_config(i, variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+			else:
+				client.reply(self.channel, member, "{0} value must be exactly two emojis.".format(variable))
 
 		elif variable == "pick_teams":
 			value = value.lower()

@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 5
+version = 6
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -478,6 +478,15 @@ def check_db():
 				conn.commit()
 
 			raise(Exception("In order to migrate to discord.py 1.0+ database tables must be rebuilded. Please backup your database (database.sqlite3 file) and run updater.py."))
+
+		if db_version < 6:
+			#add custom team emojis
+			c.execute("""ALTER TABLE `pickup_configs`
+			ADD COLUMN `team_emojis` TEXT
+			""")
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `team_emojis` TEXT
+			""")
 
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
