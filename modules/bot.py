@@ -82,8 +82,9 @@ class Match():
 		if self.require_ready:
 			self.players_ready = [False for i in players]
 
-		if pickup.channel.get_value('team_emojis', pickup):
-			self.alpha_icon, self.beta_icon = pickup.cfg['team_emojis'].split(' ')
+		emojis = pickup.channel.get_value('team_emojis', pickup)
+		if emojis:
+			self.alpha_icon, self.beta_icon = emojis.split(' ')
 		else:
 			self.alpha_icon, self.beta_icon = random.sample(team_emojis, 2)
 
