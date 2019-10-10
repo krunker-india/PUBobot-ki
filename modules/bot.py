@@ -82,10 +82,10 @@ class Match():
 		if self.require_ready:
 			self.players_ready = [False for i in players]
 
-		if pickup.cfg['teamicons']:
-			self.alpha_icon, self.beta_icon = random.sample(team_emojis, 2)
-		else:
+		if pickup.cfg['team_emojis']:
 			self.alpha_icon, self.beta_icon = pickup.cfg['team_emojis'].split(' ')
+		else:
+			self.alpha_icon, self.beta_icon = random.sample(team_emojis, 2)
 
 		if len(players) > 2:
 			if self.pick_teams == 'no_teams' or self.pick_teams == None:
