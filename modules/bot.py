@@ -82,7 +82,7 @@ class Match():
 		if self.require_ready:
 			self.players_ready = [False for i in players]
 
-		if pickup.cfg['team_emojis']:
+		if pickup.channel.get_value('team_emojis', pickup):
 			self.alpha_icon, self.beta_icon = pickup.cfg['team_emojis'].split(' ')
 		else:
 			self.alpha_icon, self.beta_icon = random.sample(team_emojis, 2)
@@ -219,7 +219,7 @@ class Match():
 
 		startmsg += self._startmsg_to_str()
 
-		if self.captains and self.pick_teams != 'auto' and len(self.players) > 1:
+		if self.captains and len(self.players) > 2:
 			startmsg += "\r\nSuggested captains: <@{0}> and <@{1}>.".format(self.captains[0].id, self.captains[1].id)
 		if self.map:
 			startmsg += "\r\nSuggested map: **{0}**.".format(self.map)
