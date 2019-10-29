@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 6
+version = 7
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -117,6 +117,13 @@ def undo_ranks(channel_id, match_id):
 	else:
 		return("No changes made.")
 
+def seed_player(channel_id, user_id, rating):
+	c.execute("SELECT user_id FROM channel_players WHERE channel_id = ? AND user_id = ?", (channel_id, user_id) )
+	if c.fetchone():
+		c.execute("UPDATE channel_players SET rank = ?, is_seeded = ? WHERE channel_id = ? AND user_id = ?", (rating, True, channel_id, user_id))
+	else:
+		c.execute("INSERT INTO channel_players (channel_id, user_id, rank, is_seeded) VALUES (?, ?, ?, ?)" (channel_id, user_id, rating, True))
+
 def reset_ranks(channel_id):
 	c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL WHERE channel_id = ?", (channel_id,))
 	conn.commit()
@@ -163,19 +170,21 @@ def register_pickup(match):
 
 			#if we need to calibrate this player add additional rank gain/loss boost
 			rank_k = match.pickup.channel.cfg['ranked_multiplayer']
-			c.execute("SELECT wins, loses FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
+			c.execute("SELECT wins, loses, streak, is_seeded FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
 			result = c.fetchone()
-			wins = result[0] or 0
-			loses = result[1] or 0
-			if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 10:
-				rank_k = rank_k * (10-(wins+loses))
+			wins, loses, streak, is_seeded = [i or 0 for i in result]
 
 			is_ranked = True
 			rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
+			if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 8 and not is_seeded :
+				rank_change = int( rank_change * ((10-(wins+loses))/2.0) )
+			streak = streak + 1 if scores[team_num] else 0
+			if streak > 2:
+				rank_change = int( rank_change * ( min([streak, 6])/2.0 ) )
 			rank_after = match.ranks[player.id] + rank_change
 			is_winner = bool(scores[team_num])
 
-			c.execute("UPDATE channel_players SET nick = ?, rank = ?, wins=?, loses=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, wins+scores[team_num], loses+abs(scores[team_num]-1), match.pickup.channel.id, player.id))
+			c.execute("UPDATE channel_players SET nick = ?, rank = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
 			new_ranks[player.id] = [user_name, rank_after]
 
 		else:
@@ -229,7 +238,7 @@ def get_rank_details(channel_id, user_id=False, nick=False):
 	return([None, None])
 
 def get_ladder(channel_id, page):
-	c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
+	c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
 	return c.fetchall()[page*10:]
 
 def stats(channel_id, text=False):
@@ -488,6 +497,15 @@ def check_db():
 			ADD COLUMN `team_emojis` TEXT
 			""")
 
+		if db_version < 7:
+			c.execute("""ALTER TABLE `channel_players`
+			ADD COLUMN `streak` INTEGER
+			""")
+
+			c.execute("""ALTER TABLE `channel_players`
+			ADD COLUMN `is_seeded` BLOB
+			""")
+
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
 
@@ -515,6 +533,8 @@ def create_tables():
 		`rank` INTEGER,
 		`wins` INTEGER,
 		`loses` INTEGER,
+		`streak` INTEGER,
+		`is_seeded` BLOB,
 		`phrase` TEXT,
 		PRIMARY KEY(`channel_id`, `user_id`) )""")
 

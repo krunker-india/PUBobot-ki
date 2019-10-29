@@ -40,6 +40,7 @@
 ##### For moderators and above:
 !reportwin or !rw <i>match_id</i> alpha or beta - report win on specified match for specified team.   
 !undo_ranks <i>match_id</i> - undo all rating changes for a previously reported match.   
+!seed <i>@nick</i> <i>rating</i> - set specified player's rating points, also this will disable initial rating calibration for this user.    
 ##### For admins:
 !reset_ranks - reset all rating data on the channel. <b>Warning, this action is irreversible!</b>   
 

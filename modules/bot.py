@@ -53,7 +53,7 @@ class Match():
 		self.lastpick = None #fatkid
 
 		pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
-		if pick_captains and len(players) > 2:
+		if pick_captains and len(players) > 2 and self.pick_teams != 'auto':
 			if self.ranked:
 				if pick_captains == 1:
 					candidates = sorted(self.players, key=lambda p: [self.captains_role in [role.id for role in p.roles], self.ranks[p.id]], reverse=True)
@@ -119,6 +119,13 @@ class Match():
 
 					self.alpha_team = best_team
 					self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
+					if pick_captains:
+						# sort by captains_role, then elo
+						self.captains = [
+							sorted(self.alpha_team, key=lambda p: self.captains_role in [role.id for role in p.roles], reverse=True)[0],
+							sorted(self.beta_team, key=lambda p: self.captains_role in [role.id for role in p.roles], reverse=True)[0]
+						]
+						
 
 				#generate random teams
 				else:
@@ -636,6 +643,9 @@ class Channel():
 
 				elif lower[0]=="reset_ranks":
 					self.reset_ranks(member, access_level)
+
+				elif lower[0]=="seed":
+					self.seed_player(member, lower[1:msglen], access_level)
 			
 	### COMMANDS ###
 
@@ -1156,7 +1166,7 @@ class Channel():
 				"{0}/{1} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
 			) for n in range(0, len(data))]
 
-			s = "```markdown\n № | Rating〈Ξ〉 |         Nickame         | Matches |   W/L\n{0}\n{1}```".format(
+			s = "```markdown\n № | Rating〈Ξ〉 |         Nickname        | Matches |   W/L\n{0}\n{1}```".format(
 				"-"*60,
 				"\n".join(l))
 
@@ -1215,6 +1225,22 @@ class Channel():
 		else:
 			stats3.reset_ranks(self.id)
 			client.reply(self.channel, member, "All rating data has been flushed.")
+
+	def seed_player(self, member, args, access_level):
+		if access_level < 1:
+			client.reply(self.channel, member, "Insufficient permissions.")
+			return
+
+		if len(args) != 2 or not args[1].isdecimal():
+			client.reply(self.channel, member, "This commands requires 2 arguments: member mention and rating integer.")
+			return
+
+		target = client.get_member_by_id(self.channel, args[0])
+		if not target:
+			client.reply(self.channel, member, "Invalid member highlight specified.")
+
+		stats3.seed_player(self.channel.id, target.id, int(args[1]))
+		client.reply(self.channel, member, "done.")
 
 	def set_ready(self, member, isready):
 		match = self._match_by_player(member)
