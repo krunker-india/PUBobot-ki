@@ -984,7 +984,12 @@ class Channel():
 		else:
 			client.reply(self.channel, member, "Not enough arguments.")
 
-	def subfor(self, member, args):	
+	def subfor(self, member, args):
+		l = stats3.check_memberid(self.id, member.id)
+		if l[0] == True: # if banned
+			client.reply(self.channel, member, l[1])
+			return
+
 		if len(args):
 			target = client.get_member_by_id(self.channel, args[0])
 			if not target:
