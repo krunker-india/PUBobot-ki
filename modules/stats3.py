@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 7
+version = 8
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -501,9 +501,17 @@ def check_db():
 			c.execute("""ALTER TABLE `channel_players`
 			ADD COLUMN `streak` INTEGER
 			""")
-
 			c.execute("""ALTER TABLE `channel_players`
 			ADD COLUMN `is_seeded` BLOB
+			""")
+
+		if db_version < 8:
+			#add custom team names
+			c.execute("""ALTER TABLE `pickup_configs`
+			ADD COLUMN `team_names` TEXT
+			""")
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `team_names` TEXT
 			""")
 
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
@@ -560,6 +568,8 @@ def create_tables():
 		`password` TEXT,
 		`maps` TEXT,
 		`pick_captains` INTEGER,
+		`team_emojis` TEXT,
+		`team_names` TEXT,
 		`pick_teams` TEXT DEFAULT 'no_teams',
 		`pick_order` TEXT,
 		`promotion_role` INTEGER,
@@ -587,6 +597,8 @@ def create_tables():
 		`maps` TEXT,
 		`pick_captains` INTEGER,
 		`captains_role` INTEGER,
+		`team_emojis` TEXT,
+		`team_names` TEXT,
 		`pick_teams` TEXT,
 		`pick_order` TEXT,
 		`promotion_role` INTEGER,

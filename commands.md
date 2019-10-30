@@ -85,15 +85,16 @@
 * ip <i>text</i> - set ip wich will be shown in startmsg, submsg and on !ip command.
 * password <i>text</i> - set password wich will be shown in startmsg, submsg and on !ip command.
 * maps <i>map_name</i>[, <i>map_name</i>...] - set maps.
-* pick_captains 0 or 1 or 2 - set if bot should suggest captains.
-  * 0 - bot doesn't choose captains
-  * 1 - if variable ranked is:
-    * 0 and captain_role is set - picks captains randomly but with preference of player having captain role
-    * 0 and captain_role is not set - picks captains randomly
-    * 1 - bot sorts players by player having captain role and player rank and picks two players from top
-  * 2 - if variable ranked is:
-    * 0 - picks players randomly
-    * 1 - bot sorts players by player rank and picks random pair of adjacent players
+* pick_captains 0, 1, 2 or 3 - set if bot should suggest captains.
+  * if variable ranked is 0:
+    * 0 - doesn't suggest captains
+    * 1 - picks captains randomly but with preference of player having captain role
+    * 2 - picks captains randomly
+  * if variable ranked is 1:
+    * 0 - doesn't suggest captains
+    * 1 - sorts players by player having captain role and player rank and picks two players from top
+    * 2 - sorts players by player rank and picks random pair of adjacent players
+    * 3 - picks captains randomly
 * pick_teams <i>value</i> -  set teams pick system the bot should use. Value must be in 'no_teams', 'auto' or 'manual'.
   * no_teams - bot will only print players list and captains if needed.
   * auto - bot will print teams balanced by rating on ranked pickups or random teams.

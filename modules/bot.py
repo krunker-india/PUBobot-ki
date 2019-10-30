@@ -32,7 +32,7 @@ class Match():
 		self.pick_teams = pickup.channel.get_value('pick_teams', pickup)
 		self.require_ready = pickup.channel.get_value('require_ready', pickup)
 		self.pick_order = pickup.cfg['pick_order']
-		self.ranked = pickup.channel.get_value('ranked', pickup)
+		self.ranked = bool(pickup.channel.get_value('ranked', pickup) and self.pick_teams != 'no_teams')
 		if self.ranked:
 			self.ranks = stats3.get_ranks(pickup.channel.id, [i.id for i in players])
 			self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
@@ -58,12 +58,14 @@ class Match():
 				if pick_captains == 1:
 					candidates = sorted(self.players, key=lambda p: [self.captains_role in [role.id for role in p.roles], self.ranks[p.id]], reverse=True)
 					self.captains = [candidates[0], candidates[1]]
-				else:  # pick_captains == 2:
+				elif pick_captains == 2:
 					candidates = sorted(self.players, key=lambda p: [self.ranks[p.id]], reverse=True)
 					i = random.randrange(len(candidates)-1)
 					self.captains = [candidates[i], candidates[i+1]]
+				else: # pick_captains == 3:
+					self.captains = random.sample(self.players, 2)
 
-			elif self.captains_role:
+			elif pick_captains == 1 and self.captains_role:
 				self.captains = []
 				candidates = list(filter(lambda x: self.captains_role in [role.id for role in x.roles], self.players))
 				while len(self.captains) < 2:
@@ -87,6 +89,8 @@ class Match():
 			self.alpha_icon, self.beta_icon = emojis.split(' ')
 		else:
 			self.alpha_icon, self.beta_icon = random.sample(team_emojis, 2)
+
+		self.team_names = (pickup.channel.get_value('team_names', pickup) or "alpha beta").split(' ')
 
 		if len(players) > 2:
 			if self.pick_teams == 'no_teams' or self.pick_teams == None:
@@ -165,38 +169,39 @@ class Match():
 		if self.ranked:
 			alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(self.ranks[i.id]), i.id) for i in self.alpha_team])
 			beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(self.ranks[i.id]), i.id) for i in self.beta_team])
+			team_ratings = ['〈__{0}__〉 '.format(sum([self.ranks[i.id] for i in team])//len(team)) for team in (self.alpha_team, self.beta_team)]
 		else:
 			alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
 			beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
-		if len(self.players) > 4:
-			return "{0} ❲{1}❳ {0}\r\n          :fire: **VERSUS** :fire:\r\n{2} ❲{3}❳ {2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str)
-		elif len(self.players) == 2:
+			alpha_rating, beta_rating = "", ""
+
+		if len(self.players) == 2:
 			return "{0} :fire:**VERSUS**:fire: {1}".format(alpha_str, beta_str)
 		else:
-			return "{0} ❲{1}❳ :fire:**VERSUS**:fire: ❲{3}❳ {2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str)
+			return "{0}❲{1}❳{4}{0}\r\n          :fire: **VERSUS** :fire:\r\n{2}❲{3}❳{5}{2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str, *team_ratings)
 			
 	def _teams_picking_to_str(self):
 		if len(self.alpha_team):
 			if self.ranked:
-				alpha_str = "❲{0}❳".format(" + ".join(
+				alpha_str = "❲{1}❳ 〈__{0}__〉".format(sum([self.ranks[i.id] for i in self.alpha_team])//len(self.alpha_team), " + ".join(
 					["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in self.alpha_team]))
 			else:
 				alpha_str = "❲{0}❳".format(" + ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.alpha_team]))
 		else:
-			alpha_str = "❲alpha❳"
+			alpha_str = "❲{0}❳".format(self.team_names[0])
 		if len(self.beta_team):
 			if self.ranked:
-				beta_str = "❲{0}❳".format(" + ".join(
+				beta_str = "❲{1}❳ 〈__{0}__〉".format(sum([self.ranks[i.id] for i in self.beta_team])//len(self.beta_team), " + ".join(
 					["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in self.beta_team]))
 			else:
 				beta_str = "❲{0}❳".format(" + ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.beta_team]))
 		else:
-			beta_str = "❲beta❳"
+			beta_str = "❲{0}❳".format(self.team_names[1])
 		if self.ranked:
-			unpicked_str = "\n    ".join(["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in sorted(self.unpicked, key=lambda p: self.ranks[p.id], reverse=True)])
+			unpicked_str = "\n".join([" - `{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in sorted(self.unpicked, key=lambda p: self.ranks[p.id], reverse=True)])
 		else:
-			unpicked_str = "\n    ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.unpicked])
-		return "{0} {1} {0}\n          :fire:**VERSUS**:fire:\n{3} {2} {3}\nUnpicked:\n    {4}".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
+			unpicked_str = "\n".join([" - `{0}`".format((i.nick or i.name).replace("`","")) for i in self.unpicked])
+		return "{0} {1} {0}\n          :fire:**VERSUS**:fire:\n{3} {2} {3}\n\n__Unpicked__:\n{4}".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
 
 	def _startmsg_to_str(self):
 		ipstr = self.pickup.channel.get_value("startmsg", self.pickup)
@@ -214,12 +219,15 @@ class Match():
 
 	def print_startmsg_instant(self):
 		if self.ranked:
-			startmsg = "*({0})* **{1}** pickup has been started! ".format(str(self.id), self.pickup.name)
+			startmsg = "__*({0})* **{1}** pickup has been started!__ ".format(str(self.id), self.pickup.name)
 		else:
-			startmsg = "**{0}** pickup has been started! ".format(self.pickup.name)
+			startmsg = "__**{0}** pickup has been started!__ ".format(self.pickup.name)
 		
-		if self.beta_team and self.alpha_team and len(self.players) > 1:
-			startmsg += "\r\n"+self._teams_to_str()+"\r\n"
+		if self.beta_team and self.alpha_team:
+			if len(self.players) > 2:
+				startmsg += "\r\n\r\n"+self._teams_to_str()+"\r\n\r\n"
+			else:
+				startmsg += "\r\n"+self._teams_to_str()+"\r\n"
 		else:
 			startmsg += "\r\n"+self._players_to_str()
 			if len(self.players) > 4:
@@ -235,13 +243,11 @@ class Match():
 		client.notice(self.channel, startmsg)
 
 	def print_startmsg_teams_picking_start(self):
-		startmsg = "*({0})* **{1}** pickup has been started! ".format(str(self.id), self.pickup.name)
+		startmsg = "__*({0})* **{1}** pickup has been started!__\r\n".format(str(self.id), self.pickup.name)
 		if self.captains:
-			startmsg += "<@{0}> and <@{1}> please start picking teams.\r\n".format(self.captains[0].id, self.captains[1].id)
+			startmsg += "<@{0}> and <@{1}> please start picking teams.\r\n\r\n".format(self.captains[0].id, self.captains[1].id)
 		else:
-			if len(self.players) > 4:
-				startmsg += "\r\n"
-			startmsg += self._players_to_str() + "please use '!capfor alpha|beta' and start picking teams.\r\n"
+			startmsg += self._players_to_str() + "please use '!capfor **{0}**' and start picking teams.\r\n\r\n".format('**/**'.join(self.team_names))
 		startmsg += self._teams_picking_to_str()
 
 		if self.pick_order:
@@ -249,20 +255,20 @@ class Match():
 				if self.captains:
 					first = "<@{0}>".format(self.captains[0].id)
 				else:
-					first = "Alpha"
+					first = '**'+self.team_names[0]+'**'
 			else:
 				if self.captains:
 					first = "<@{0}>".format(self.captains[1].id)
 				else:
-					first = "Beta"
+					first = '**'+self.team_names[1]+'**'
 			startmsg += "\r\n{0} picks first!".format(first)
 
 		client.notice(self.channel, startmsg)
 
 	def print_startmsg_teams_picking_finish(self):
-		startmsg = "**TEAMS READY:**\r\n"
+		startmsg = "**TEAMS READY:**\r\n\r\n"
 		startmsg += self._teams_to_str()
-		startmsg += "\r\n" + self._startmsg_to_str()
+		startmsg += "\r\n\r\n" + self._startmsg_to_str()
 		if self.map:
 			startmsg += "\r\nSuggested map: **{0}**.".format(self.map)
 		client.notice(self.channel, startmsg)
@@ -920,12 +926,12 @@ class Channel():
 								if len(match.alpha_team):
 									who = "<@{0}>".format(match.alpha_team[0].id)
 								else:
-									who = "Alpha"
+									who = match.team_names[0]
 							else:
 								if len(match.beta_team):
 									who = "<@{0}>".format(match.beta_team[0].id)
 								else:
-									who = "Beta"
+									who = match.team_names[1]
 							msg += "\n{0}'s turn to pick!".format(who)
 						client.notice(self.channel, msg)
 					return
@@ -953,14 +959,14 @@ class Channel():
 				client.reply(self.channel, member, "This match does not have teams.")
 				return
 
-			if args[1] == 'alpha':
+			if args[1] == match.team_names[0].lower():
 				team = match.alpha_team
-			elif args[1] == 'beta':
+			elif args[1] == match.team_names[1].lower():
 				team = match.beta_team
 			elif args[1] == 'unpicked':
 				team = match.unpicked
 			else:
-				client.reply(self.channel, member, "Team argument must be **alpha**, **beta** or **unpicked**.")
+				client.reply(self.channel, member, "Team argument must be **{0}**, **{1}** or **unpicked**.".format(*match.team_names))
 				return
 
 			if player in match.unpicked:
@@ -1032,12 +1038,12 @@ class Channel():
 				return
 
 		if len(args):
-			if args[0] == 'alpha':
+			if args[0] == match.team_names[0].lower():
 				team = match.alpha_team
-			elif args[0] == 'beta':
+			elif args[0] == match.team_names[1].lower():
 				team = match.beta_team
 			else:
-				client.reply(self.channel, member, "Specified team must be **alpha** or **beta**.")
+				client.reply(self.channel, member, "Specified team must be **{0}** or **{1}**.".format(*match.team_names))
 				return
 		else:
 			client.reply(self.channel, member, "You must specify the team.")
@@ -1094,10 +1100,6 @@ class Channel():
 				return
 			match_id, winner = args[0:2]
 
-			if winner not in ['alpha', 'beta']:
-				client.reply(self.channel, member, "Winner team must be 'alpha' or 'beta'.")
-				return
-
 			match = None
 			for i in active_matches:
 				if str(i.id) == match_id and i.pickup.channel.id == self.id:
@@ -1108,6 +1110,14 @@ class Channel():
 				return
 			if match.state != "waiting_report":
 				client.reply(self.channel, member, "This match is not on waiting report state yet.")
+				return
+
+			if winner == match.team_names[0].lower():
+				winner = 'alpha'
+			elif winner == match.team_names[1].lower():
+				winner = 'beta'
+			else:
+				client.reply(self.channel, member, "Winner team must be '{0}' or '{1}'.".format(*match.team_names))
 				return
 
 		#!reportlose
@@ -2011,6 +2021,16 @@ class Channel():
 			else:
 				client.reply(self.channel, member, "{0} value must be exactly two emojis.".format(variable))
 
+		elif variable == "team_names":
+			if value.lower() == "none":
+				self.update_channel_config(variable, None)
+				client.reply(self.channel, member, "Removed {0} default value".format(variable))
+			elif len(value.split(' ')) == 2:
+				self.update_channel_config(variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+			else:
+				client.reply(self.channel, member, "{0} value must be exactly two words.".format(variable))
+
 		elif variable == "pick_teams":
 			value = value.lower()
 			if value in ["no_teams", "manual", "auto"]:
@@ -2020,7 +2040,7 @@ class Channel():
 				client.reply(self.channel, member, "teams_pick_system value must be no_teams, just_captains, captains_pick, manual_pick or random_teams.")
 
 		elif variable == "pick_captains":
-			if value in ["0", "1", "2"]:
+			if value in ["0", "1", "2", "3"]:
 				self.update_channel_config(variable, int(value))
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
 			else:
@@ -2258,6 +2278,18 @@ class Channel():
 			else:
 				client.reply(self.channel, member, "{0} value must be exactly two emojis.".format(variable))
 
+		elif variable == "team_names":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			elif len(value.split(' ')) == 2:
+				for i in pickups:
+					self.update_pickup_config(i, variable, value)
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+			else:
+				client.reply(self.channel, member, "{0} value must be exactly two words.".format(variable))
+
 		elif variable == "pick_teams":
 			value = value.lower()
 			if value.lower() == "none":
@@ -2310,7 +2342,7 @@ class Channel():
 					return
 				for i in value:
 					if i not in ['a', 'b']:
-						client.reply(self.channel, member, "pick_order letters must be 'a' (alpha) or 'b' (beta).")
+						client.reply(self.channel, member, "pick_order letters must be 'a' (team 1) or 'b' (team 2).")
 						return
 				self.update_pickup_config(pickups[0], variable, value)
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
