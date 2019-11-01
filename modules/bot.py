@@ -171,7 +171,7 @@ class Match():
 				not_ready = ["<@{0}>".format(i.id) for i in not_ready]
 				client.notice(self.channel, "{0} was not ready in time!\r\nReverting **{1}** pickup to gathering state...".format(", ".join(not_ready), self.pickup.name))
 				self.ready_fallback()
-		elif alive_time > (self.channel.cfg['match_livetime'] or max_match_alive_time):
+		elif alive_time > (self.pickup.channel.cfg['match_livetime'] or max_match_alive_time):
 			client.notice(self.channel, "Match *({0})* has timed out.".format(str(self.id)))
 			self.cancel_match()
 
