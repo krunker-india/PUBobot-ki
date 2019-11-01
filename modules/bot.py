@@ -171,7 +171,7 @@ class Match():
 				not_ready = ["<@{0}>".format(i.id) for i in not_ready]
 				client.notice(self.channel, "{0} was not ready in time!\r\nReverting **{1}** pickup to gathering state...".format(", ".join(not_ready), self.pickup.name))
 				self.ready_fallback()
-		elif alive_time > max_match_alive_time:
+		elif alive_time > (self.channel.cfg['match_livetime'] or max_match_alive_time):
 			client.notice(self.channel, "Match *({0})* has timed out.".format(str(self.id)))
 			self.cancel_match()
 
@@ -183,7 +183,7 @@ class Match():
 		else:
 			alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
 			beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
-			alpha_rating, beta_rating = "", ""
+			team_ratings = ["", ""]
 
 		if len(self.players) == 2:
 			return "{0} :fire:**VERSUS**:fire: {1}".format(alpha_str, beta_str)
@@ -356,7 +356,7 @@ class Match():
 		self.ready_refresh()
 		
 	def process_ready_reaction(self, action, reaction, user):
-		if user not in self.players:
+		if user not in self.players or self.state != 'waiting_ready':
 			return
 
 		if action == 'remove' and str(reaction) == ready_emoji and user.id in self.players_ready:
@@ -519,10 +519,10 @@ class Channel():
 
 		prefix, lower[0] = lower[0][0], lower[0][1:]
 		if prefix == self.cfg["prefix"]:
-			if lower[0]=="add":
+			if lower[0] in ["add", "j"]:
 				self.add_player(member, lower[1:msglen])
 
-			elif lower[0]=="remove":
+			elif lower[0] in ["remove", "l"]:
 				self.remove_player(member, lower[1:msglen])
 
 			elif lower[0]=="expire":
@@ -2189,6 +2189,22 @@ class Channel():
 					return
 				self.update_channel_config(variable, seconds)
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(seconds, variable))
+
+		elif variable == "match_livetime":
+			if value.lower() == 'none':
+				self.update_channel_config(variable, None)
+				client.reply(self.channel, member, "Removed {0} default value".format(variable))
+			else:
+				try:
+					seconds = utils.format_timestring(value.split(" "))
+				except Exception as e:
+					client.reply(self.channel, member, str(e))
+					return
+				if 60 < seconds < 259201:
+					self.update_channel_config(variable, seconds)
+					client.reply(self.channel, member, "Set '{0}' {1} as default value".format(seconds, variable))
+				else:
+					client.reply(self.channel, member, "match_livetime value must be more than 60 seconds and less than 3 days.")
 
 		elif variable == "global_expire":
 			if value.lower() == 'none':

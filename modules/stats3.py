@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 9
+version = 10
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -529,6 +529,11 @@ def check_db():
 			ADD COLUMN `ranked_streaks` INTEGER DEFAULT 1
 			""")
 
+		if db_version < 10:
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `match_livetime` INTEGER
+			""")
+
 
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
@@ -597,6 +602,7 @@ def create_tables():
 		`ranked_multiplayer` INTEGER DEFAULT 32,
 		`ranked_calibrate` INTEGER DEFAULT 1,
 		`ranked_streaks` INTEGER DEFAULT 1,
+		`match_livetime` INTEGER,
 		`global_expire` INTEGER,
 		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
 		PRIMARY KEY(`channel_id`) )""")
