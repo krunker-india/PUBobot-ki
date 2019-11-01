@@ -9,15 +9,18 @@ from modules import client, config, console, stats3, scheduler, utils
 max_expire_time = 6*60*60 #6 hours
 max_bantime = 30*24*60*60*12*3 #30 days * 12 * 3
 max_match_alive_time = 4*60*60 #4 hours
+ready_emoji = '☑'
+notready_emoji = '⛔'
 team_emojis = [":fox:", ":wolf:", ":dog:", ":bear:", ":panda_face:", ":tiger:", ":lion:", ":pig:", ":octopus:", ":boar:", ":spider:", ":scorpion:", ":crab:", ":eagle:", ":shark:", ":bat:", ":gorilla:", ":rhino:", ":dragon_face:", ":deer:"]
 
 def init():
-	global channels, channels_list, active_pickups, active_matches, allowoffline
+	global channels, channels_list, active_pickups, active_matches, allowoffline, waiting_reactions
 	channels = []
 	channels_list = []
 	active_pickups = []
 	active_matches = []
 	allowoffline = [] #users with !allowoffline
+	waiting_reactions = dict() #{message_id: function}
 
 class Match():
 
@@ -27,12 +30,14 @@ class Match():
 		#set match id
 		stats3.last_match += 1
 		self.id = stats3.last_match
+		self.ready_message = None
 		#these values cannot be changed until match end, so we need to save them
 		self.maxplayers = pickup.cfg['maxplayers']
 		self.pick_teams = pickup.channel.get_value('pick_teams', pickup)
 		self.require_ready = pickup.channel.get_value('require_ready', pickup)
 		self.pick_order = pickup.cfg['pick_order']
 		self.ranked = bool(pickup.channel.get_value('ranked', pickup) and self.pick_teams != 'no_teams')
+		self.ranked_streaks = pickup.channel.cfg['ranked_streaks']
 		if self.ranked:
 			self.ranks = stats3.get_ranks(pickup.channel.id, [i.id for i in players])
 			self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
@@ -41,9 +46,14 @@ class Match():
 		self.captains_role = pickup.channel.get_value('captains_role', pickup)
 		maps = pickup.channel.get_value('maps', pickup)
 		if maps:
-			self.map = random.choice(maps.split(',')).strip()
+			maps = [i.strip() for i in maps.split(',')]
+			if pickup.lastmap and len(maps) > 1 and pickup.lastmap in maps:
+				maps.remove(pickup.lastmap)
+			self.map = random.choice(maps)
 		else:
 			self.map = None
+		pickup.lastmap = self.map
+
 		#prepare working variables
 		self.state = "none" #none, waiting_ready, teams_picking or waiting_report
 		self.pickup = pickup
@@ -156,10 +166,10 @@ class Match():
 		alive_time = frametime - self.start_time
 		if self.state == "waiting_ready":
 			if alive_time > self.require_ready:
-				not_ready = list(filter(lambda x: not self.players_ready[self.players.index(x)], self.players))
-				self.players = list(filter(lambda x: x not in not_ready, self.players))
+				not_ready = list(filter(lambda x: x.id not in self.players_ready, self.players))
+				self.players = list(filter(lambda x: x.id in self.players_ready, self.players))
 				not_ready = ["<@{0}>".format(i.id) for i in not_ready]
-				client.notice(self.channel, "{0} was not ready in time!\r\nReverting **{1}** to gathering state...".format(", ".join(not_ready), self.pickup.name))
+				client.notice(self.channel, "{0} was not ready in time!\r\nReverting **{1}** pickup to gathering state...".format(", ".join(not_ready), self.pickup.name))
 				self.ready_fallback()
 		elif alive_time > max_match_alive_time:
 			client.notice(self.channel, "Match *({0})* has timed out.".format(str(self.id)))
@@ -210,11 +220,13 @@ class Match():
 		ipstr = ipstr.replace("%ip%", ip or "").replace("%password%", password or "")
 		return ipstr
 
-	def _players_to_str(self):
-		players = list(self.players)
+	def _players_to_str(self, players):
+		if len(players) == 1: return('<@{0}>'.format(players[0].id))
+
+		players = list(players)
 		last_player = players.pop(len(players)-1)
 		players_highlight = '<@'+'>, <@'.join([str(i.id) for i in players])+'>'
-		players_highlight += " and <@{0}> ".format(last_player.id)
+		players_highlight += " and <@{0}>".format(last_player.id)
 		return players_highlight
 
 	def print_startmsg_instant(self):
@@ -229,7 +241,7 @@ class Match():
 			else:
 				startmsg += "\r\n"+self._teams_to_str()+"\r\n"
 		else:
-			startmsg += "\r\n"+self._players_to_str()
+			startmsg += "\r\n"+self._players_to_str(self.players)+' '
 			if len(self.players) > 4:
 				startmsg += "\r\n"
 
@@ -247,7 +259,7 @@ class Match():
 		if self.captains:
 			startmsg += "<@{0}> and <@{1}> please start picking teams.\r\n\r\n".format(self.captains[0].id, self.captains[1].id)
 		else:
-			startmsg += self._players_to_str() + "please use '!capfor **{0}**' and start picking teams.\r\n\r\n".format('**/**'.join(self.team_names))
+			startmsg += self._players_to_str(self.players) + "please use '!capfor **{0}**' and start picking teams.\r\n\r\n".format('**/**'.join(self.team_names))
 		startmsg += self._teams_picking_to_str()
 
 		if self.pick_order:
@@ -277,7 +289,8 @@ class Match():
 		if self.state == 'none':
 			if self.require_ready:
 				self.state = 'waiting_ready'
-				client.notice(self.channel, "*({0})* **{1}** pickup is now on waiting ready state!\r\n{2} please type **!ready** or **!notready**.".format(str(self.id), self.pickup.name, ", ".join(["<@{0}>".format(i.id) for i in self.players])))
+				self.pickup.channel.waiting_messages[str(self.id)] = self.spawn_ready_message
+				client.notice(self.channel, '{0}spawn_message {1}'.format(self.pickup.channel.cfg['prefix'], self.id))
 			elif self.pick_teams == 'manual':
 				self.print_startmsg_teams_picking_start()
 				self.state = 'teams_picking'
@@ -330,36 +343,53 @@ class Match():
 
 	def cancel_match(self):
 		client.notice(self.channel, "{0} your match has been canceled.".format(', '.join(["<@{0}>".format(i.id) for i in self.players])))
+		if self.ready_message and self.ready_message.id in waiting_reactions.keys():
+			waiting_reactions.pop(self.ready_message.id)
+
 		active_matches.remove(self)
 
-	def ready_ready(self, player): #on !ready commands
-		idx = self.players.index(player)
-		if self.players_ready[idx]:
-			client.reply(self.channel, player, "You are already ready.")
+	def spawn_ready_message(self, message):
+		self.ready_message = message
+		waiting_reactions[message.id] = self.process_ready_reaction
+		for emoji in [ready_emoji, '🔸', notready_emoji]:
+			client.add_reaction(message, emoji)
+		self.ready_refresh()
+		
+	def process_ready_reaction(self, action, reaction, user):
+		if user not in self.players:
+			return
+
+		if action == 'remove' and str(reaction) == ready_emoji and user.id in self.players_ready:
+			self.players_ready.remove(user.id)
+			self.ready_refresh()
+
+		elif action == 'add' and str(reaction) == ready_emoji and user in filter(lambda i: i.id not in self.players_ready, self.players):
+			self.players_ready.append(user.id)
+			self.ready_refresh()
+
+		elif action == 'add' and str(reaction) == notready_emoji and user in self.players:
+			self.ready_notready(user)
+
+	def ready_notready(self, user):
+			self.players.remove(user)
+			client.notice(self.channel, "**{0}** is not ready!\r\nReverting **{1}** to gathering state...".format(user.nick or user.name, self.pickup.name))
+			self.ready_fallback()
+
+	def ready_refresh(self):
+		not_ready = list( filter(lambda i: i.id not in self.players_ready, self.players) )
+		if len(not_ready):
+			content = "__*({0})* **{1}** pickup is now on waiting ready state!__\r\n".format(self.id, self.pickup.name)
+			content += "Waiting on: {0}.\r\n".format(self._players_to_str(not_ready))
+			content += "Please react with :ballot_box_with_check: to **check-in** or :no_entry: to **abort**!"
+			client.edit_message(self.ready_message, content)
 		else:
-			self.players_ready[idx] = True
-			if False in self.players_ready:
-				self.ready_show()
-			else:
-				self.ready_end()
+			waiting_reactions.pop(self.ready_message.id)
+			client.delete_message(self.ready_message)
+			self.next_state()
 
-	def ready_notready(self, player): #on !notready command
-		client.notice(self.channel, "**{0}** is not ready!\r\nReverting **{1}** to gathering state...".format(player.nick or player.name, self.pickup.name))
-		self.players.remove(player)
-		self.ready_fallback()
-
-	def ready_show(self):
-		l = []
-		for idx in range(0, len(self.players)):
-			if self.players_ready[idx]:
-				status = ":ok:"
-			else:
-				status = ":zzz:"
-			l.append("{0} {1}".format(self.players[idx].nick or self.players[idx].name, status))
-
-		client.notice(self.channel, " | ".join(l))
-
-	def	ready_fallback(self): #if ready event failed
+	def ready_fallback(self): #if ready event failed
+		waiting_reactions.pop(self.ready_message.id)
+		client.delete_message(self.ready_message)
 		active_matches.remove(self)
 		newplayers = list(self.pickup.players)
 		self.pickup.players = list(self.players)
@@ -381,6 +411,7 @@ class Pickup():
 	def __init__(self, channel, cfg):
 		self.players = [] #[discord member objects]
 		self.name = cfg['pickup_name']
+		self.lastmap = None
 		self.channel = channel
 		self.cfg = cfg
 
@@ -405,6 +436,7 @@ class Channel():
 		self.lastgame_pickup = None
 		self.oldtopic = '[**no pickups**]'
 		self.to_remove = [] #players
+		self.waiting_messages = dict() #{msg_code: function}
 		
 	def init_pickups(self):
 		pickups = stats3.get_pickups(self.id)
@@ -458,8 +490,9 @@ class Channel():
 		Match(pickup, players)
 		self.lastgame_pickup = pickup
 
-	async def processmsg(self, content, member): #parse PRIVMSG event
-		msgtup = content.split(" ")
+	async def processmsg(self, msg):
+		member = msg.author
+		msgtup = msg.content.split(" ")
 		lower = [i.lower() for i in msgtup]
 		msglen = len(lower)
 		role_ids = [i.id for i in member.roles]
@@ -633,6 +666,9 @@ class Channel():
 			elif lower[0]=="help":
 				self.help_answer(member, lower[1:])
 
+			elif lower[0]=='spawn_message' and member == self.guild.me:
+				self.waiting_messages.pop(msgtup[1])(msg)
+
 			elif self.cfg["ranked"]:
 
 				if lower[0] in ['leaderboard', 'lb']:
@@ -662,7 +698,7 @@ class Channel():
 			return
 	
 		#check noadds and phrases
-		l = stats3.check_memberid(self.id, member.id)
+		l = stats3.check_memberid(self.id, member.id) #is_banned, phrase, default_expire
 		if l[0] == True: # if banned
 			client.reply(self.channel, member, l[1])
 			return
@@ -706,10 +742,11 @@ class Channel():
 
 		#update scheduler, reply a phrase and update topic
 		if changes:
-			if l[2]: # if have default_expire
+			expire = l[2] if l[2] != None else self.cfg['global_expire']
+			if expire: # if have default_expire
 				if member.id in scheduler.tasks.keys():
 					scheduler.cancel_task(member.id)
-				scheduler.add_task(member.id, l[2], global_remove, (member, 'scheduler'))
+				scheduler.add_task(member.id, expire, global_remove, (member, 'scheduler'))
 			if l[1]: # if have phrase
 				client.reply(self.channel, member, l[1])
 			self.update_topic()
@@ -1267,9 +1304,10 @@ class Channel():
 			client.reply(self.channel, member, "This match is not on waiting_ready state.")
 			return
 
-		if isready:
-			match.ready_ready(member)
-		else:
+		if isready and member.id not in match.players_ready:
+			match.players_ready.append(member.id)
+			match.ready_refresh()
+		elif not isready:
 			match.ready_notready(member)
 
 	def update_topic(self):
@@ -1453,6 +1491,7 @@ class Channel():
 		#print user default expire time
 		if timelist == []:
 			timeint = stats3.get_expire(member.id)
+			timeint = timeint if timeint != None else self.cfg['global_expire']
 			if timeint:
 				client.reply(self.channel, member, "Your default expire time is {0}".format(str(datetime.timedelta(seconds=int(timeint))),))
 			else:
@@ -1460,8 +1499,12 @@ class Channel():
 
 		#set expire time to afk
 		elif timelist[0] == 'afk':
-			stats3.set_expire(member.id, None)
+			stats3.set_expire(member.id, 0)
 			client.reply(self.channel, member, "You will be removed on AFK status by default.")
+
+		elif timelist[0] == 'none':
+			stats3.set_expire(member.id, None)
+			client.reply(self.channel, member, "Your default expire time will now depend on guild's global_expire value.")
 
 		#format time string and set new time amount
 		else:
@@ -2065,6 +2108,13 @@ class Channel():
 			else:
 				client.reply(self.channel, member, "ranked_calibrate value must be none, 0 or 1.")
 
+		elif variable == "ranked_streaks":
+			if value in ["0", "1"]:
+				self.update_channel_config(variable, bool(int(value)))
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+			else:
+				client.reply(self.channel, member, "ranked_streaks value must be 0 or 1.")
+
 		elif variable == "ranked_multiplayer":
 			if value.lower() == "none":
 				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
@@ -2140,6 +2190,21 @@ class Channel():
 				self.update_channel_config(variable, seconds)
 				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(seconds, variable))
 
+		elif variable == "global_expire":
+			if value.lower() == 'none':
+				self.update_channel_config(variable, None)
+				client.reply(self.channel, member, "Removed {0} default value".format(variable))
+			elif value.lower() == 'afk':
+				self.update_channel_config(variable, 0)
+				client.reply(self.channel, member, "Removed {0} default value".format(variable))
+			else:
+				try:
+					seconds = utils.format_timestring(value.split(" "))
+				except Exception as e:
+					client.reply(self.channel, member, str(e))
+					return
+				self.update_channel_config(variable, seconds)
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(seconds, variable))
 		else:
 			client.reply(self.channel, member, "Variable '{0}' is not configurable.".format(variable))
 
@@ -2474,7 +2539,7 @@ def global_remove(member, reason):
 		elif reason == 'idle':
 			client.notice(i.channel, "<@{0}> went AFK and was removed from all pickups...".format(member.id))
 		elif reason == 'offline':
-			client.notice(i.channel, "{0} went offline and was removed from all pickups...".format(member.name))
+			client.notice(i.channel, "**{0}** went offline and was removed from all pickups...".format(member.name))
 
 def run(frametime):
 	for match in active_matches:

@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 8
+version = 9
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -178,9 +178,16 @@ def register_pickup(match):
 			rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
 			if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 8 and not is_seeded :
 				rank_change = int( rank_change * ((10-(wins+loses))/2.0) )
-			streak = streak + 1 if scores[team_num] else 0
-			if streak > 2:
-				rank_change = int( rank_change * ( min([streak, 6])/2.0 ) )
+
+			if match.ranked_streaks:
+				if streak.__gt__(0) != scores[team_num].__gt__(0):
+					streak = 0
+				streak = streak + (1 if scores[team_num] else -1)
+				if abs(streak) > 2:
+					rank_change = int( rank_change * ( min([abs(streak), 6])/2.0 ) )
+			else:
+				streak = 0
+
 			rank_after = match.ranks[player.id] + rank_change
 			is_winner = bool(scores[team_num])
 
@@ -514,6 +521,15 @@ def check_db():
 			ADD COLUMN `team_names` TEXT
 			""")
 
+		if db_version < 9:
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `global_expire` INTEGER
+			""")
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `ranked_streaks` INTEGER DEFAULT 1
+			""")
+
+
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
 
@@ -580,6 +596,8 @@ def create_tables():
 		`ranked` INTEGER,
 		`ranked_multiplayer` INTEGER DEFAULT 32,
 		`ranked_calibrate` INTEGER DEFAULT 1,
+		`ranked_streaks` INTEGER DEFAULT 1,
+		`global_expire` INTEGER,
 		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
 		PRIMARY KEY(`channel_id`) )""")
 

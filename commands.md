@@ -5,7 +5,7 @@
 !remove <i>pickup</i>[ <i>pickup</i> ...] or -[<i>pickup</i>[ <i>pickup</i> ..]] - removes you from specified pickups.   
 !remove or -- - removes you from all pickups.   
 !expire <i>time</i> - Sets new time delay after you will be removed from all pickups, example: '!expire 1h 2m 3s'.   
-!default_expire <i>time</i> or 'afk' - Set your personal default !expire time or set autoremove on afk status.   
+!default_expire <i>time</i>, 'afk' or 'none' - Set your personal default !expire time or set autoremove on afk status.   
 !sub - request sub for last game.   
 !allowoffline or !ao - gives you immune from getting removed by offline or afk statuses until a pickup with you starts. (done for mobile devices users).   
 !subscribe <i>pickup</i>[ <i>pickup</i> ..]] - adds the promotion role of specified pickup(s) to you.   
@@ -99,6 +99,8 @@
   * no_teams - bot will only print players list and captains if needed.
   * auto - bot will print teams balanced by rating on ranked pickups or random teams.
   * manual - users will have to pick teams using teams picking commands.
+* team_emojis <i>emoji</i> <i>emoji</i> - set custom team emojis.
+* team_names <i>alpha_name</i> <i>beta_name</i> - set custom team names (commands with team names will change accordingly).
 * pick_order <i>order</i> - force specified teams picking order. Example value: 'abababba'.
 * promotion_role <i>role_name</i> - set promotion_role to highlight on !promote and !sub commands.
 * promotion_delay <i>time</i> - set time delay between !promote and !sub commands can be used.
@@ -108,4 +110,6 @@
 * ranked 0 or 1 - set pickup(s) to have rating system and make players have to report their matches.
 * ranked_calibrate 0 or 1 - set to enable rating boost on first 10 user's matches, default on. Only for 'set_default'.
 * ranked_multiplayer 8 to 256 - change rating K-factor (gain/loss multiplyer), default 32. Only for 'set_default'.
+* ranked_streaks 1 or 0 - set to enable ranked streaks (starting from x1.5 for (3 wins/loses in a row) to x3.0 (6+ wins/loses in a row))
+* global_expire <i>time</i>, afk or none - set default_expire value for users without personal settings.
 * help_answer <i>text</i> - set an answer on !help command.

@@ -38,12 +38,11 @@ def get_empty_servers():
 async def send(): #send messages in queue
 	global send_queue
 	if len(send_queue):
-		for dest, msg in send_queue:
+		for func, kwargs in send_queue:
 			try:
-				#console.display("SEND| {0}# {1}".format(str(dest), str(msg)))
-				await dest.send(msg)
+				await func(**kwargs)
 			except Exception as e:
-				console.display("ERROR| could not send a message to {0}. {1}".format(str(dest), str(e)))
+				console.display("ERROR| could not send data ({0}). {1}".format(str(func), str(e)))
 		send_queue = []
 
 async def close(): #on quit
@@ -87,13 +86,22 @@ async def send_message(dest, msg): #send msg asap, dont put it in queue
 	await dest.send(msg)
 
 def notice(channel, msg):
-	send_queue.append([channel, msg])
+	send_queue.append([channel.send, {'content': msg}])
 
 def reply(channel, member, msg):
-	send_queue.append([channel, "<@{0}>, {1}".format(member.id, msg)])
+	send_queue.append([channel.send, {'content': "<@{0}>, {1}".format(member.id, msg)}])
 	
 def private_reply(channel, member, msg):
-	send_queue.append([member, msg])
+	send_queue.append([member.send, {'content': msg}])
+
+def delete_message(msg):
+	send_queue.append([msg.delete, {}])
+
+def edit_message(msg, new_content):
+	send_queue.append([msg.edit, {'content': new_content}])
+
+def add_reaction(msg, emoji):
+	send_queue.append([msg.add_reaction, {'emoji': emoji}])
 	
 def get_member_by_nick(channel, nick):
 	server = c.get_guild(channel.guild.id)
@@ -153,7 +161,7 @@ async def on_message(message):
 			if message.channel.id == channel.id:
 				console.display("CHAT| {0}>{1}>{2}: {3}".format(message.guild, message.channel, message.author.display_name, message.content))
 				try:
-					await channel.processmsg(message.content, message.author)
+					await channel.processmsg(message)
 				except:
 					console.display("ERROR| Error processing message: {0}".format(traceback.format_exc()))
 
@@ -162,6 +170,16 @@ async def on_member_update(before, after):
 	#console.display("DEBUG| {0} changed status from {1}  to -{2}-".format(after.name, before.status, after.status))
 	if str(after.status) in ['idle', 'offline']:
 		bot.update_member(after)
+
+@c.event
+async def on_reaction_add(reaction, user):
+	if reaction.message.id in bot.waiting_reactions.keys():
+		bot.waiting_reactions[reaction.message.id]('add', reaction, user)
+
+@c.event
+async def on_reaction_remove(reaction, user):
+	if reaction.message.id in bot.waiting_reactions.keys():
+		bot.waiting_reactions[reaction.message.id]('remove', reaction, user)
 
 ### connect to discord ###
 def run():
