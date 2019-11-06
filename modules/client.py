@@ -82,22 +82,23 @@ async def remove_roles(member, *roles):
 async def add_roles(member, *roles):
 	await member.add_roles(*roles)
 
-async def send_message(dest, msg): #send msg asap, dont put it in queue
-	await dest.send(msg)
-
 def notice(channel, msg):
+	console.display("SEND| {0}> {1}".format(channel.name, msg))
 	send_queue.append([channel.send, {'content': msg}])
 
 def reply(channel, member, msg):
+	console.display("SEND| {0}> {1}, {2}".format(channel.name, member.nick or member.name, msg))
 	send_queue.append([channel.send, {'content': "<@{0}>, {1}".format(member.id, msg)}])
 	
 def private_reply(channel, member, msg):
+	console.display("SEND_PM| {0}> {1}".format(member.nick or member.name, msg))
 	send_queue.append([member.send, {'content': msg}])
 
 def delete_message(msg):
 	send_queue.append([msg.delete, {}])
 
 def edit_message(msg, new_content):
+	console.display("EDIT| {0}> {1}".format(msg.channel.name, new_content))
 	send_queue.append([msg.edit, {'content': new_content}])
 
 def add_reaction(msg, emoji):
@@ -155,11 +156,10 @@ async def on_message(message):
 					return
 			reply(message.channel, message.author, "pickups on this channel has not been set up yet!") 
 		else:
-			reply(message.channel, message.author, "You must have permission to manage channels to disable pickups.") 
-	else:
+			reply(message.channel, message.author, "You must have permission to manage channels to disable pickups.")
+	elif message.content != '':
 		for channel in bot.channels:
 			if message.channel.id == channel.id:
-				console.display("CHAT| {0}>{1}>{2}: {3}".format(message.guild, message.channel, message.author.display_name, message.content))
 				try:
 					await channel.processmsg(message)
 				except:

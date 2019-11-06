@@ -519,6 +519,7 @@ class Channel():
 
 		prefix, lower[0] = lower[0][0], lower[0][1:]
 		if prefix == self.cfg["prefix"]:
+			console.display("CHAT| {0}>{1}>{2}: {3}".format(msg.guild, msg.channel, msg.author.display_name, msg.content))
 			if lower[0] in ["add", "j"]:
 				self.add_player(member, lower[1:msglen])
 
