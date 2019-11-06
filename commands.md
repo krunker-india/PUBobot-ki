@@ -111,6 +111,7 @@
 * ranked_calibrate 0 or 1 - set to enable rating boost on first 10 user's matches, default on. Only for 'set_default'.
 * ranked_multiplayer 8 to 256 - change rating K-factor (gain/loss multiplyer), default 32. Only for 'set_default'.
 * ranked_streaks 1 or 0 - set to enable ranked streaks (starting from x1.5 for (3 wins/loses in a row) to x3.0 (6+ wins/loses in a row))
+* initial_rating <i>integer</i> - set starting rating for new players (default is 1400).
 * global_expire <i>time</i>, afk or none - set default_expire value for users without personal settings.
 * match_livetime <i>time</i> - set a timelimit before a match gets aborted as timed out.
 * help_answer <i>text</i> - set an answer on !help command.
