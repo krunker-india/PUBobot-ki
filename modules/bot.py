@@ -39,7 +39,7 @@ class Match():
 		self.ranked = bool(pickup.channel.get_value('ranked', pickup) and self.pick_teams != 'no_teams')
 		self.ranked_streaks = pickup.channel.cfg['ranked_streaks']
 		if self.ranked:
-			self.ranks = stats3.get_ranks(pickup.channel.id, [i.id for i in players])
+			self.ranks = stats3.get_ranks(pickup.channel, [i.id for i in players])
 			self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
 		else:
 			self.players = list(players)
@@ -179,7 +179,7 @@ class Match():
 		if self.ranked:
 			alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(self.ranks[i.id]), i.id) for i in self.alpha_team])
 			beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(self.ranks[i.id]), i.id) for i in self.beta_team])
-			team_ratings = ['〈__{0}__〉 '.format(sum([self.ranks[i.id] for i in team])//len(team)) for team in (self.alpha_team, self.beta_team)]
+			team_ratings = ['〈__{0}__〉'.format(sum([self.ranks[i.id] for i in team])//len(team)) for team in (self.alpha_team, self.beta_team)]
 		else:
 			alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
 			beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
@@ -188,7 +188,7 @@ class Match():
 		if len(self.players) == 2:
 			return "{0} :fire:**VERSUS**:fire: {1}".format(alpha_str, beta_str)
 		else:
-			return "{0}❲{1}❳{4}{0}\r\n          :fire: **VERSUS** :fire:\r\n{2}❲{3}❳{5}{2}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str, *team_ratings)
+			return "{0} ❲{1}❳ {4}\r\n          :fire: **VERSUS** :fire:\r\n{2} ❲{3}❳ {5}".format(self.alpha_icon, alpha_str, self.beta_icon, beta_str, *team_ratings)
 			
 	def _teams_picking_to_str(self):
 		if len(self.alpha_team):
@@ -211,7 +211,7 @@ class Match():
 			unpicked_str = "\n".join([" - `{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in sorted(self.unpicked, key=lambda p: self.ranks[p.id], reverse=True)])
 		else:
 			unpicked_str = "\n".join([" - `{0}`".format((i.nick or i.name).replace("`","")) for i in self.unpicked])
-		return "{0} {1} {0}\n          :fire:**VERSUS**:fire:\n{3} {2} {3}\n\n__Unpicked__:\n{4}".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
+		return "{0} {1}\n          :fire:**VERSUS**:fire:\n{3} {2}\n\n__Unpicked__:\n{4}".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
 
 	def _startmsg_to_str(self):
 		ipstr = self.pickup.channel.get_value("startmsg", self.pickup)
@@ -1051,11 +1051,12 @@ class Channel():
 					idx = x.index(target)
 					x[idx] = member
 					idx = match.players.index(target)
+					match.players = list(match.players)
 					match.players[idx] = member
 
 					#update ranks table if needed
 					if match.ranked:
-						match.ranks = stats3.get_ranks(self.channel.id, [i.id for i in match.players])
+						match.ranks = stats3.get_ranks(self, [i.id for i in match.players])
 						match.players = list(sorted(match.players, key=lambda p: match.ranks[p.id], reverse=True))
 
 					client.notice(self.channel, match._teams_picking_to_str())
@@ -2129,6 +2130,20 @@ class Channel():
 				else:
 					client.reply(self.channel, member, "ranked_multiplayer number must be a number between 8 and 256.")
 
+		elif variable == "initial_rating":
+			if value.lower() == "none":
+				client.reply(self.channel, member, "Cant unset {0} value.".format(variable))
+			else:
+				try:
+					number = int(value)
+				except:
+					client.reply("Value must be a number")
+				if 0 < number < 3000:
+					self.update_channel_config(variable, number)
+					client.reply(self.channel, member, "Done.")
+				else:
+					client.reply(self.channel, member, "initial_rating  must be a number between 1 and 3000.")
+
 		elif variable == "promotion_role":
 			if value.lower() == "none":
 				self.update_channel_config(variable, None)
@@ -2200,7 +2215,7 @@ class Channel():
 				except Exception as e:
 					client.reply(self.channel, member, str(e))
 					return
-				if 60 < seconds < 259201:
+				if 59 < seconds < 259201:
 					self.update_channel_config(variable, seconds)
 					client.reply(self.channel, member, "Set '{0}' {1} as default value".format(seconds, variable))
 				else:

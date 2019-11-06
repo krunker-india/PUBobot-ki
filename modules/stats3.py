@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 10
+version = 11
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -125,7 +125,7 @@ def seed_player(channel_id, user_id, rating):
 		c.execute("INSERT INTO channel_players (channel_id, user_id, rank, is_seeded) VALUES (?, ?, ?, ?)" (channel_id, user_id, rating, True))
 
 def reset_ranks(channel_id):
-	c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL WHERE channel_id = ?", (channel_id,))
+	c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
 	conn.commit()
 
 def register_pickup(match):
@@ -166,7 +166,7 @@ def register_pickup(match):
 				team = 'beta'
 
 		if match.ranked and match.winner and team:
-			c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, wins, loses, phrase) VALUES (?, ?, ?, 1400, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name))
+			c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, wins, loses, phrase) VALUES (?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks[player.id]))
 
 			#if we need to calibrate this player add additional rank gain/loss boost
 			rank_k = match.pickup.channel.cfg['ranked_multiplayer']
@@ -218,16 +218,16 @@ def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
 			result = c.fetchone()
 	return result
 
-def get_ranks(channel_id, user_ids):
+def get_ranks(channel, user_ids):
 	d = dict()
-	c.execute("SELECT user_id, rank FROM channel_players WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel_id, *user_ids))
+	c.execute("SELECT user_id, rank FROM channel_players WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
 	results = c.fetchall()
 	for user_id, rank in results:
 		if rank:
 			d[user_id] = rank
 	for user_id in user_ids:
 		if user_id not in d.keys():
-			d[user_id] = 1400
+			d[user_id] = channel.cfg['initial_rating'] or 1400
 	return d
 
 def get_rank_details(channel_id, user_id=False, nick=False):
@@ -534,6 +534,10 @@ def check_db():
 			ADD COLUMN `match_livetime` INTEGER
 			""")
 
+		if db_version < 11:
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `initial_rating` INTEGER
+			""")
 
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
@@ -602,6 +606,7 @@ def create_tables():
 		`ranked_multiplayer` INTEGER DEFAULT 32,
 		`ranked_calibrate` INTEGER DEFAULT 1,
 		`ranked_streaks` INTEGER DEFAULT 1,
+		`initial_rating` INTEGER,
 		`match_livetime` INTEGER,
 		`global_expire` INTEGER,
 		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
