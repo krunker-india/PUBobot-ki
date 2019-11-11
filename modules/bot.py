@@ -467,7 +467,7 @@ class Channel():
 			if i.id in scheduler.tasks.keys():
 				scheduler.cancel_task(i.id)
 			if pmsg:
-				client.private_reply(self, i, pmsg)
+				client.private_reply(i, pmsg)
 			for pu in ( pu for pu in list(active_pickups) if i.id in [x.id for x in pu.players]):
 				pu.players.remove(i)
 				if not len(pu.players):
@@ -1882,11 +1882,11 @@ class Channel():
 	def show_config(self, member, args):
 		if len(args):
 			if args[0] in self.cfg.keys():
-				client.private_reply(self.channel, member, "{0}: '{1}'".format(args[0], str(self.cfg[args[0]])))
+				client.private_reply(member, "{0}: '{1}'".format(args[0], str(self.cfg[args[0]])))
 			else:
 				client.reply(self.channel, member, "No such variable '{0}'.".format(args[0]))
 		else:
-			client.private_reply(self.channel, member, '\r\n'.join(["{0}: '{1}'".format(key, str(value)) for (key, value) in self.cfg.items()]))
+			client.private_reply(member, '\r\n'.join(["{0}: '{1}'".format(key, str(value)) for (key, value) in self.cfg.items()]))
 
 	def show_pickup_config(self, member, args):
 		if len(args):
@@ -1895,13 +1895,13 @@ class Channel():
 				if pickup.name.lower() == args[0]:
 					if len(args) > 1:
 						if args[1] in pickup.cfg.keys():
-							client.private_reply(self.channel, member, "[{0}] {1}: '{2}'".format(pickup.name, args[1], str(pickup.cfg[args[1]])))
+							client.private_reply(member, "[{0}] {1}: '{2}'".format(pickup.name, args[1], str(pickup.cfg[args[1]])))
 							return
 						else:
 							client.reply(self.channel, member, "No such variable '{0}'.".format(args[1]))
 							return
 					else:
-						client.private_reply(self.channel, member, '\r\n'.join(["[{0}] {1}: '{2}'".format(pickup.name, key, str(value)) for (key, value) in pickup.cfg.items()]))
+						client.private_reply(member, '\r\n'.join(["[{0}] {1}: '{2}'".format(pickup.name, key, str(value)) for (key, value) in pickup.cfg.items()]))
 						return
 			client.reply(self.channel, member, "Pickup '{0}' not found.".format(args[0]))
 		else:

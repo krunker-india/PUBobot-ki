@@ -90,8 +90,8 @@ def reply(channel, member, msg):
 	console.display("SEND| {0}> {1}, {2}".format(channel.name, member.nick or member.name, msg))
 	send_queue.append([channel.send, {'content': "<@{0}>, {1}".format(member.id, msg)}])
 	
-def private_reply(channel, member, msg):
-	console.display("SEND_PM| {0}> {1}".format(member.nick or member.name, msg))
+def private_reply(member, msg):
+	console.display("SEND_PM| {0}> {1}".format(member.name, msg))
 	send_queue.append([member.send, {'content': msg}])
 
 def delete_message(msg):
@@ -136,7 +136,7 @@ async def on_message(message):
 #		return
 	if isinstance(message.channel, discord.abc.PrivateChannel) and message.author.id != c.user.id:
 		console.display("PRIVATE| {0}>{1}>{2}: {3}".format(message.guild, message.channel, message.author.display_name, message.content))
-		notice(message.channel, config.cfg.HELPINFO)
+		private_reply(message.author, config.cfg.HELPINFO)
 	elif message.content == '!enable_pickups':
 		if message.channel.permissions_for(message.author).manage_channels:
 			if message.channel.id not in [x.id for x in bot.channels]:
