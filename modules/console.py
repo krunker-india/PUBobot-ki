@@ -42,7 +42,7 @@ def init():
 	#init log file
 	if not os.path.exists(os.path.abspath("logs")):
 	  os.makedirs('logs')
-	log = open(datetime.datetime.now().strftime("logs/log_%Y-%m-%d-%H:%M"),'w')
+	log = open(datetime.datetime.now().strftime("logs/log_%Y-%m-%d-%H:%M"), 'w', encoding = 'utf-8')
 	
 	userinput_queue = Queue()
 
