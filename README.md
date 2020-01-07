@@ -6,7 +6,7 @@ Bot keeps statistic database, have features to automatically remove AFK users, d
 Python 3.6+, sqlite3 module for python, discord api v1.0+.
 
 # Running
-1. Fill your discord bot token or username and password in the 'config.cfg' file.
+1. Copy config.example.cfg as config.cfg and fill your discord bot token or username and password in it.
 2. Run './pubobot.py' to launch the program.
 3. Invite your bot to the desired server.
 4. Type '!enable_pickups' on the desired channel.
