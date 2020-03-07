@@ -34,7 +34,8 @@
 ### RANKING
 !leaderboard [page] or !lb [page] - show top players by rating.   
 !rank - show your rating stats.   
-!reportlose or !rl - report loss on your current match (avalible for captains only).   
+!reportlose or !rl - report loss on your current match (avalible for captains only).  
+!reportdraw !draw or !rd - report draw on your current match (avalible for captains only, captain of other team has to confirm).  
 !matches - show all active matches on the channel.   
 !ranks_table - show rank to rating table.   
 ##### For moderators and above:

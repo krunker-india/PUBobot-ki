@@ -150,6 +150,8 @@ def register_pickup(match):
 		expected_scores = [1/(1+10**((beta_rank-alpha_rank)/400)), 1/(1+10**((alpha_rank-beta_rank)/400))]
 		if match.winner == 'alpha':
 			scores = [1, 0]
+		elif match.winner == 'draw':
+			scores = [0.5, 0.5]
 		else:
 			scores = [0, 1]
 
@@ -182,14 +184,19 @@ def register_pickup(match):
 			if match.ranked_streaks:
 				if streak.__gt__(0) != scores[team_num].__gt__(0):
 					streak = 0
-				streak = streak + (1 if scores[team_num] else -1)
+				if scores[team_num] == 1:
+					streak += 1
+				elif scores[team_num] == 0.5:
+					streak = 0
+				else:
+					streak -= 1
 				if abs(streak) > 2:
 					rank_change = int( rank_change * ( min([abs(streak), 6])/2.0 ) )
 			else:
 				streak = 0
 
 			rank_after = match.ranks[player.id] + rank_change
-			is_winner = bool(scores[team_num])
+			is_winner = scores[team_num]
 
 			c.execute("UPDATE channel_players SET nick = ?, rank = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
 			new_ranks[player.id] = [user_name, rank_after]
