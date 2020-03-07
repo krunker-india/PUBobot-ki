@@ -956,6 +956,14 @@ class Channel():
 					match.unpicked.remove(i)
 					if len(match.unpicked) == 0:
 						match.next_state()
+					elif len(match.unpicked) == 1 and match.pick_order:
+						match.pick_step += 1
+						if match.pick_order[match.pick_step] == 'a':
+							match.alpha_team.append(match.unpicked[0])
+						else:
+							match.beta_team.append(match.unpicked[0])
+						match.unpicked.remove(match.unpicked[0])
+						match.next_state()
 					else:
 						msg = match._teams_picking_to_str()
 						if match.pick_order:
