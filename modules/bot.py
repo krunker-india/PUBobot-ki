@@ -388,8 +388,9 @@ class Match():
 			self.next_state()
 
 	def ready_fallback(self): #if ready event failed
-		waiting_reactions.pop(self.ready_message.id)
-		client.delete_message(self.ready_message)
+		if self.ready_message:
+			waiting_reactions.pop(self.ready_message.id)
+			client.delete_message(self.ready_message)
 		active_matches.remove(self)
 		newplayers = list(self.pickup.players)
 		self.pickup.players = list(self.players)
