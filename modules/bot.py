@@ -61,6 +61,8 @@ class Match():
 		self.winner = None
 		self.unpicked = []
 		self.lastpick = None #fatkid
+		self.beta_draw = False
+		self.alpha_draw = False
 
 		pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
 		if pick_captains and len(players) > 2 and self.pick_teams != 'auto':
@@ -348,6 +350,11 @@ class Match():
 
 		active_matches.remove(self)
 
+	def draw_match(self):
+		# client.notice(self.channel, "Match {0} finished. Your match has ended in a draw.".format(self.id))
+		self.winner = 'draw'
+		self.next_state()
+
 	def spawn_ready_message(self, message):
 		self.ready_message = message
 		waiting_reactions[message.id] = self.process_ready_reaction
@@ -592,6 +599,9 @@ class Channel():
 
 			elif lower[0] in ["reportlose", "rl"]:
 				self.report_match(member)
+
+			elif lower[0] in ["reportdraw", "draw", "rd"]:
+				self.draw_match(member)
 
 			elif lower[0] in ["ready", "r"]:
 				self.set_ready(member, True)
@@ -957,6 +967,14 @@ class Channel():
 					match.unpicked.remove(i)
 					if len(match.unpicked) == 0:
 						match.next_state()
+					elif len(match.unpicked) == 1 and match.pick_order:
+						match.pick_step += 1
+						if match.pick_order[match.pick_step] == 'a':
+							match.alpha_team.append(match.unpicked[0])
+						else:
+							match.beta_team.append(match.unpicked[0])
+						match.unpicked.remove(match.unpicked[0])
+						match.next_state()
 					else:
 						msg = match._teams_picking_to_str()
 						if match.pick_order:
@@ -1193,6 +1211,39 @@ class Channel():
 		match.winner = winner
 		match.next_state()
 
+	def draw_match(self, member):
+		# !draw
+		match = None
+		for i in active_matches:
+			if i.pickup.channel.id == self.id and member in i.players:
+				match = i
+				if match.state != "waiting_report":
+					client.reply(self.channel, member, "This match is not on waiting report state yet.")
+					return
+				if match.beta_team[0] == member:
+					if match.beta_draw == False:
+						match.beta_draw = True
+						if not match.alpha_draw:
+							client.reply(self.channel, member, "Match is now waiting for Alpha captain to report draw.")
+						else:
+							i.draw_match()
+					else:
+						client.reply(self.channel, member, "You already requested a draw, waiting for Alpha captain.")
+				elif match.alpha_team[0] == member:
+					if match.alpha_draw == False:
+						match.alpha_draw = True
+						if not match.beta_draw:
+							client.reply(self.channel, member, "Match is now waiting for Beta captain to report draw.")
+						else:
+							i.draw_match()
+					else:
+						client.reply(self.channel, member, "You already requested a draw, waiting for Beta captain.")
+				else:
+					client.reply(self.channel, member, "You must be captain of the team to report a draw.")
+
+		if not match:
+			client.reply(self.channel, member, "You are not in an active match.")
+
 	def get_matches(self):
 		l = []
 		for match in active_matches:
@@ -1217,8 +1268,8 @@ class Channel():
 				(page*10)+(n+1),
 				str(data[n][0]) + utils.rating_to_icon(data[n][0]),
 				data[n][1],
-				data[n][2]+data[n][3],
-				"{0}/{1} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
+				int(data[n][2]+data[n][3]),
+				"{0:3.1f}/{1:<3.1f} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
 			) for n in range(0, len(data))]
 
 			s = "```markdown\n № | Rating〈Ξ〉 |         Nickname        | Matches |   W/L\n{0}\n{1}```".format(
@@ -1239,7 +1290,7 @@ class Channel():
 			details_str = "№ {0} | Rating {1} | {2} Matches | {3}/{4} ({5})% W/L".format(
 				details[0],
 				str(details[2]) + utils.rating_to_icon(details[2]),
-				details[3]+details[4],
+				int(details[3]+details[4]),
 				details[3],
 				details[4],
 				int(details[3]*100/((details[3]+details[4]) or 1)))
