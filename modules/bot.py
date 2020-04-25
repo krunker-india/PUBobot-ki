@@ -315,6 +315,7 @@ class Match():
 				self.finish_match()
 
 		elif self.state == 'teams_picking':
+			self.remove_unpicked()
 			if self.ranked:
 				self.print_startmsg_teams_picking_finish()
 				self.state = 'waiting_report'
@@ -342,6 +343,11 @@ class Match():
 					) for i in new_ranks.keys() ]
 				)
 				client.notice(self.channel, "```python\n"+summary+"```")
+
+	def remove_unpicked(self):
+		for player in self.unpicked:
+			self.players.remove(player)
+		self.unpicked = []
 
 	def cancel_match(self):
 		client.notice(self.channel, "{0} your match has been canceled.".format(', '.join(["<@{0}>".format(i.id) for i in self.players])))
@@ -741,7 +747,7 @@ class Channel():
 				elif not whitelist_role or whitelist_role in member_roles:
 					changes = True
 					pickup.players.append(member)
-					if len(pickup.players)==pickup.cfg['maxplayers']:
+					if len(pickup.players)==pickup.cfg['maxplayers'] and self.get_value("autostart", pickup) != 0:
 						self.start_pickup(pickup)
 						return
 					elif len(pickup.players)==pickup.cfg['maxplayers']-1 and pickup.cfg['maxplayers']>2:
@@ -831,15 +837,22 @@ class Channel():
 			client.notice(self.channel, 'no one added...ZzZz')
 
 	def user_start_pickup(self, member, args, access_level):
+		target = None
+		if len(args):
+			for pickup in self.pickups:
+				if pickup.name.lower() == args[0]:
+					target = pickup
+		elif len(self.pickups) == 1:
+			target = self.pickups[0]
+
+		if not target:
+			client.reply(self.channel, member, "You must specify a pickup to start!")
+			return
+
 		if access_level:
-			if len(args):
-				for pickup in self.pickups:
-					if pickup.name.lower() == args[0]:
-						self.start_pickup(pickup)
-			elif len(self.pickups) == 1:
-				self.start_pickup(self.pickups[0])
-			else:
-				client.reply(self.channel, member, "You must specify a pickup to start!")
+			self.start_pickup(target)
+		elif self.get_value('autostart', target) == 0 and self.get_value('captains_role', target) in [role.id for role in member.roles]:
+			self.start_pickup(target)
 		else:
 			client.reply(self.channel, member, "You have no right for this!")
 
@@ -965,7 +978,7 @@ class Channel():
 				if i.id == targetid:
 					team.append(i)
 					match.unpicked.remove(i)
-					if len(match.unpicked) == 0:
+					if len(match.unpicked) == 0 or match.maxplayers == len(match.alpha_team) + len(match.beta_team):
 						match.next_state()
 					elif len(match.unpicked) == 1 and match.pick_order:
 						match.pick_step += 1
@@ -2148,6 +2161,13 @@ class Channel():
 			else:
 				client.reply(self.channel, member, "pick_captains value must be 0 or 1 or 2.")
 
+		elif variable == "autostart":
+			if value in ["0", "1"]:
+				self.update_channel_config(variable, bool(int(value)))
+				client.reply(self.channel, member, "Set '{0}' {1} as default value".format(value, variable))
+			else:
+				client.reply(self.channel, member, "autostart value must be 0 or 1.")
+
 		elif variable == "ranked":
 			if value in ["0", "1"]:
 				self.update_channel_config(variable, bool(int(value)))
@@ -2468,6 +2488,18 @@ class Channel():
 				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
 			else:
 				client.reply(self.channel, member, "pick_captains value must be none, 0 or 1 or 2.")
+
+		elif variable == "autostart":
+			if value.lower() == "none":
+				for i in pickups:
+					self.update_pickup_config(i, variable, None)
+				client.reply(self.channel, member, "{0} for {1} pickups will now fallback to the channel's default value.".format(variable, ", ".join(i.name for i in pickups)))
+			elif value in ["0", "1"]:
+				for i in pickups:
+					self.update_pickup_config(i, variable, bool(int(value)))
+				client.reply(self.channel, member, "Set '{0}' {1} for {2} pickups.".format(value, variable, ", ".join(i.name for i in pickups)))
+			else:
+				client.reply(self.channel, member, "autostart value must be none, 0 or 1.")
 
 		elif variable == "ranked":
 			if value.lower() == "none":

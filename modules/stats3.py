@@ -8,7 +8,7 @@ from decimal import Decimal
 from modules import console
 
 #INIT
-version = 11
+version = 12
 def init():
 	global conn, c, last_match
 	dbexists = isfile("database.sqlite3")
@@ -98,6 +98,7 @@ def delete_channel(channel_id):
 	c.execute("DELETE FROM pickup_configs WHERE channel_id = ?", (channel_id, ))
 	c.execute("DELETE FROM player_pickups WHERE channel_id = ?", (channel_id, ))
 	c.execute("DELETE FROM pickups WHERE channel_id = ?", (channel_id, ))
+	c.execute("DELETE FROM pickup_groups WHERE channel_id = ?", (channel_id, ))
 	conn.commit()
 
 def reset_stats(channel_id):
@@ -545,6 +546,15 @@ def check_db():
 			c.execute("""ALTER TABLE `channels`
 			ADD COLUMN `initial_rating` INTEGER
 			""")
+
+		if db_version < 12:
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `autostart` INTEGER DEFAULT 1
+			""")
+			c.execute("""ALTER TABLE `pickup_configs`
+			ADD COLUMN `autostart` INTEGER
+			""")
+
 
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
