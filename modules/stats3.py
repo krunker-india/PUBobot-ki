@@ -555,6 +555,13 @@ def check_db():
 			ADD COLUMN `autostart` INTEGER
 			""")
 
+		if db_version < 13:
+			c.execute("""ALTER TABLE `channels`
+			ADD COLUMN `help_answer` TEXT
+			""")
+			c.execute("""ALTER TABLE `pickup_configs`
+			ADD COLUMN `help_answer` TEXT
+			""")
 
 		c.execute("INSERT OR REPLACE INTO utility (variable, value) VALUES ('version', ?)", (str(version), ))
 		conn.commit()
@@ -626,6 +633,7 @@ def create_tables():
 		`initial_rating` INTEGER,
 		`match_livetime` INTEGER,
 		`global_expire` INTEGER,
+		`help_answer` TEXT,
 		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
 		PRIMARY KEY(`channel_id`) )""")
 
@@ -654,6 +662,7 @@ def create_tables():
 		`require_ready` INTEGER,
 		`ranked` INTEGER,
 		`allow_offline` INTEGER DEFAULT 0,
+		`help_answer` TEXT,
 		PRIMARY KEY(`channel_id`, `pickup_name`) )""")
 
 	c.execute("""CREATE TABLE `pickups` 
