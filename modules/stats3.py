@@ -633,6 +633,7 @@ def create_tables():
 		`initial_rating` INTEGER,
 		`match_livetime` INTEGER,
 		`global_expire` INTEGER,
+		`autostart` INTEGER DEFAULT 1,
 		`help_answer` TEXT,
 		`start_pm_msg` TEXT DEFAULT '**%pickup_name%** pickup has been started @ %channel%.',
 		PRIMARY KEY(`channel_id`) )""")
@@ -662,6 +663,7 @@ def create_tables():
 		`require_ready` INTEGER,
 		`ranked` INTEGER,
 		`allow_offline` INTEGER DEFAULT 0,
+		`autostart` INTEGER,
 		`help_answer` TEXT,
 		PRIMARY KEY(`channel_id`, `pickup_name`) )""")
 
