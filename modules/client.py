@@ -172,6 +172,10 @@ async def on_member_update(before, after):
 		bot.update_member(after)
 
 @c.event
+async def on_member_remove(member):
+	bot.member_left(member)
+
+@c.event
 async def on_reaction_add(reaction, user):
 	if reaction.message.id in bot.waiting_reactions.keys():
 		bot.waiting_reactions[reaction.message.id]('add', reaction, user)

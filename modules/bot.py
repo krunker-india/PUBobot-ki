@@ -2622,6 +2622,19 @@ def delete_channel(channel):
 	channels.remove(channel)
 	stats3.delete_channel(channel.id)
 
+def member_left(member): #when a user left a guild
+	affected_pickups = [ p for p in active_pickups
+		if p.channel.guild.id == member.guild.id
+		and member in p.players ]
+
+	if len(affected_pickups):
+		for p in affected_pickups:
+			p.players.remove(member)
+
+		for i in set((p.channel for p in affected_pickups)):
+			i.update_topic()
+			client.notice(i.channel, "**{0}** left the guild and was removed from all pickups...".format(member.nick or member.name))
+
 def update_member(member): #on status change
 	if member not in allowoffline:
 		if str(member.status) == 'offline':
