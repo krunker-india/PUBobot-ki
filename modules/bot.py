@@ -40,6 +40,7 @@ class Match():
 		self.ranked_streaks = pickup.channel.cfg['ranked_streaks']
 		if self.ranked:
 			self.ranks = stats3.get_ranks(pickup.channel, [i.id for i in players])
+			self.ranks_season = stats3.get_ranks_season(pickup.channel, [i.id for i in players])
 			self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
 		else:
 			self.players = list(players)
@@ -690,11 +691,17 @@ class Channel():
 			elif self.cfg["ranked"]:
 
 				if lower[0] in ['leaderboard', 'lb']:
-					self.get_leaderboard(lower[1:2])
+					self.get_leaderboard_season(lower[1:2])
 
 				elif lower[0]=="rank":
-					self.get_rank_details(member, lower[1:len(lower)])
+					self.get_rank_details_season(member, lower[1:len(lower)])
 
+                                elif lower[0] in ['alltime', 'atlb']:
+					self.get_leaderboard(lower[1:2])
+
+				elif lower[0]=="atrank":
+					self.get_rank_details(member, lower[1:len(lower)])
+                                        
 				elif lower[0]=="ranks_table":
 					self.show_ranks_table()
 
@@ -1293,11 +1300,63 @@ class Channel():
 		else:
 			client.notice(self.channel, "Nothing found.")
 
+	def get_leaderboard_season(self, page):
+		try:
+			page = int(page[0])-1
+		except:
+			page = 0
+
+		print(page)
+		data = stats3.get_ladder_season(self.id, page) #[rank, nick, wins, loses]
+		if len(data):
+
+			l = ["{0:^3}|{1:^11}|{2:^25.25}|{3:^9}| {4}".format(
+				(page*10)+(n+1),
+				str(data[n][0]) + utils.rating_to_icon(data[n][0]),
+				data[n][1],
+				int(data[n][2]+data[n][3]),
+				"{0:3.1f}/{1:<3.1f} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
+			) for n in range(0, len(data))]
+
+			s = "```markdown\n № | Rating〈Ξ〉 |         Nickname        | Matches |   W/L\n{0}\n{1}```".format(
+				"-"*60,
+				"\n".join(l))
+
+			client.notice(self.channel, s)
+		else:
+			client.notice(self.channel, "Nothing found.")
+
 	def get_rank_details(self, member, args):
 		if len(args):
 			details, matches = stats3.get_rank_details(self.id, nick=" ".join(args))
 		else:
 			details, matches = stats3.get_rank_details(self.id, user_id=member.id)
+
+		if details:
+			details_str = "№ {0} | Rating {1} | {2} Matches | {3}/{4} ({5})% W/L".format(
+				details[0],
+				str(details[2]) + utils.rating_to_icon(details[2]),
+				int(details[3]+details[4]),
+				details[3],
+				details[4],
+				int(details[3]*100/((details[3]+details[4]) or 1)))
+			s = "```markdown\n**{nick:^{length}.{length}}**\n".format(nick=details[1], length=len(details_str)-4)
+			s += details_str
+			s += "\n{0}".format("-"*len(details_str))
+			for i in matches:
+				ago = datetime.timedelta(seconds=int(time.time() - int(i[1])))
+				s += "\n... ({0}) {1} ago, {2}, {3:+} rating".format(i[0], ago, i[2], i[3])
+			s += "```"
+			client.notice(self.channel, s)
+
+		else:
+			client.notice(self.channel, "No rating data found.")
+
+	def get_rank_details_season(self, member, args):
+		if len(args):
+			details, matches = stats3.get_rank_details_season(self.id, nick=" ".join(args))
+		else:
+			details, matches = stats3.get_rank_details_season(self.id, user_id=member.id)
 
 		if details:
 			details_str = "№ {0} | Rating {1} | {2} Matches | {3}/{4} ({5})% W/L".format(

@@ -131,7 +131,6 @@ def reset_ranks(channel_id):
 
 def register_pickup(match):
 	new_ranks = dict()
-        new_ranks_season = dict()
 	at = int(time())
 
 	playersstr = " " + " ".join([i.nick or i.name for i in match.players]) + " "
@@ -148,12 +147,8 @@ def register_pickup(match):
 		alpha_rank = int(sum([ match.ranks[player.id] for player in match.alpha_team ])/len(match.alpha_team))
 		beta_rank = int(sum([ match.ranks[player.id] for player in match.beta_team ])/len(match.beta_team))
 
-		alpha_rank_season = int(sum([ match.ranks_season[player.id] for player in match.alpha_team ])/len(match.alpha_team))
-		beta_rank_season = int(sum([ match.ranks_season[player.id] for player in match.beta_team ])/len(match.beta_team))
 		#[alpha, beta]
 		expected_scores = [1/(1+10**((beta_rank-alpha_rank)/400)), 1/(1+10**((alpha_rank-beta_rank)/400))]
-
-		expected_scores_season = [1/(1+10**((beta_rank_season-alpha_rank_season)/400)), 1/(1+10**((alpha_rank_season-beta_rank_season)/400))]
 		if match.winner == 'alpha':
 			scores = [1, 0]
 		elif match.winner == 'draw':
@@ -175,7 +170,7 @@ def register_pickup(match):
 
 		if match.ranked and match.winner and team:
 			c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, wins, loses, phrase) VALUES (?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks[player.id]))
-			c.execute("INSERT OR IGNORE INTO channel_players_season (channel_id, user_id, nick, rank, wins, loses, phrase) VALUES (?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks_season[player.id]))
+
 			#if we need to calibrate this player add additional rank gain/loss boost
 			rank_k = match.pickup.channel.cfg['ranked_multiplayer']
 			c.execute("SELECT wins, loses, streak, is_seeded FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
@@ -184,7 +179,6 @@ def register_pickup(match):
 
 			is_ranked = True
 			rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
-			rank_change_season = int(rank_k * (scores[team_num] - expected_scores_season[team_num]))
 			if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 8 and not is_seeded :
 				rank_change = int( rank_change * ((10-(wins+loses))/2.0) )
 
@@ -203,13 +197,10 @@ def register_pickup(match):
 				streak = 0
 
 			rank_after = match.ranks[player.id] + rank_change
-			rank_after_season = match.ranks_season[player.id] + rank_change_season
 			is_winner = scores[team_num]
 
 			c.execute("UPDATE channel_players SET nick = ?, rank = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
-			c.execute("UPDATE channel_players_season SET nick = ?, rank = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after_season, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
 			new_ranks[player.id] = [user_name, rank_after]
-			new_ranks_season[player.id] = [user_name, rank_after_season]
 
 		else:
 			is_ranked = False
@@ -218,10 +209,9 @@ def register_pickup(match):
 			is_winner = None
 
 		c.execute("INSERT OR IGNORE INTO player_pickups (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick))
-		c.execute("INSERT OR IGNORE INTO player_pickups_season (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after_season, rank_change_season, is_lastpick))
 
 	conn.commit()
-	return new_ranks_season #show the seasonal changes, not alltime changes
+	return new_ranks
 
 def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
 	if not text: #return lastest game
@@ -248,18 +238,6 @@ def get_ranks(channel, user_ids):
 			d[user_id] = channel.cfg['initial_rating'] or 1400
 	return d
 
-def get_ranks_season(channel, user_ids):
-	d = dict()
-        c.execute("SELECT user_id, rank FROM channel_players_season WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
-	results = c.fetchall()
-	for user_id, rank in results:
-		if rank:
-			d[user_id] = rank
-	for user_id in user_ids:
-		if user_id not in d.keys():
-			d[user_id] = channel.cfg['initial_rating'] or 1400
-	return d
-
 def get_rank_details(channel_id, user_id=False, nick=False):
 	c.execute("SELECT user_id, nick, rank, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank DESC", (channel_id,))
 	lb = c.fetchall()
@@ -274,26 +252,8 @@ def get_rank_details(channel_id, user_id=False, nick=False):
 			return([i, matches])
 	return([None, None])
 
-def get_rank_details_season(channel_id, user_id=False, nick=False):
-	c.execute("SELECT user_id, nick, rank, wins, loses FROM channel_players_season WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank DESC", (channel_id,))
-	lb = c.fetchall()
-	for i in lb:
-		if i[0] == user_id or i[1].lower() == nick:
-			c.execute("SELECT pickup_id, at, pickup_name, rank_change FROM player_pickups_season WHERE user_id = ? AND channel_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], channel_id))
-			matches = c.fetchall()
-			place = lb.index(i)+1
-			i = list(i)
-			i[0] = place #replace user_id with ladder position
-			print(i)
-			return([i, matches])
-	return([None, None])
-
 def get_ladder(channel_id, page):
 	c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
-	return c.fetchall()[page*10:]
-
-def get_ladder_season(channel_id, page):
-	c.execute("SELECT rank, nick, wins, loses FROM channel_players_season WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
 	return c.fetchall()[page*10:]
 
 def stats(channel_id, text=False):
@@ -635,18 +595,6 @@ def create_tables():
 		`phrase` TEXT,
 		PRIMARY KEY(`channel_id`, `user_id`) )""")
 
-	c.execute("""CREATE TABLE `channel_players_season` 
-		( `channel_id` INTEGER,
-		`user_id` INTEGER,
-		`nick` TEXT,
-		`rank` INTEGER,
-		`wins` INTEGER,
-		`loses` INTEGER,
-		`streak` INTEGER,
-		`is_seeded` BLOB,
-		`phrase` TEXT,
-		PRIMARY KEY(`channel_id`, `user_id`) )""")
-
 	c.execute("""CREATE TABLE `channels` 
 		( `server_id` INTEGER,
 		`server_name` TEXT,
@@ -744,20 +692,6 @@ def create_tables():
 		`rank_change` INTEGER,
 		`is_lastpick` BLOB)""")
 
-	c.execute("""CREATE TABLE `player_pickups_season` 
-		( `pickup_id` INTEGER,
-		`channel_id` INTEGER,
-		`user_id` INTEGER,
-		`user_name` TEXT,
-		`pickup_name` TEXT,
-		`at` INTEGER,
-		`team` TEXT,
-		`is_ranked` BOOL,
-		`is_winner` BLOB,
-		`rank_after` INTEGER,
-		`rank_change` INTEGER,
-		`is_lastpick` BLOB)""")
-        
 	c.execute("""CREATE TABLE `players` 
 		( `user_id` INTEGER,
 		`default_expire` INTEGER,
