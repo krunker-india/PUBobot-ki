@@ -139,6 +139,10 @@ def reset_ranks(channel_id):
         c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
         conn.commit()
 
+def reset_season(channel_id):
+        c.execute("UPDATE channel_players_season SET rank = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
+        conn.commit()
+
 def register_pickup(match):
         new_ranks = dict()
         new_ranks_season = dict()

@@ -716,6 +716,9 @@ class Channel():
                                 elif lower[0]=="reset_ranks":
                                         self.reset_ranks(member, access_level)
 
+                                elif lower[0]=="reset_season":
+                                        self.reset_season(member, access_level)
+
                                 elif lower[0]=="seed":
                                         self.seed_player(member, lower[1:msglen], access_level)
                         
@@ -1441,6 +1444,14 @@ class Channel():
                 else:
                         stats3.reset_ranks(self.id)
                         client.reply(self.channel, member, "All rating data has been flushed.")
+
+        def reset_season(self, member, access_level):
+                if access_level < 2:
+                        client.reply(self.channel, member, "You must posses administrator rights to use this command.")
+                        return
+                else:
+                        stats3.reset_season(self.id)
+                        client.reply(self.channel, member, "All seasonal rating data has been flushed.")
 
         def seed_player(self, member, args, access_level):
                 if access_level < 1:
