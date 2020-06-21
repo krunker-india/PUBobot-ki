@@ -135,6 +135,13 @@ def seed_player(channel_id, user_id, rating):
         else:
                 c.execute("INSERT INTO channel_players (channel_id, user_id, rank, is_seeded) VALUES (?, ?, ?, ?)" (channel_id, user_id, rating, True))
 
+def seed_player_season(channel_id, user_id, rating):
+        c.execute("SELECT user_id FROM channel_players_season WHERE channel_id = ? AND user_id = ?", (channel_id, user_id) )
+        if c.fetchone():
+                c.execute("UPDATE channel_players_season SET rank = ?, is_seeded = ? WHERE channel_id = ? AND user_id = ?", (rating, True, channel_id, user_id))
+        else:
+                c.execute("INSERT INTO channel_players_season (channel_id, user_id, rank, is_seeded) VALUES (?, ?, ?, ?)" (channel_id, user_id, rating, True))
+
 def reset_ranks(channel_id):
         c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
         conn.commit()

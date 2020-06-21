@@ -721,6 +721,9 @@ class Channel():
 
                                 elif lower[0]=="seed":
                                         self.seed_player(member, lower[1:msglen], access_level)
+
+                                elif lower[0]=="seed_season":
+                                        self.seed_player_season(member, lower[1:msglen], access_level)
                         
         ### COMMANDS ###
 
@@ -1467,6 +1470,22 @@ class Channel():
                         client.reply(self.channel, member, "Invalid member highlight specified.")
 
                 stats3.seed_player(self.channel.id, target.id, int(args[1]))
+                client.reply(self.channel, member, "done.")
+
+        def seed_player_season(self, member, args, access_level):
+                if access_level < 1:
+                        client.reply(self.channel, member, "Insufficient permissions.")
+                        return
+
+                if len(args) != 2 or not args[1].isdecimal():
+                        client.reply(self.channel, member, "This commands requires 2 arguments: member mention and rating integer.")
+                        return
+
+                target = client.get_member_by_id(self.channel, args[0])
+                if not target:
+                        client.reply(self.channel, member, "Invalid member highlight specified.")
+
+                stats3.seed_player_season(self.channel.id, target.id, int(args[1]))
                 client.reply(self.channel, member, "done.")
 
         def set_ready(self, member, isready):
