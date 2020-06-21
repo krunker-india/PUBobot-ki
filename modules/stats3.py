@@ -113,8 +113,18 @@ def undo_ranks(channel_id, match_id):
                 c.execute("UPDATE player_pickups SET is_ranked = 0 WHERE channel_id = ? AND pickup_id = ?", (channel_id, match_id))
                 for user_id, user_name, rank_change, is_winner in l:
                         c.execute("UPDATE channel_players SET rank=rank-(?), wins=wins-?, loses=loses-? WHERE channel_id = ? AND user_id = ?", (rank_change, is_winner, 1-is_winner, channel_id, user_id))
+                outstr = "All Time Changes:\n"+str("\n".join(["`{0}` - **{1:+}** points".format(i[1], 0-i[2]) for i in l]))
+
+                # Now do season
+                c.execute("SELECT user_id, user_name, rank_change, is_winner FROM player_pickups_season WHERE channel_id = ? AND pickup_id = ? AND is_ranked = 1", (channel_id, match_id))
+                l = c.fetchall()
+                c.execute("UPDATE player_pickups_season SET is_ranked = 0 WHERE channel_id = ? AND pickup_id = ?", (channel_id, match_id))
+                for user_id, user_name, rank_change, is_winner in l:
+                        c.execute("UPDATE channel_players_season SET rank=rank-(?), wins=wins-?, loses=loses-? WHERE channel_id = ? AND user_id = ?", (rank_change, is_winner, 1-is_winner, channel_id, user_id))
                 conn.commit()
-                return("\n".join(["`{0}` - **{1:+}** points".format(i[1], 0-i[2]) for i in l]))
+                
+                outstr += "\nSeasonal Changes:\n"+str("\n".join(["`{0}` - **{1:+}** points".format(i[1], 0-i[2]) for i in l]))
+                return(outstr)
         else:
                 return("No changes made.")
 
