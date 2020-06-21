@@ -6,6 +6,8 @@ Currently has a seprate leaderboard for seasons. Uses an alltime leaderboard and
 
 Matchmaker uses alltime rank for actually balancing games, and seasonal leaderboard can be used by staff for seasons. That way you get fair games, however you stop good players from winning every single season, and you don't let it be affected by shit like streaks and intital 10 games. Think of the seasonal leaderboard as tracking progress made by the player during the season.
 
+There is also a report cancel feature. !rc. This is used in the same way as !rd, only doesn't affect players elos. Allows for games to be canceled by players, as long as both captains agree to cancel.
+
 # Reminder for myself on how to set up a ranked pickup
 
 make sure:

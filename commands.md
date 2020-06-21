@@ -1,4 +1,10 @@
 ## Avaible commands:
+
+### COMMANDS FOR THIS FORK OF PUBOBOT:
+!rc - report cancel. Both captains have to agree (like report draw, only doesn't affect elo)
+!reset_season - Resets the season <b>Warning, this action is irrevesible!</b>
+!seed_season - seed a players seasonal elo
+
 ### ACTONS:
 !add <i>pickup</i>[ <i>pickup</i> ..]] or +<u>pickup</u>[ <i>pickup</i> ..]] - adds you to specified pickups.   
 !add or ++ - adds you to all active pickups.    
