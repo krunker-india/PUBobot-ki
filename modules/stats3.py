@@ -214,7 +214,9 @@ def register_pickup(match):
                 else:
                         is_ranked = False
                         rank_change = None
+                        rank_change_season = None
                         rank_after = None
+                        rank_after_season = None
                         is_winner = None
 
                 c.execute("INSERT OR IGNORE INTO player_pickups (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after, rank_change, is_lastpick))

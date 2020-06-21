@@ -1,3 +1,19 @@
+# Changes in this fork
+
+Currently has a seprate leaderboard for seasons. Uses an alltime leaderboard and a seasonal leaderboard. !atlb = alltime leaderboard, !atrank for all time rank
+
+> why
+
+Matchmaker uses alltime rank for actually balancing games, and seasonal leaderboard can be used by staff for seasons. That way you get fair games, however you stop good players from winning every single season, and you don't let it be affected by shit like streaks and intital 10 games. Think of the seasonal leaderboard as tracking progress made by the player during the season.
+
+# Reminder for myself on how to set up a ranked pickup
+
+make sure:
+ - ranked = 1
+ - pick_teams auto
+ - ranked_calibrate 1
+ - (potentially) ranked_streaks 0 (Id personally disable it as players would stop queueing if they were on a streak and didn't like the players currently in queue)
+
 # PUBobot-discord
 PUBobot-discord is a multichannel discord bot for pickup games organisation.
 Bot keeps statistic database, have features to automatically remove AFK users, disallow users to play pickups, fun phrases, teams picking and more!

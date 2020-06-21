@@ -289,6 +289,11 @@ class Match():
                 client.notice(self.channel, startmsg)
                 
         def next_state(self):
+                outstr = "state="+str(self.state)
+                outstr += ", require_ready="+str(self.require_ready)
+                outstr += ", pick_teams="+str(self.pick_teams)
+                outstr += ", ranked="+str(self.ranked)
+                client.notice(self.channel, outstr)
                 if self.state == 'none':
                         if self.require_ready:
                                 self.state = 'waiting_ready'
