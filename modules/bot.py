@@ -64,6 +64,8 @@ class Match():
                 self.lastpick = None #fatkid
                 self.beta_draw = False
                 self.alpha_draw = False
+                self.beta_cancel = False
+                self.alpha_cancel = False
 
                 pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
                 if pick_captains and len(players) > 2 and self.pick_teams != 'auto':
@@ -289,11 +291,6 @@ class Match():
                 client.notice(self.channel, startmsg)
                 
         def next_state(self):
-                outstr = "state="+str(self.state)
-                outstr += ", require_ready="+str(self.require_ready)
-                outstr += ", pick_teams="+str(self.pick_teams)
-                outstr += ", ranked="+str(self.ranked)
-                client.notice(self.channel, outstr)
                 if self.state == 'none':
                         if self.require_ready:
                                 self.state = 'waiting_ready'
@@ -614,6 +611,9 @@ class Channel():
 
                         elif lower[0] in ["reportdraw", "draw", "rd"]:
                                 self.draw_match(member)
+
+                        elif lower[0] in ["reportcancel", "rc"]:
+                                self.report_cancel(member)
 
                         elif lower[0] in ["ready", "r"]:
                                 self.set_ready(member, True)
@@ -1235,6 +1235,39 @@ class Channel():
 
                 match.winner = winner
                 match.next_state()
+
+        def report_cancel(self, member):
+                # !draw
+                match = None
+                for i in active_matches:
+                        if i.pickup.channel.id == self.id and member in i.players:
+                                match = i
+                                if match.state != "waiting_report":
+                                        client.reply(self.channel, member, "This match is not on waiting report state yet.")
+                                        return
+                                if match.beta_team[0] == member:
+                                        if match.beta_cancel == False:
+                                                match.beta_cancel = True
+                                                if not match.alpha_cancel:
+                                                        client.reply(self.channel, member, "Match is now waiting for Alpha captain to report cancel.")
+                                                else:
+                                                        i.cancel_match()
+                                        else:
+                                                client.reply(self.channel, member, "You already requested a cancel, waiting for Alpha captain.")
+                                elif match.alpha_team[0] == member:
+                                        if match.alpha_cancel == False:
+                                                match.alpha_cancel = True
+                                                if not match.beta_cancel:
+                                                        client.reply(self.channel, member, "Match is now waiting for Beta captain to report cancel.")
+                                                else:
+                                                        i.cancel_match()
+                                        else:
+                                                client.reply(self.channel, member, "You already requested a cancel, waiting for Beta captain.")
+                                else:
+                                        client.reply(self.channel, member, "You must be captain of the team to report a cancel.")
+
+                if not match:
+                        client.reply(self.channel, member, "You are not in an active match.")
 
         def draw_match(self, member):
                 # !draw
