@@ -203,6 +203,7 @@ def register_pickup(match):
                     psig = match.sigma_season[player.id]
                     beta_ts_season[player.id]=ts.Rating(mu=pmu, sigma=psig)
 
+                #NOTE: the order for these was swapped from the original. Labels may not make sense, but this is what works. Makes sure the winning team actually gains elo.
                 if match.winner == 'alpha':
                         scores = [0, 1]
                 elif match.winner == 'draw':

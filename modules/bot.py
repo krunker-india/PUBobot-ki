@@ -1332,7 +1332,7 @@ class Channel():
 
                         l = ["{0:^3}|{1:^11}|{2:^25.25}|{3:^9}| {4}".format(
                                 (page*10)+(n+1),
-                                str(data[n][0]) + utils.rating_to_icon(data[n][0]),
+                                str(int(100*data[n][0])) + utils.rating_to_icon(int(100*data[n][0])),
                                 data[n][1],
                                 int(data[n][2]+data[n][3]),
                                 "{0:3.1f}/{1:<3.1f} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
@@ -1358,7 +1358,7 @@ class Channel():
 
                         l = ["{0:^3}|{1:^11}|{2:^25.25}|{3:^9}| {4}".format(
                                 (page*10)+(n+1),
-                                str(data[n][0]) + utils.rating_to_icon(data[n][0]),
+                                str(int(100*data[n][0])) + utils.rating_to_icon(int(100*data[n][0])),
                                 data[n][1],
                                 int(data[n][2]+data[n][3]),
                                 "{0:3.1f}/{1:<3.1f} ({2}%)".format(data[n][2], data[n][3], int(data[n][2]*100/((data[n][2]+data[n][3]) or 1)))
@@ -1381,7 +1381,7 @@ class Channel():
                 if details:
                         details_str = "№ {0} | Rating {1} | {2} Matches | {3}/{4} ({5})% W/L".format(
                                 details[0],
-                                str(details[2]) + utils.rating_to_icon(details[2]),
+                                str(int(100*details[2])) + utils.rating_to_icon(int(100*details[2])),
                                 int(details[3]+details[4]),
                                 details[3],
                                 details[4],
@@ -1391,7 +1391,7 @@ class Channel():
                         s += "\n{0}".format("-"*len(details_str))
                         for i in matches:
                                 ago = datetime.timedelta(seconds=int(time.time() - int(i[1])))
-                                s += "\n... ({0}) {1} ago, {2}, {3:+} rating".format(i[0], ago, i[2], i[3])
+                                s += "\n... ({0}) {1} ago, {2}, {3:+} rating".format(i[0], ago, i[2], int(100*i[3]))
                         s += "```"
                         client.notice(self.channel, s)
 
@@ -1407,7 +1407,7 @@ class Channel():
                 if details:
                         details_str = "№ {0} | Rating {1} | {2} Matches | {3}/{4} ({5})% W/L".format(
                                 details[0],
-                                str(details[2]) + utils.rating_to_icon(details[2]),
+                                str(int(100*details[2])) + utils.rating_to_icon(int(100*details[2])),
                                 int(details[3]+details[4]),
                                 details[3],
                                 details[4],
@@ -1417,7 +1417,7 @@ class Channel():
                         s += "\n{0}".format("-"*len(details_str))
                         for i in matches:
                                 ago = datetime.timedelta(seconds=int(time.time() - int(i[1])))
-                                s += "\n... ({0}) {1} ago, {2}, {3:+} rating".format(i[0], ago, i[2], i[3])
+                                s += "\n... ({0}) {1} ago, {2}, {3:+} rating".format(i[0], ago, i[2], int(100*i[3]))
                         s += "```"
                         client.notice(self.channel, s)
 
