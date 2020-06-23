@@ -41,6 +41,8 @@ class Match():
                 if self.ranked:
                         self.ranks = stats3.get_ranks(pickup.channel, [i.id for i in players])
                         self.ranks_season = stats3.get_ranks_season(pickup.channel, [i.id for i in players])
+                        self.sigma = stats3.get_sigma(pickup.channel, [i.id for i in players])
+                        self.sigma_season = stats3.get_sigma_season(pickup.channel, [i.id for i in players])
                         self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
                 else:
                         self.players = list(players)

@@ -187,20 +187,20 @@ def register_pickup(match):
                 alpha_ts_season = {}
                 beta_ts_season = {}
                 for player in match.alpha_team:
-                    pmu = match.ranks[player.id][0]
-                    psig = match.ranks[player.id][1]
+                    pmu = match.ranks[player.id]
+                    psig = match.sigma[player.id]
                     alpha_ts[player.id] = ts.Rating(mu=pmu, sigma=psig)
 
-                    pmu = match.ranks_season[player.id][0]
-                    psig = match.ranks_season[player.id][1]
+                    pmu = match.ranks_season[player.id]
+                    psig = match.sigma_season[player.id]
                     alpha_ts_season[player.id]=ts.Rating(mu=pmu, sigma=psig)
                 for player in match.beta_team:
-                    pmu = match.ranks[player.id][0]
-                    psig = match.ranks[player.id][1]
+                    pmu = match.ranks[player.id]
+                    psig = match.sigma[player.id]
                     beta_ts[player.id]=ts.Rating(mu=pmu, sigma=psig)
 
-                    pmu = match.ranks_season[player.id][0]
-                    psig = match.ranks_season[player.id][1]
+                    pmu = match.ranks_season[player.id]
+                    psig = match.sigma_season[player.id]
                     beta_ts_season[player.id]=ts.Rating(mu=pmu, sigma=psig)
 
                 if match.winner == 'alpha':
@@ -226,15 +226,17 @@ def register_pickup(match):
                                 team = 'beta'
 
                 if match.ranked and match.winner and team:
-                        c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, sigma, wins, loses, phrase) VALUES (?, ?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks[player.id][0], match.ranks[player.id][1]))
-                        c.execute("INSERT OR IGNORE INTO channel_players_season (channel_id, user_id, nick, rank, sigma, wins, loses, phrase) VALUES (?, ?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks_season[player.id][0], match.ranks_season[player.id][1]))
+                        c.execute("INSERT OR IGNORE INTO channel_players (channel_id, user_id, nick, rank, sigma, wins, loses, phrase) VALUES (?, ?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks[player.id], match.sigma[player.id]))
+                        c.execute("INSERT OR IGNORE INTO channel_players_season (channel_id, user_id, nick, rank, sigma, wins, loses, phrase) VALUES (?, ?, ?, ?, ?, 0, 0, NULL)", (match.pickup.channel.id, player.id, user_name, match.ranks_season[player.id], match.sigma_season[player.id]))
                         #if we need to calibrate this player add additional rank gain/loss boost
-                        """rank_k = match.pickup.channel.cfg['ranked_multiplayer']
+                        #rank_k = match.pickup.channel.cfg['ranked_multiplayer']
                         c.execute("SELECT wins, loses, streak, is_seeded FROM channel_players WHERE channel_id = ? AND user_id = ?", (match.pickup.channel.id, player.id))
                         result = c.fetchone()
                         wins, loses, streak, is_seeded = [i or 0 for i in result]
-
+                        streak = 0
                         is_ranked = True
+
+                        """is_ranked = True
                         rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
                         rank_change_season = int(rank_k * (scores[team_num] - expected_scores_season[team_num]))
                         if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 8 and not is_seeded :
@@ -254,10 +256,10 @@ def register_pickup(match):
                         else:
                                 streak = 0
                         """
-                        rank_after = rated[player.id][0]
-                        sig_after = rated[player.id][1]
-                        rank_after_season = rated[player.id][0]
-                        sig_after_season = rated[player.id][1]
+                        rank_after = rated[team_num][player.id].mu
+                        sig_after = rated[team_num][player.id].sigma
+                        rank_after_season = rated_season[team_num][player.id].mu
+                        sig_after_season = rated_season[team_num][player.id].sigma
                         is_winner = scores[team_num]
 
                         c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
@@ -265,10 +267,10 @@ def register_pickup(match):
                         new_ranks[player.id] = [user_name, rank_after]
                         new_ranks_season[player.id] = [user_name, rank_after_season]
 
-                        rank_change = rank_after - match.ranks[player.id][0]
-                        sig_change = sig_after - match.ranks[player.id][1]
-                        rank_change_season = rank_after_season - match.ranks_season[player.id][0]
-                        sig_change_season = sig_after_season - match.ranks_season[player.id][1]
+                        rank_change = rank_after - match.ranks[player.id]
+                        sig_change = sig_after - match.sigma[player.id]
+                        rank_change_season = rank_after_season - match.ranks_season[player.id]
+                        sig_change_season = sig_after_season - match.sigma_season[player.id]
 
                 else:
                         is_ranked = False
@@ -282,8 +284,8 @@ def register_pickup(match):
                         sig_after_season = None
                         is_winner = None
 
-                c.execute("INSERT OR IGNORE INTO player_pickups (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, sigma_after, rank_change, sigma_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after, sigma_after, rank_change, sigma_change, is_lastpick))
-                c.execute("INSERT OR IGNORE INTO player_pickups_season (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, sigma_after, rank_change, sigma_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after_season, sigma_after_season, rank_change_season, sigma_change_season, is_lastpick))
+                c.execute("INSERT OR IGNORE INTO player_pickups (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, sigma_after, rank_change, sigma_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after, sig_after, rank_change, sig_change, is_lastpick))
+                c.execute("INSERT OR IGNORE INTO player_pickups_season (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, sigma_after, rank_change, sigma_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after_season, sig_after_season, rank_change_season, sig_change_season, is_lastpick))
 
         conn.commit()
         return new_ranks_season #show the seasonal changes, not alltime changes
@@ -303,28 +305,54 @@ def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
 
 def get_ranks(channel, user_ids):
         d = dict()
-        c.execute("SELECT user_id, rank, sigma FROM channel_players WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
+        c.execute("SELECT user_id, rank FROM channel_players WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
         results = c.fetchall()
-        for user_id, rank, sigma in results:
+        for user_id, rank in results:
                 if rank:
-                        d[user_id] = (rank,sigma)
+                        d[user_id] = rank
         for user_id in user_ids:
                 if user_id not in d.keys():
                         #d[user_id] = channel.cfg['initial_rating'] or 1400
-                        d[user_id] = (ts.global_env().mu,ts.global_env().sigma)
+                        d[user_id] = ts.global_env().mu
         return d
 
 def get_ranks_season(channel, user_ids):
         d = dict()
-        c.execute("SELECT user_id, rank, sigma FROM channel_players_season WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
+        c.execute("SELECT user_id, rank FROM channel_players_season WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
         results = c.fetchall()
-        for user_id, rank, sigma in results:
+        for user_id, rank in results:
                 if rank:
-                        d[user_id] = (rank,sigma)
+                        d[user_id] = rank
         for user_id in user_ids:
                 if user_id not in d.keys():
                         #d[user_id] = channel.cfg['initial_rating'] or 1400
-                        d[user_id] = (ts.global_env().mu,ts.global_env().sigma)
+                        d[user_id] = ts.global_env().mu
+        return d
+
+def get_sigma(channel, user_ids):
+        d = dict()
+        c.execute("SELECT user_id, sigma FROM channel_players WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
+        results = c.fetchall()
+        for user_id, sigma in results:
+                if sigma:
+                        d[user_id] = sigma
+        for user_id in user_ids:
+                if user_id not in d.keys():
+                        #d[user_id] = channel.cfg['initial_rating'] or 1400
+                        d[user_id] = ts.global_env().sigma
+        return d
+
+def get_sigma_season(channel, user_ids):
+        d = dict()
+        c.execute("SELECT user_id, sigma FROM channel_players_season WHERE channel_id = ? AND user_id in ({seq})".format(seq=','.join(['?']*len(user_ids))), (channel.id, *user_ids))
+        results = c.fetchall()
+        for user_id, sigma in results:
+                if sigma:
+                        d[user_id] = sigma
+        for user_id in user_ids:
+                if user_id not in d.keys():
+                        #d[user_id] = channel.cfg['initial_rating'] or 1400
+                        d[user_id] = ts.global_env().sigma
         return d
 
 def get_rank_details(channel_id, user_id=False, nick=False):
