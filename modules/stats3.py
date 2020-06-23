@@ -204,11 +204,11 @@ def register_pickup(match):
                     beta_ts_season[player.id]=ts.Rating(mu=pmu, sigma=psig)
 
                 if match.winner == 'alpha':
-                        scores = [1, 0]
+                        scores = [0, 1]
                 elif match.winner == 'draw':
                         scores = [0.5, 0.5]
                 else:
-                        scores = [0, 1]
+                        scores = [1, 0]
 
                 rated = ts.rate([alpha_ts,beta_ts], ranks=scores)
                 rated_season = ts.rate([alpha_ts_season,beta_ts_season], ranks=scores)
