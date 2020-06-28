@@ -146,10 +146,10 @@ class Match():
                                             team1 = []
                                             team2 = []
                                             for i in team:
-                                                team1.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id])
+                                                team1.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                             for i in self.players:
-                                                if i not in team:
-                                                    team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id])
+                                                if j not in team:
+                                                    team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                             qual = ts.quality([team1,team2])
                                             if qual > best_qual:
                                                 best_qual = qual
@@ -1481,7 +1481,7 @@ class Channel():
                         client.reply(self.channel, member, "Insufficient permissions.")
                         return
 
-                if len(args) != 2 or not args[1].isdecimal():
+                if len(args) != 2 or not args[1].replace(".","",1).isdecimal():
                         client.reply(self.channel, member, "This commands requires 2 arguments: member mention and rating integer.")
                         return
 
@@ -1489,7 +1489,7 @@ class Channel():
                 if not target:
                         client.reply(self.channel, member, "Invalid member highlight specified.")
 
-                stats3.seed_player(self.channel.id, target.id, int(args[1]))
+                stats3.seed_player(self.channel.id, target.id, float(args[1]))
                 client.reply(self.channel, member, "done.")
 
         def seed_player_season(self, member, args, access_level):
@@ -1497,7 +1497,7 @@ class Channel():
                         client.reply(self.channel, member, "Insufficient permissions.")
                         return
 
-                if len(args) != 2 or not args[1].isdecimal():
+                if len(args) != 2 or not args[1].replace(".","",1).isdecimal():
                         client.reply(self.channel, member, "This commands requires 2 arguments: member mention and rating integer.")
                         return
 
@@ -1505,7 +1505,7 @@ class Channel():
                 if not target:
                         client.reply(self.channel, member, "Invalid member highlight specified.")
 
-                stats3.seed_player_season(self.channel.id, target.id, int(args[1]))
+                stats3.seed_player_season(self.channel.id, target.id, float(args[1]))
                 client.reply(self.channel, member, "done.")
 
         def set_ready(self, member, isready):
