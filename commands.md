@@ -3,7 +3,7 @@
 ### COMMANDS FOR THIS FORK OF PUBOBOT:
 !rc - report cancel. Both captains have to agree (like report draw, only doesn't affect elo) 
 !atlb - View alltime leaderboard  
-!atrank - View alltime rank 
+!atrank - View alltime rank  
 !reset_season - Resets the season <b>Warning, this action is irrevesible!</b>  
 !seed_season - seed a players seasonal elo  
 
