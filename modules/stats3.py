@@ -146,11 +146,11 @@ def seed_player_season(channel_id, user_id, rating):
                 c.execute("INSERT INTO channel_players_season (channel_id, user_id, rank, is_seeded) VALUES (?, ?, ?, ?)" (channel_id, user_id, rating, True))
 
 def reset_ranks(channel_id):
-        c.execute("UPDATE channel_players SET rank = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
+        c.execute("UPDATE channel_players SET rank = NULL, sigma = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
         conn.commit()
 
 def reset_season(channel_id):
-        c.execute("UPDATE channel_players_season SET rank = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
+        c.execute("UPDATE channel_players_season SET rank = NULL, sigma = NULL, wins = NULL, loses = NULL, streak = NULL, is_seeded = NULL WHERE channel_id = ?", (channel_id,))
         conn.commit()
 
 def register_pickup(match):
