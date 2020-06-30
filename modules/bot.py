@@ -155,7 +155,7 @@ class Match():
                                             if qual > best_qual:
                                                 console.display("debug: qual > best_qual")
                                                 best_qual = qual
-                                                self.alpha_team = team.copy()
+                                                self.alpha_team = team
 
                                         console.display("debug: out of combinations")
 
