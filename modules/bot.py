@@ -155,13 +155,12 @@ class Match():
                                             if qual > best_qual:
                                                 console.display("debug: qual > best_qual")
                                                 best_qual = qual
-                                                self.alpha_team = team1.copy()
-                                                self.beta_team = team2.copy()
+                                                self.alpha_team = team.copy()
 
                                         console.display("debug: out of combinations")
 
                                         #self.alpha_team = best_team
-                                        #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
+                                        self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
                                         if pick_captains:
                                                 # sort by captains_role, then elo
                                                 console.display("debug: in pick_captains")
