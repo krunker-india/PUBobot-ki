@@ -149,7 +149,7 @@ class Match():
                                             for i in team:
                                                 team1.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                             for i in self.players:
-                                                if j not in team:
+                                                if i not in team:
                                                     team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                             qual = ts.quality([team1,team2])
                                             if qual > best_qual:
