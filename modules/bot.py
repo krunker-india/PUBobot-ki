@@ -154,7 +154,7 @@ class Match():
                                             if qual > best_qual:
                                                 best_qual = qual
                                                 self.alpha_team = team1
-                                                self.beta_team
+                                                self.beta_team = team2
 
                                         #self.alpha_team = best_team
                                         #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
