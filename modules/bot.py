@@ -142,6 +142,7 @@ class Match():
                                         teamlen = int(len(self.players)/2)
                                         best_qual = -1
                                         best_team = None
+                                        console.display("debug: prior to combinations")
                                         for team in combinations(self.players, teamlen):#ineffcient, should probably change this
                                             team1 = []
                                             team2 = []
@@ -152,14 +153,18 @@ class Match():
                                                     team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                             qual = ts.quality([team1,team2])
                                             if qual > best_qual:
+                                                console.display("debug: qual > best_qual")
                                                 best_qual = qual
-                                                self.alpha_team = team1
-                                                self.beta_team = team2
+                                                self.alpha_team = team1.copy()
+                                                self.beta_team = team2.copy()
+
+                                        console.display("debug: out of combinations")
 
                                         #self.alpha_team = best_team
                                         #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
                                         if pick_captains:
                                                 # sort by captains_role, then elo
+                                                console.display("debug: in pick_captains")
                                                 self.captains = [
                                                         sorted(self.alpha_team, key=lambda p: self.captains_role in [role.id for role in p.roles], reverse=True)[0],
                                                         sorted(self.beta_team, key=lambda p: self.captains_role in [role.id for role in p.roles], reverse=True)[0]
@@ -186,6 +191,7 @@ class Match():
                 #set state and start time
                 self.start_time = time.time()
                 self.next_state()
+                console.display("debug: did the times")
 
         def think(self, frametime):
                 alive_time = frametime - self.start_time
