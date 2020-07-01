@@ -370,7 +370,7 @@ class Match():
                                                 utils.rating_to_icon(int(100*new_ranks[i][1]))
                                         ) for i in new_ranks.keys() ]
                                 )
-                                client.notice(self.channel, "```python\n"+summary+"```")
+                                client.notice(self.channel, "Raiting changes (All-time):\n```python\n"+summary+"```")
 
         def remove_unpicked(self):
                 for player in self.unpicked:

@@ -267,7 +267,11 @@ def register_pickup(match):
                         sig_after_season = rated_season[team_num][player.id].sigma
                         is_winner = 1 - scores[team_num]
 
-                        c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
+                        c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
+                        #now need to make sure our all time wins/losses don't mess up our seasonal wins/losses
+                        c.execute("SELECT wins, loses FROM channel_players_season WHERE channel_id = ? and user_id = ?", (match.pickup.channel.id, player.id))
+                        result = c.fetchone()
+                        wins, loses = [i or 0 for i in result]
                         c.execute("UPDATE channel_players_season SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after_season, sig_after_season, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
                         new_ranks[player.id] = [user_name, rank_after]
                         new_ranks_season[player.id] = [user_name, rank_after_season]
@@ -293,7 +297,7 @@ def register_pickup(match):
                 c.execute("INSERT OR IGNORE INTO player_pickups_season (pickup_id, channel_id, user_id, user_name, pickup_name, at, team, is_ranked, is_winner, rank_after, sigma_after, rank_change, sigma_change, is_lastpick) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (match.id, match.pickup.channel.id, player.id, user_name, match.pickup.name, at, team, is_ranked, is_winner, rank_after_season, sig_after_season, rank_change_season, sig_change_season, is_lastpick))
 
         conn.commit()
-        return new_ranks_season #show the seasonal changes, not alltime changes
+        return new_ranks #show the seasonal changes, not alltime changes
 
 def lastgame(channel_id, text=False): #[id, gametype, ago, [players], [caps]]
         if not text: #return lastest game
