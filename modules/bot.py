@@ -69,6 +69,8 @@ class Match():
                 self.alpha_draw = False
                 self.beta_cancel = False
                 self.alpha_cancel = False
+                #new variables in this fork
+                self.match_quality = None
 
                 pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
                 if pick_captains and len(players) > 2 and self.pick_teams != 'auto':
@@ -157,8 +159,7 @@ class Match():
                                                 best_qual = qual
                                                 self.alpha_team = team
 
-                                        #console.display("debug: out of combinations")
-
+                                        self.match_quality = best_qual
                                         #self.alpha_team = best_team
                                         self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
                                         if pick_captains:
@@ -190,7 +191,6 @@ class Match():
                 #set state and start time
                 self.start_time = time.time()
                 self.next_state()
-                console.display("debug: did the times")
 
         def think(self, frametime):
                 alive_time = frametime - self.start_time
@@ -281,6 +281,9 @@ class Match():
                         startmsg += "\r\nSuggested captains: <@{0}> and <@{1}>.".format(self.captains[0].id, self.captains[1].id)
                 if self.map:
                         startmsg += "\r\nSuggested map: **{0}**.".format(self.map)
+
+                if self.match_quality != None:
+                        startmsg += "\r\nMatch quality: "+str(int(100*self.match_quality))+"%"
 
                 client.notice(self.channel, startmsg)
 
