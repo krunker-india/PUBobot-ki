@@ -268,7 +268,7 @@ def register_pickup(match):
                         is_winner = 1 - scores[team_num]
 
                         c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
-                        c.execute("UPDATE channel_players_season SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after_season, sig_after_season, wins+scores[team_num], loses+abs(scores[team_num]-1), streak, match.pickup.channel.id, player.id))
+                        c.execute("UPDATE channel_players_season SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after_season, sig_after_season, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
                         new_ranks[player.id] = [user_name, rank_after]
                         new_ranks_season[player.id] = [user_name, rank_after_season]
 
