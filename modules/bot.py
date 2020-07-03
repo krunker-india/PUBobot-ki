@@ -142,20 +142,25 @@ class Match():
                                                         best_team = team
                                         """
                                         teamlen = int(len(self.players)/2)
+                                        if teamlen > int(self.maxplayers/2):
+                                            teamlen = int(self.maxplayers/2)
                                         best_qual = -1
                                         best_team = None
-                                        #console.display("debug: prior to combinations")
-                                        for team in combinations(self.players, teamlen):#ineffcient, should probably change this
+                                        combplayers = self.players.copy()
+                                        combplayers.remove(players[0])
+                                        for team in combinations(combplayers, teamlen-1):
+                                            team.append(players[0])
+                                            leftovers = self.players.copy()
                                             team1 = []
                                             team2 = []
                                             for i in team:
                                                 team1.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
-                                            for i in self.players:
-                                                if i not in team:
+                                                leftovers.remove(i)
+                                            for altteam in combinations(leftovers, teamlen):
+                                                for i in altteam:
                                                     team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                             qual = ts.quality([team1,team2])
                                             if qual > best_qual:
-                                                #console.display("debug: qual > best_qual")
                                                 best_qual = qual
                                                 self.alpha_team = team
 
@@ -191,6 +196,23 @@ class Match():
                 #set state and start time
                 self.start_time = time.time()
                 self.next_state()
+                
+                #if we had more players than we could fit in
+                if len(players)>int(self.maxplayers):
+                    self.players = self.alpha_team + self.beta_team
+                    newplayers = list(self.pickup.players)
+                    self.pickup.players = []
+                    for p in players:
+                        if p not in self.players:
+                            self.pickup.players.append(p)
+                    while len(self.pickup.players) < self.pickup.cfg['maxplayers'] and len(newplayers):
+                            self.pickup.players.append(newplayers.pop(0))
+                    if len(self.pickup.players) == self.pickup.cfg['maxplayers']:
+                            self.pickup.channel.start_pickup(self.pickup)
+                            self.pickup.players = newplayers
+                    if len(self.pickup.players):
+                            active_pickups.append(self.pickup)
+                    self.pickup.channel.update_topic()
 
         def think(self, frametime):
                 alive_time = frametime - self.start_time
@@ -793,7 +815,9 @@ class Channel():
                                 elif not whitelist_role or whitelist_role in member_roles:
                                         changes = True
                                         pickup.players.append(member)
-                                        if len(pickup.players)==pickup.cfg['maxplayers'] and self.get_value("autostart", pickup) != 0:
+                                        if int(time.time()-int(self.lastgame_cache[1])) <= 60:
+                                                client.notice(self.channel, "A match ended recently, waiting to see if any more players will join")
+                                        elif len(pickup.players)>=pickup.cfg['maxplayers'] and self.get_value("autostart", pickup) != 0:
                                                 self.start_pickup(pickup)
                                                 return
                                         elif len(pickup.players)==pickup.cfg['maxplayers']-1 and pickup.cfg['maxplayers']>2:
@@ -2828,3 +2852,11 @@ def global_remove(member, reason):
 def run(frametime):
         for match in active_matches:
                 match.think(frametime)
+        for c in channels:
+            for p in c.pickups:
+                if len(p.players) > 0 and len(p.players) >= p.cfg['maxplayers'] and int(time.time()-int(c.lastgame_cache[1])) > 60:
+                    #if we have enough players, and the previous pickup ended over a minute ago, lets start the dgame
+                    #note, we use len(p.player) > 0 so the if statement will fail as fast as possible. However this may actually be more inefficient. I'm not sure.
+                    c.start_pickup(p)
+
+
