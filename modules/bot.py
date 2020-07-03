@@ -815,7 +815,7 @@ class Channel():
                                 elif not whitelist_role or whitelist_role in member_roles:
                                         changes = True
                                         pickup.players.append(member)
-                                        if int(time.time()-int(self.lastgame_cache[1])) <= 60:
+                                        if int(time.time()-int(self.lastgame_cache[1])) <= 15:
                                                 client.notice(self.channel, "A match ended recently, waiting to see if any more players will join")
                                         elif len(pickup.players)>=pickup.cfg['maxplayers'] and self.get_value("autostart", pickup) != 0:
                                                 self.start_pickup(pickup)
@@ -2854,7 +2854,7 @@ def run(frametime):
                 match.think(frametime)
         for c in channels:
             for p in c.pickups:
-                if len(p.players) > 0 and len(p.players) >= p.cfg['maxplayers'] and int(time.time()-int(c.lastgame_cache[1])) > 60:
+                if len(p.players) > 0 and len(p.players) >= p.cfg['maxplayers'] and int(time.time()-int(c.lastgame_cache[1])) > 15:
                     #if we have enough players, and the previous pickup ended over a minute ago, lets start the dgame
                     #note, we use len(p.player) > 0 so the if statement will fail as fast as possible. However this may actually be more inefficient. I'm not sure.
                     c.start_pickup(p)
