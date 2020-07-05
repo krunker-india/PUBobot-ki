@@ -162,7 +162,7 @@ class Match():
                                             qual = ts.quality([team1,team2])
                                             if qual > best_qual:
                                                 best_qual = qual
-                                                self.alpha_team = team
+                                                self.alpha_team = list(team)
 
                                         self.match_quality = best_qual
                                         #self.alpha_team = best_team
@@ -1159,9 +1159,11 @@ class Channel():
 
                                         #update ranks table if needed
                                         if match.ranked:
-                                                match.ranks = stats3.get_ranks(self, [i.id for i in match.players])
-                                                match.players = list(sorted(match.players, key=lambda p: match.ranks[p.id], reverse=True))
-
+                                            self.ranks = stats3.get_ranks(pickup.channel, [i.id for i in players])
+                                            self.ranks_season = stats3.get_ranks_season(pickup.channel, [i.id for i in players])
+                                            self.sigma = stats3.get_sigma(pickup.channel, [i.id for i in players])
+                                            self.sigma_season = stats3.get_sigma_season(pickup.channel, [i.id for i in players])
+                                            self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
                                         client.notice(self.channel, match._teams_picking_to_str())
                                         return
                         client.reply(self.channel, member, "Specified player not found in the match!")
