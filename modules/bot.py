@@ -149,24 +149,28 @@ class Match():
                                         combplayers = self.players.copy()
                                         combplayers.remove(players[0])
                                         for team in combinations(combplayers, teamlen-1):
+                                            team = list(team)
                                             team.append(players[0])
+                                            otherteam = None
                                             leftovers = self.players.copy()
                                             team1 = []
-                                            team2 = []
                                             for i in team:
                                                 team1.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
                                                 leftovers.remove(i)
                                             for altteam in combinations(leftovers, teamlen):
+                                                otherteam = list(altteam)
+                                                team2 = []
                                                 for i in altteam:
                                                     team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
-                                            qual = ts.quality([team1,team2])
-                                            if qual > best_qual:
-                                                best_qual = qual
-                                                self.alpha_team = list(team)
+                                                qual = ts.quality([team1,team2])
+                                                if qual > best_qual:
+                                                    best_qual = qual
+                                                    self.alpha_team = team
+                                                    self.beta_team = otherteam
 
                                         self.match_quality = best_qual
                                         #self.alpha_team = best_team
-                                        self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
+                                        #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
                                         if pick_captains:
                                                 # sort by captains_role, then elo
                                                 #console.display("debug: in pick_captains")
@@ -1159,11 +1163,11 @@ class Channel():
 
                                         #update ranks table if needed
                                         if match.ranked:
-                                            self.ranks = stats3.get_ranks(pickup.channel, [i.id for i in players])
-                                            self.ranks_season = stats3.get_ranks_season(pickup.channel, [i.id for i in players])
-                                            self.sigma = stats3.get_sigma(pickup.channel, [i.id for i in players])
-                                            self.sigma_season = stats3.get_sigma_season(pickup.channel, [i.id for i in players])
-                                            self.players = list(sorted(players, key=lambda p: self.ranks[p.id], reverse=True))
+                                            match.ranks = stats3.get_ranks(self, [i.id for i in match.players])
+                                            match.ranks_season = stats3.get_ranks_season(self, [i.id for i in match.players])
+                                            match.sigma = stats3.get_sigma(self, [i.id for i in match.players])
+                                            match.sigma_season = stats3.get_sigma_season(self, [i.id for i in match.players])
+                                            match.players = list(sorted(match.players, key=lambda p: match.ranks[p.id], reverse=True))
                                         client.notice(self.channel, match._teams_picking_to_str())
                                         return
                         client.reply(self.channel, member, "Specified player not found in the match!")
