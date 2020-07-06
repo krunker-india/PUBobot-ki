@@ -1220,6 +1220,9 @@ class Channel():
                         return
                 
                 if match.pick_teams != "no_teams":
+                    if match.state == "waiting_ready":
+                        client.reply(self.channel, member, "lolno")
+                    else:
                         client.notice(self.channel, match._teams_picking_to_str())
                 else:
                         client.reply(self.channel, member, "This match does not have teams.")
