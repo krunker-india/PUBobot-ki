@@ -215,6 +215,11 @@ def register_pickup(match):
                 else:
                         scores = [1, 0]
 
+                #need winrates to make sigma go up for incorrectly predicted games
+                winprobs = [0,0]
+                winprobs[0] = win_probability(alpha_ts,beta_ts)
+                winprobs[1] = win_probability(beta_ts,alpha_ts)
+                #this is normal:
                 rated = ts.rate([alpha_ts,beta_ts], ranks=scores)
                 rated_season = ts.rate([alpha_ts_season,beta_ts_season], ranks=scores)
 
@@ -241,31 +246,23 @@ def register_pickup(match):
                         streak = 0
                         is_ranked = True
 
-                        """is_ranked = True
-                        rank_change = int(rank_k * (scores[team_num] - expected_scores[team_num]))
-                        rank_change_season = int(rank_k * (scores[team_num] - expected_scores_season[team_num]))
-                        if match.pickup.channel.cfg['ranked_calibrate'] and wins + loses < 8 and not is_seeded :
-                                rank_change = int( rank_change * ((10-(wins+loses))/2.0) )
-
-                        if match.ranked_streaks:
-                                if streak.__gt__(0) != scores[team_num].__gt__(0):
-                                        streak = 0
-                                if scores[team_num] == 1:
-                                        streak += 1
-                                elif scores[team_num] == 0.5:
-                                        streak = 0
-                                else:
-                                        streak -= 1
-                                if abs(streak) > 2:
-                                        rank_change = int( rank_change * ( min([abs(streak), 6])/2.0 ) )
-                        else:
-                                streak = 0
-                        """
                         rank_after = rated[team_num][player.id].mu
                         sig_after = rated[team_num][player.id].sigma
                         rank_after_season = rated_season[team_num][player.id].mu
                         sig_after_season = rated_season[team_num][player.id].sigma
                         is_winner = 1 - scores[team_num]
+
+                        rank_change = rank_after - match.ranks[player.id]
+                        sig_change = sig_after - match.sigma[player.id]
+                        rank_change_season = rank_after_season - match.ranks_season[player.id]
+                        sig_change_season = sig_after_season - match.sigma_season[player.id]
+
+                        #adjusting sigma
+                        if (is_winner == 1 and winprobs[team_num]<winprobs[1-team_num]) or (is_winner == 0 and winprobs[team_num]>winprobs[1-team_num]):
+                            sig_after = sig_after - (2-winprobs[team_num])*sig_change
+                            sig_after_season = sig_after_season - (2-winprobs[team_num])*sig_change_season
+                            sig_change = sig_after - match.sigma[player.id]
+                            sig_change_season = sig_after_season - match.sigma_season[player.id]
 
                         c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
                         #now need to make sure our all time wins/losses don't mess up our seasonal wins/losses
@@ -275,11 +272,6 @@ def register_pickup(match):
                         c.execute("UPDATE channel_players_season SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after_season, sig_after_season, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
                         new_ranks[player.id] = [user_name, rank_after]
                         new_ranks_season[player.id] = [user_name, rank_after_season]
-
-                        rank_change = rank_after - match.ranks[player.id]
-                        sig_change = sig_after - match.sigma[player.id]
-                        rank_change_season = rank_after_season - match.ranks_season[player.id]
-                        sig_change_season = sig_after_season - match.sigma_season[player.id]
 
                 else:
                         is_ranked = False
@@ -889,3 +881,11 @@ def create_tables():
 def close():
         conn.commit()
         conn.close()
+
+def win_probability(team1, team2):
+    env = ts.global_env()
+    delta_mu = sum(r.mu for r in team1) - sum(r.mu for r in team2)
+    sum_sigma = sum(r.sigma ** 2 for r in itertools.chain(team1, team2))
+    size = len(team1) + len(team2)
+    denom = math.sqrt(size * (env.beta * env.beta) + sum_sigma)
+    return env.cdf(delta_mu / denom)
