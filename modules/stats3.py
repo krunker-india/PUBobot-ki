@@ -7,6 +7,8 @@ from decimal import Decimal
 
 from modules import console
 import trueskill as ts
+import itertools
+import math
 
 #INIT
 version = 12
@@ -176,16 +178,6 @@ def register_pickup(match):
         rated_season = []
 
         if match.ranked and match.winner:
-                """
-                alpha_rank = int(sum([ match.ranks[player.id] for player in match.alpha_team ])/len(match.alpha_team))
-                beta_rank = int(sum([ match.ranks[player.id] for player in match.beta_team ])/len(match.beta_team))
-
-                alpha_rank_season = int(sum([ match.ranks_season[player.id] for player in match.alpha_team ])/len(match.alpha_team))
-                beta_rank_season = int(sum([ match.ranks_season[player.id] for player in match.beta_team ])/len(match.beta_team))
-                #[alpha, beta]
-                expected_scores = [1/(1+10**((beta_rank-alpha_rank)/400)), 1/(1+10**((alpha_rank-beta_rank)/400))]
-
-                expected_scores_season = [1/(1+10**((beta_rank_season-alpha_rank_season)/400)), 1/(1+10**((alpha_rank_season-beta_rank_season)/400))]"""
                 alpha_ts = {}
                 beta_ts = {}
                 alpha_ts_season = {}
@@ -884,8 +876,10 @@ def close():
 
 def win_probability(team1, team2):
     env = ts.global_env()
-    delta_mu = sum(r.mu for r in team1) - sum(r.mu for r in team2)
-    sum_sigma = sum(r.sigma ** 2 for r in itertools.chain(team1, team2))
+    delta_mu = sum(team1[r].mu for r in team1) - sum(team2[r].mu for r in team2)
+    sum_sigma = sum(team1[r].sigma ** 2 for r in team1)
+    sum_sigma += sum(team2[r].sigma ** 2 for r in team2)
+    #sum_sigma = sum(r.sigma ** 2 for r in itertools.chain(team1, team2))
     size = len(team1) + len(team2)
     denom = math.sqrt(size * (env.beta * env.beta) + sum_sigma)
     return env.cdf(delta_mu / denom)
