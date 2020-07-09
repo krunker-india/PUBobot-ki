@@ -211,6 +211,9 @@ def register_pickup(match):
                 winprobs = [0,0]
                 winprobs[0] = win_probability(alpha_ts,beta_ts)
                 winprobs[1] = win_probability(beta_ts,alpha_ts)
+                winprobs_season = [0,0]
+                winprobs_season[0] = win_probability(alpha_ts_season,beta_ts_season)
+                winprobs_season[1] = win_probability(beta_ts_season,alpha_ts_season)
                 #this is normal:
                 rated = ts.rate([alpha_ts,beta_ts], ranks=scores)
                 rated_season = ts.rate([alpha_ts_season,beta_ts_season], ranks=scores)
@@ -252,8 +255,10 @@ def register_pickup(match):
                         #adjusting sigma
                         if (is_winner == 1 and winprobs[team_num]<winprobs[1-team_num]) or (is_winner == 0 and winprobs[team_num]>winprobs[1-team_num]):
                             sig_after = sig_after - (2-winprobs[team_num])*sig_change
-                            sig_after_season = sig_after_season - (2-winprobs[team_num])*sig_change_season
                             sig_change = sig_after - match.sigma[player.id]
+
+                        if (is_winner == 1 and winprobs_season[team_num]<winprobs_season[1-team_num]) or (is_winner == 0 and winprobs_season[team_num]>winprobs_season[1-team_num]):
+                            sig_after_season = sig_after_season - (2-winprobs_seasons[team_num])*sig_change_season
                             sig_change_season = sig_after_season - match.sigma_season[player.id]
 
                         c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
