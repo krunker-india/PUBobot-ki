@@ -258,7 +258,7 @@ def register_pickup(match):
                             sig_change = sig_after - match.sigma[player.id]
 
                         if (is_winner == 1 and winprobs_season[team_num]<winprobs_season[1-team_num]) or (is_winner == 0 and winprobs_season[team_num]>winprobs_season[1-team_num]):
-                            sig_after_season = sig_after_season - (2-winprobs_seasons[team_num])*sig_change_season
+                            sig_after_season = sig_after_season - (2-winprobs_season[team_num])*sig_change_season
                             sig_change_season = sig_after_season - match.sigma_season[player.id]
 
                         c.execute("UPDATE channel_players SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after, sig_after, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
