@@ -382,7 +382,7 @@ def get_rank_details_season(channel_id, user_id=False, nick=False):
         return([None, None])
 
 def get_ladder(channel_id, page):
-        c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
+        c.execute("SELECT (rank-3*sigma), nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY (rank-3*sigma) desc LIMIT ?", (channel_id, (page+1)*10))
         return c.fetchall()[page*10:]
 
 def get_ladder_season(channel_id, page):
