@@ -1155,7 +1155,25 @@ class Channel():
 
                         for x in [match.unpicked, match.alpha_team, match.beta_team]:
                                 if target in x:
-                                        idx = x.index(target)
+                                    idx = x.index(target)
+                                    t1 = []
+                                    t2 = []
+                                    for i in range(len(match.alpha_team)):
+                                        if match.alpha_team[i] == target:
+                                            psubmu = stats3.get_ranks(self, [member.id])[member.id]
+                                            psubsig = stats3.get_sigma(self, [member.id])[member.id]
+                                            t1.append(ts.Rating(mu=psubmu, sigma=psubsig));
+                                        else:
+                                            t1.append(ts.Rating(mu=match.ranks[match.alpha_team[i].id], sigma=match.sigma[match.alpha_team[i].id]));
+                                        if match.beta_team[i] == target:
+                                            psubmu = stats3.get_ranks(self, [member.id])[member.id]
+                                            psubsig = stats3.get_sigma(self, [member.id])[member.id]
+                                            t2.append(ts.Rating(mu=psubmu, sigma=psubsig));
+                                        else:
+                                            t2.append(ts.Rating(mu=match.ranks[match.beta_team[i].id], sigma=match.sigma[match.beta_team[i].id]));
+                                    qual = ts.quality([t1,t2])
+                                    #client.reply(self.channel, member, "DEBUG LOLLOLOLOLOLL:" + str(t1) + " " + str(t2) + ", qual=" + str(qual))
+                                    if qual >= 0.5:
                                         x[idx] = member
                                         idx = match.players.index(target)
                                         match.players = list(match.players)
@@ -1169,6 +1187,9 @@ class Channel():
                                             match.sigma_season = stats3.get_sigma_season(self, [i.id for i in match.players])
                                             match.players = list(sorted(match.players, key=lambda p: match.ranks[p.id], reverse=True))
                                         client.notice(self.channel, match._teams_picking_to_str())
+                                        return
+                                    else:
+                                        client.reply(self.channel, member, "Sub denied, too low match quality: " + str(int(100*qual))+"%")
                                         return
                         client.reply(self.channel, member, "Specified player not found in the match!")
                 else:
