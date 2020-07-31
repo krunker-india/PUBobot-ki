@@ -6,6 +6,7 @@ from discord import errors
 from itertools import combinations
 from modules import client, config, console, stats3, scheduler, utils
 import trueskill as ts
+import math
 
 max_expire_time = 6*60*60 #6 hours
 max_bantime = 30*24*60*60*12*3 #30 days * 12 * 3
@@ -71,6 +72,8 @@ class Match():
                 self.alpha_cancel = False
                 #new variables in this fork
                 self.match_quality = None
+                self.alpha_prob = None
+                self.beta_prob = None
 
                 pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
                 if pick_captains and len(players) > 2 and self.pick_teams != 'auto':
@@ -148,6 +151,8 @@ class Match():
                                         best_team = None
                                         combplayers = self.players.copy()
                                         combplayers.remove(players[0])
+                                        team1 = []
+                                        team2 = []
                                         for team in combinations(combplayers, teamlen-1):
                                             team = list(team)
                                             team.append(players[0])
@@ -171,6 +176,8 @@ class Match():
                                         self.match_quality = best_qual
                                         #self.alpha_team = best_team
                                         #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
+                                        self.alpha_prob = win_probability(team1,team2)
+                                        self.beta_prob = win_probability(team2,team1)
                                         if pick_captains:
                                                 # sort by captains_role, then elo
                                                 #console.display("debug: in pick_captains")
@@ -235,7 +242,7 @@ class Match():
                 if self.ranked:
                         alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.alpha_team])
                         beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.beta_team])
-                        team_ratings = ['〈__{0}__〉'.format(sum([int(100*(self.ranks[i.id]-3*self.sigma[i.id])) for i in team])//len(team)) for team in (self.alpha_team, self.beta_team)]
+                        team_ratings = ['〈__{0}__〉'.format(str(int(prob*100))+"%") for prob in (self.alpha_prob, self.beta_prob)]
                 else:
                         alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
                         beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
@@ -2889,4 +2896,12 @@ def run(frametime):
                     #note, we use len(p.player) > 0 so the if statement will fail as fast as possible. However this may actually be more inefficient. I'm not sure.
                     c.start_pickup(p)
 
-
+def win_probability(team1, team2):
+    env = ts.global_env()
+    delta_mu = sum(r.mu for r in team1) - sum(r.mu for r in team2)
+    sum_sigma = sum(r.sigma ** 2 for r in team1)
+    sum_sigma += sum(r.sigma ** 2 for r in team2)
+    #sum_sigma = sum(r.sigma ** 2 for r in itertools.chain(team1, team2))
+    size = len(team1) + len(team2)
+    denom = math.sqrt(size * (env.beta * env.beta) + sum_sigma)
+    return env.cdf(delta_mu / denom)
