@@ -178,6 +178,9 @@ class Match():
                                         #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
                                         self.alpha_prob = win_probability(team1,team2)
                                         self.beta_prob = win_probability(team2,team1)
+                                        #adjusting the probabilities to be more understandable to teh average player
+                                        self.alpha_prob = (1-best_qual)*self.alpha_prob + (best_qual/2)
+                                        self.beta_prob = (1-best_qual)*self.beta_prob + (best_qual/2)
                                         if pick_captains:
                                                 # sort by captains_role, then elo
                                                 #console.display("debug: in pick_captains")
