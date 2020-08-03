@@ -404,7 +404,7 @@ class Match():
                                         [ "{0} {1}{2} -> {3}{4}".format(
                                                 new_ranks[i][0],
                                                 int(100*(self.ranks[i]-3*self.sigma[i])),
-                                                utils.rating_to_icon(int(100*self.ranks[i])),
+                                                utils.rating_to_icon(int(100*(self.ranks[i]-3*self.sigma[i]))),
                                                 int(100*(new_ranks[i][1])),
                                                 utils.rating_to_icon(int(100*new_ranks[i][1]))
                                         ) for i in new_ranks.keys() ]
