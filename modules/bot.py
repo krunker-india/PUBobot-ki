@@ -176,11 +176,13 @@ class Match():
                                         self.match_quality = best_qual
                                         #self.alpha_team = best_team
                                         #self.beta_team = list(filter(lambda i: i not in self.alpha_team, self.players))
-                                        self.alpha_prob = win_probability(team1,team2)
-                                        self.beta_prob = win_probability(team2,team1)
-                                        #adjusting the probabilities to be more understandable to teh average player
-                                        self.alpha_prob = (1-best_qual)*self.alpha_prob + (best_qual/2)
-                                        self.beta_prob = (1-best_qual)*self.beta_prob + (best_qual/2)
+                                        t1wp = win_probability(team1,team2)
+                                        if t1wp < 0.4:
+                                            self.alpha_prob = "-"
+                                            self.beta_prob = "+"
+                                        elif t1wp > 0.6:
+                                            self.alpha_prob = "+"
+                                            self.beta_prob = "-"
                                         if pick_captains:
                                                 # sort by captains_role, then elo
                                                 #console.display("debug: in pick_captains")
@@ -245,7 +247,9 @@ class Match():
                 if self.ranked:
                         alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.alpha_team])
                         beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.beta_team])
-                        team_ratings = ['〈__{0}__〉'.format(str(int(prob*100))+"%") for prob in (self.alpha_prob, self.beta_prob)]
+                        team_ratings = ['','']
+                        team_ratings[0] = '〈__{0}__〉'.format(str(sum([self.ranks[i.id] for i in self.alpha_team])//len(self.alpha_team)) + str(self.alpha_prob))
+                        team_ratings[0] = '〈__{0}__〉'.format(str(sum([self.ranks[i.id] for i in self.beta_team])//len(self.beta_team)) + str(self.beta_prob))
                 else:
                         alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
                         beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
