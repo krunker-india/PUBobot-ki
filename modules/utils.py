@@ -46,9 +46,12 @@ ranks = {
 	3500: "〈B〉",
 	3000: "〈C〉",
 	2500: "〈D+〉",
-	2000: "〈D〉",
-	0: "〈D-〉",
-	-5000: "〈F〉"}
+	2000: "〈D-〉",
+	1500: "〈E+〉",
+	1000: "〈E〉",
+	500: "〈E-〉",
+	0: "〈F〉",
+	-5000: "〈〉"}
 
 def rating_to_icon(rating):
 	for i in sorted(ranks.keys(), reverse=True):
