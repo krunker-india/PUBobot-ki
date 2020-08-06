@@ -264,22 +264,22 @@ class Match():
         def _teams_picking_to_str(self):
                 if len(self.alpha_team):
                         if self.ranked:
-                                alpha_str = "❲{1}❳ 〈__{0}__〉".format(sum([self.ranks[i.id] for i in self.alpha_team])//len(self.alpha_team), " + ".join(
-                                        ["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in self.alpha_team]))
+                                alpha_str = "❲{1}❳ 〈__{0}__〉".format(int(100*sum([self.ranks[i.id] for i in self.alpha_team]))//len(self.alpha_team), " + ".join(
+                                        ["`{0}{1}`".format(utils.rating_to_icon(int(100*self.ranks[i.id])), (i.nick or i.name).replace("`","")) for i in self.alpha_team]))
                         else:
                                 alpha_str = "❲{0}❳".format(" + ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.alpha_team]))
                 else:
                         alpha_str = "❲{0}❳".format(self.team_names[0])
                 if len(self.beta_team):
                         if self.ranked:
-                                beta_str = "❲{1}❳ 〈__{0}__〉".format(sum([self.ranks[i.id] for i in self.beta_team])//len(self.beta_team), " + ".join(
-                                        ["`{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in self.beta_team]))
+                                beta_str = "❲{1}❳ 〈__{0}__〉".format(int(100*sum([self.ranks[i.id] for i in self.beta_team]))//len(self.beta_team), " + ".join(
+                                        ["`{0}{1}`".format(utils.rating_to_icon(int(100*self.ranks[i.id])), (i.nick or i.name).replace("`","")) for i in self.beta_team]))
                         else:
                                 beta_str = "❲{0}❳".format(" + ".join(["`{0}`".format((i.nick or i.name).replace("`","")) for i in self.beta_team]))
                 else:
                         beta_str = "❲{0}❳".format(self.team_names[1])
                 if self.ranked:
-                        unpicked_str = "\n".join([" - `{0}{1}`".format(utils.rating_to_icon(self.ranks[i.id]), (i.nick or i.name).replace("`","")) for i in sorted(self.unpicked, key=lambda p: self.ranks[p.id], reverse=True)])
+                        unpicked_str = "\n".join([" - `{0}{1}`".format(utils.rating_to_icon(int(100*self.ranks[i.id])), (i.nick or i.name).replace("`","")) for i in sorted(self.unpicked, key=lambda p: self.ranks[p.id], reverse=True)])
                 else:
                         unpicked_str = "\n".join([" - `{0}`".format((i.nick or i.name).replace("`","")) for i in self.unpicked])
                 return "{0} {1}\n          :fire:**VERSUS**:fire:\n{3} {2}\n\n__Unpicked__:\n{4}".format(self.alpha_icon, alpha_str, beta_str, self.beta_icon, unpicked_str)
