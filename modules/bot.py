@@ -248,8 +248,9 @@ class Match():
                         alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.alpha_team])
                         beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.beta_team])
                         team_ratings = ['','']
-                        team_ratings[0] = '〈__{0}__〉'.format(str(sum([self.ranks[i.id] for i in self.alpha_team])//len(self.alpha_team)) + str(self.alpha_prob))
-                        team_ratings[0] = '〈__{0}__〉'.format(str(sum([self.ranks[i.id] for i in self.beta_team])//len(self.beta_team)) + str(self.beta_prob))
+                        team_ratings[0] = '〈__{0}__〉'.format(str(int(100*sum([self.ranks[i.id] for i in self.alpha_team])//len(self.alpha_team))) + str(self.alpha_prob))
+                        team_ratings[1] = '〈__{0}__〉'.format(str(int(100*sum([self.ranks[i.id] for i in self.beta_team])//len(self.beta_team))) + str(self.beta_prob))
+                        console.display(str(self.beta_prob) + " " + str(self.alpha_prob))
                 else:
                         alpha_str = " ".join(["<@{0}>".format(i.id) for i in self.alpha_team])
                         beta_str = " ".join(["<@{0}>".format(i.id) for i in self.beta_team])
