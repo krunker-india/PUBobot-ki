@@ -183,6 +183,9 @@ class Match():
                                         elif t1wp > 0.6:
                                             self.alpha_prob = "+"
                                             self.beta_prob = "-"
+                                        else:
+                                            self.alpha_prob = "="
+                                            self.beta_prob = "="
                                         if pick_captains:
                                                 # sort by captains_role, then elo
                                                 #console.display("debug: in pick_captains")
