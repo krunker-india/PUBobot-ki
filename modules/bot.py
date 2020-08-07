@@ -837,7 +837,7 @@ class Channel():
                                 elif not whitelist_role or whitelist_role in member_roles:
                                         changes = True
                                         pickup.players.append(member)
-                                        if int(time.time()-int(self.lastgame_cache[1])) <= 15 and len(pickup.players)>=pickup.cfg['maxplayers']:
+                                        if self.cfg['pick_teams']=='auto' and len(pickup.players)>=pickup.cfg['maxplayers'] and int(time.time()-int(self.lastgame_cache[1])) <= 15:
                                                 client.notice(self.channel, "A match ended recently, waiting to see if any more players will join")
                                         elif len(pickup.players)>=pickup.cfg['maxplayers'] and self.get_value("autostart", pickup) != 0:
                                                 self.start_pickup(pickup)
