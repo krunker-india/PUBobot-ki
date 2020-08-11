@@ -72,8 +72,8 @@ class Match():
                 self.alpha_cancel = False
                 #new variables in this fork
                 self.match_quality = None
-                self.alpha_prob = None
-                self.beta_prob = None
+                self.alpha_prob = ""
+                self.beta_prob = ""
 
                 pick_captains = self.pickup.channel.get_value('pick_captains', pickup)
                 if pick_captains and len(players) > 2 and self.pick_teams != 'auto':
@@ -360,6 +360,8 @@ class Match():
                 startmsg += "\r\n\r\n" + self._startmsg_to_str()
                 if self.map:
                         startmsg += "\r\nSuggested map: **{0}**.".format(self.map)
+                #if self.match_quality != None:
+                startmsg += "\r\nMatch quality: "+str(int(100*self.match_quality))+"%"
                 client.notice(self.channel, startmsg)
                 
         def next_state(self):
@@ -1071,6 +1073,23 @@ class Channel():
                                         team.append(i)
                                         match.unpicked.remove(i)
                                         if len(match.unpicked) == 0 or match.maxplayers == len(match.alpha_team) + len(match.beta_team):
+                                                team1 = []
+                                                team2 = []
+                                                for i in match.alpha_team:
+                                                    team1.append(ts.Rating(mu=match.ranks[i.id], sigma=match.sigma[i.id]))
+                                                for i in match.beta_team:
+                                                    team2.append(ts.Rating(mu=match.ranks[i.id], sigma=match.sigma[i.id]))
+                                                match.match_quality = ts.quality([team1,team2])
+                                                t1wp = win_probability(team1,team2)
+                                                if t1wp < 0.4:
+                                                    match.alpha_prob = "-"
+                                                    match.beta_prob = "+"
+                                                elif t1wp > 0.6:
+                                                    match.alpha_prob = "+"
+                                                    match.beta_prob = "-"
+                                                else:
+                                                    match.alpha_prob = "="
+                                                    match.beta_prob = "="
                                                 match.next_state()
                                         elif len(match.unpicked) == 1 and match.pick_order:
                                                 match.pick_step += 1
@@ -1079,6 +1098,24 @@ class Channel():
                                                 else:
                                                         match.beta_team.append(match.unpicked[0])
                                                 match.unpicked.remove(match.unpicked[0])
+                                                #add in shit here
+                                                team1 = []
+                                                team2 = []
+                                                for i in match.alpha_team:
+                                                    team1.append(ts.Rating(mu=match.ranks[i.id], sigma=match.sigma[i.id]))
+                                                for i in match.beta_team:
+                                                    team2.append(ts.Rating(mu=match.ranks[i.id], sigma=match.sigma[i.id]))
+                                                match.match_quality = ts.quality([team1,team2])
+                                                t1wp = win_probability(team1,team2)
+                                                if t1wp < 0.4:
+                                                    match.alpha_prob = "-"
+                                                    match.beta_prob = "+"
+                                                elif t1wp > 0.6:
+                                                    match.alpha_prob = "+"
+                                                    match.beta_prob = "-"
+                                                else:
+                                                    match.alpha_prob = "="
+                                                    match.beta_prob = "="
                                                 match.next_state()
                                         else:
                                                 msg = match._teams_picking_to_str()
