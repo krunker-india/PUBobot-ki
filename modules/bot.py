@@ -134,26 +134,43 @@ class Match():
                         elif self.pick_teams == 'auto':
                                 #form balanced teams by rank
                                 if self.ranked:
-                                        """teamlen = int(len(self.players)/2)
-                                        perfect_rank = sum(self.ranks.values())/2
-                                        best_diff = 10000
-                                        best_team = None
-                                        for team in combinations(self.players, teamlen):
-                                                rank = sum([self.ranks[i.id] for i in team])
-                                                if abs(perfect_rank-rank) < best_diff:
-                                                        best_diff = abs(perfect_rank-rank)
-                                                        best_team = team
-                                        """
                                         teamlen = int(len(self.players)/2)
                                         if teamlen > int(self.maxplayers/2):
                                             teamlen = int(self.maxplayers/2)
+
+                                        ci = self.pickup.confirmed_in
+                                        self.pickup.confirmed_in = 0
+
                                         best_qual = -1
                                         best_team = None
-                                        combplayers = self.players.copy()
-                                        combplayers.remove(players[0])
+                                        #combplayers = self.players.copy()
+                                        #combplayers.remove(players[0])
                                         team1 = []
                                         team2 = []
-                                        for team in combinations(combplayers, teamlen-1):
+
+                                        for overfill in combinations(players[ci:], 2*teamlen-ci):
+                                            fullset = list(players[:ci])+list(overfill)
+                                            for team in combinations(fullset[1:], teamlen-1):
+                                                team = list(team)
+                                                team.append(fullset[0])
+                                                team1 = []
+                                                team2 = []
+                                                otherteam = []
+                                                for i in fullset:
+                                                    if i in team:
+                                                        team1.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
+                                                    else:
+                                                        team2.append(ts.Rating(mu=self.ranks[i.id], sigma=self.sigma[i.id]))
+                                                        otherteam.append(i)
+                                                qual = ts.quality([team1,team2])
+                                                if qual > best_qual:
+                                                    best_qual = qual
+                                                    self.alpha_team = team
+                                                    self.alpha_team = sorted(team, key=lambda p: [self.ranks[p.id]], reverse=True)
+
+                                                    self.beta_team = sorted(otherteam, key=lambda p: [self.ranks[p.id]], reverse=True)
+
+                                        '''for team in combinations(combplayers, teamlen-1):
                                             team = list(team)
                                             team.append(players[0])
                                             otherteam = None
@@ -172,6 +189,7 @@ class Match():
                                                     best_qual = qual
                                                     self.alpha_team = team
                                                     self.beta_team = otherteam
+                                        '''
 
                                         self.match_quality = best_qual
                                         #self.alpha_team = best_team
@@ -420,6 +438,9 @@ class Match():
                                         ) for i in new_ranks.keys() ]
                                 )
                                 client.notice(self.channel, "Raiting changes (All-time):\n```python\n"+summary+"```")
+                #set the confirmed in player
+                if (self.pickup.confirmed_in == 0):
+                    self.pickup.confirmed_in = len(self.pickup.players)
 
         def remove_unpicked(self):
                 for player in self.unpicked:
@@ -505,6 +526,7 @@ class Pickup():
                 self.lastmap = None
                 self.channel = channel
                 self.cfg = cfg
+                self.confirmed_in = 0 #this is the length of players confirmed to be in the next game
 
 class Channel():
 
