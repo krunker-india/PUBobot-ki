@@ -944,6 +944,10 @@ class Channel():
                         client.reply(self.channel, member, "You have no right for this!")
 
         def who(self, member, args):
+                egg = random.randint(1,10000)
+                if (egg==1):
+                    client.notice(self.channel, "CARES!")
+                    return
                 templist=[]
                 for pickup in ( pickup for pickup in self.pickups if pickup.players != [] and (pickup.name.lower() in args or args == [])):
                         templist.append('[**{0}** ({1}/{2})] {3}'.format(pickup.name, len(pickup.players), pickup.cfg['maxplayers'], '/'.join(["`"+(i.nick or i.name).replace("`","")+"`" for i in pickup.players])))
