@@ -23,6 +23,10 @@ Bot keeps statistic database, have features to automatically remove AFK users, d
 # Requirements
 Python 3.6+, sqlite3 module for python, discord api v1.0+.
 
+```NOTE : 
+This bot cant be run in systems with no SQl/Disk Database support(Heroku), use a VPS for optimum service
+```
+
 # Running
 1. Copy config.example.cfg as config.cfg and fill your discord bot token or username and password in it.
 2. Run 'pip install discord' and 'pip install trueskill'
