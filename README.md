@@ -25,7 +25,8 @@ Python 3.6+, sqlite3 module for python, discord api v1.0+.
 
 # Running
 1. Copy config.example.cfg as config.cfg and fill your discord bot token or username and password in it.
-2. Run './pubobot.py' to launch the program.
+2. Run 'pip install discord' and 'pip install trueskill'
+2. Run 'python3 pubobot.py' to launch the program.
 3. Invite your bot to the desired server.
 4. Type '!enable_pickups' on the desired channel.
 
