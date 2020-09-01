@@ -267,7 +267,7 @@ def register_pickup(match):
                         result = c.fetchone()
                         wins, loses = [i or 0 for i in result]
                         c.execute("UPDATE channel_players_season SET nick = ?, rank = ?, sigma = ?, wins=?, loses=?, streak=? WHERE channel_id = ? AND user_id = ?", (user_name, rank_after_season, sig_after_season, wins-scores[team_num]+1, loses+scores[team_num], streak, match.pickup.channel.id, player.id))
-                        new_ranks[player.id] = [user_name, (rank_after-3*sig_after)]
+                        new_ranks[player.id] = [user_name, (rank_after)]
                         new_ranks_season[player.id] = [user_name, rank_after_season]
 
                 else:
@@ -354,11 +354,11 @@ def get_sigma_season(channel, user_ids):
         return d
 
 def get_rank_details(channel_id, user_id=False, nick=False):
-        c.execute("SELECT user_id, nick, (rank-3*sigma), wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY (rank-3*sigma) DESC", (channel_id,))
+        c.execute("SELECT user_id, nick, rank, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank DESC", (channel_id,))
         lb = c.fetchall()
         for i in lb:
                 if i[0] == user_id or i[1].lower() == nick:
-                        c.execute("SELECT pickup_id, at, pickup_name, (rank_change-3*sigma_change) FROM player_pickups WHERE user_id = ? AND channel_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], channel_id))
+                        c.execute("SELECT pickup_id, at, pickup_name, rank_change FROM player_pickups WHERE user_id = ? AND channel_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], channel_id))
                         matches = c.fetchall()
                         place = lb.index(i)+1
                         i = list(i)
@@ -368,11 +368,11 @@ def get_rank_details(channel_id, user_id=False, nick=False):
         return([None, None])
 
 def get_rank_details_season(channel_id, user_id=False, nick=False):
-        c.execute("SELECT user_id, nick, rank, wins, loses FROM channel_players_season WHERE channel_id = ? AND rank IS NOT NULL ORDER BY rank DESC", (channel_id,))
+        c.execute("SELECT user_id, nick, (rank-3*sigma), wins, loses FROM channel_players_season WHERE channel_id = ? AND rank IS NOT NULL ORDER BY (rank-3*sigma) DESC", (channel_id,))
         lb = c.fetchall()
         for i in lb:
                 if i[0] == user_id or i[1].lower() == nick:
-                        c.execute("SELECT pickup_id, at, pickup_name, rank_change FROM player_pickups_season WHERE user_id = ? AND channel_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], channel_id))
+                        c.execute("SELECT pickup_id, at, pickup_name, (rank_change-3*sigma_change) FROM player_pickups_season WHERE user_id = ? AND channel_id = ? AND is_ranked = 1 ORDER BY pickup_id DESC LIMIT 3", (i[0], channel_id))
                         matches = c.fetchall()
                         place = lb.index(i)+1
                         i = list(i)
@@ -382,11 +382,11 @@ def get_rank_details_season(channel_id, user_id=False, nick=False):
         return([None, None])
 
 def get_ladder(channel_id, page):
-        c.execute("SELECT (rank-3*sigma), nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY (rank-3*sigma) desc LIMIT ?", (channel_id, (page+1)*10))
+        c.execute("SELECT rank, nick, wins, loses FROM channel_players WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
         return c.fetchall()[page*10:]
 
 def get_ladder_season(channel_id, page):
-        c.execute("SELECT rank, nick, wins, loses FROM channel_players_season WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY rank desc LIMIT ?", (channel_id, (page+1)*10))
+        c.execute("SELECT (rank-3*sigma), nick, wins, loses FROM channel_players_season WHERE channel_id = ? AND rank IS NOT NULL AND wins+loses > 0 ORDER BY (rank-3*sigma) desc LIMIT ?", (channel_id, (page+1)*10))
         return c.fetchall()[page*10:]
 
 def stats(channel_id, text=False):

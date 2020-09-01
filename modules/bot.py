@@ -266,8 +266,8 @@ class Match():
 
         def _teams_to_str(self):
                 if self.ranked:
-                        alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.alpha_team])
-                        beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]-3*self.sigma[i.id]))), i.id) for i in self.beta_team])
+                        alpha_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]))), i.id) for i in self.alpha_team])
+                        beta_str = " ".join(["`{0}`<@{1}>".format(utils.rating_to_icon(int(100*(self.ranks[i.id]))), i.id) for i in self.beta_team])
                         team_ratings = ['','']
                         team_ratings[0] = '〈__{0}__〉'.format(str(int(100*sum([self.ranks[i.id] for i in self.alpha_team])//len(self.alpha_team))) + str(self.alpha_prob))
                         team_ratings[1] = '〈__{0}__〉'.format(str(int(100*sum([self.ranks[i.id] for i in self.beta_team])//len(self.beta_team))) + str(self.beta_prob))
@@ -431,8 +431,8 @@ class Match():
                                 summary = '\n'.join(
                                         [ "{0} {1}{2} -> {3}{4}".format(
                                                 new_ranks[i][0],
-                                                int(100*(self.ranks[i]-3*self.sigma[i])),
-                                                utils.rating_to_icon(int(100*(self.ranks[i]-3*self.sigma[i]))),
+                                                int(100*(self.ranks[i])),
+                                                utils.rating_to_icon(int(100*(self.ranks[i]))),
                                                 int(100*(new_ranks[i][1])),
                                                 utils.rating_to_icon(int(100*new_ranks[i][1]))
                                         ) for i in new_ranks.keys() ]
