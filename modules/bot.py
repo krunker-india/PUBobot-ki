@@ -809,16 +809,16 @@ class Channel():
                                 elif lower[0]=="undo_ranks":
                                         self.undo_ranks(member, lower[1:2], access_level)
 
-                                elif lower[0]=="reset_ranks":
+                                elif lower[0]=="reset_ranks_dontusethis":
                                         self.reset_ranks(member, access_level)
 
                                 elif lower[0]=="reset_season":
                                         self.reset_season(member, access_level)
 
-                                elif lower[0]=="seed":
+                                elif lower[0]=="seed_dontusethis":
                                         self.seed_player(member, lower[1:msglen], access_level)
 
-                                elif lower[0]=="seed_season":
+                                elif lower[0]=="seed_season_dontusethis":
                                         self.seed_player_season(member, lower[1:msglen], access_level)
                         
         ### COMMANDS ###
@@ -1278,6 +1278,9 @@ class Channel():
 
         def capfor(self, member, args):
                 match = self._match_by_player(member)
+                if True:
+                        client.reply(self.channel, member, "Nice try")
+                        return
                 if not match:
                         client.reply(self.channel, member, "Could not find an active match.")
                         return

@@ -5,7 +5,6 @@
 !atlb - View alltime leaderboard  
 !atrank - View alltime rank  
 !reset_season - Resets the season <b>Warning, this action is irrevesible!</b>  
-!seed_season - seed a players seasonal elo  
 
 ### ACTONS:
 !add <i>pickup</i>[ <i>pickup</i> ..]] or +<u>pickup</u>[ <i>pickup</i> ..]] - adds you to specified pickups.   
@@ -34,9 +33,7 @@
 ### TEAMS PICKING:
 !cointoss or !ct [heads or tails] - toss a coin.   
 !pick <i>@nick</i> - pick a user to your team.   
-!put <i>@nick</i> alpha or beta - put player in specified team (availible only for users with moderator or admin rights).   
 !subfor <i>@nick</i> - become a substitute for specified player.   
-!capfor alpha or beta - become a captain of specified team.   
 !teams - show teams for current pickup.   
 
 ### RANKING
@@ -49,9 +46,6 @@
 ##### For moderators and above:
 !reportwin or !rw <i>match_id</i> alpha or beta - report win on specified match for specified team.   
 !undo_ranks <i>match_id</i> - undo all rating changes for a previously reported match.   
-!seed <i>@nick</i> <i>rating</i> - set specified player's rating points, also this will disable initial rating calibration for this user.    
-##### For admins:
-!reset_ranks - reset all rating data on the channel. <b>Warning, this action is irreversible!</b>   
 
 ### MODERATION:
 !noadd <i>@nick</i> [<i>time</i>] [<i>reason</i>] - disallow user to play pickups.   
@@ -124,3 +118,5 @@
 * global_expire <i>time</i>, afk or none - set default_expire value for users without personal settings.
 * match_livetime <i>time</i> - set a timelimit before a match gets aborted as timed out.
 * help_answer <i>text</i> - set an answer on !help command.
+
+Also, some commands have been hidden and changed, as they were troublesome and often abused or caused major issues. Contact the bot admin if you need access to said commands.
