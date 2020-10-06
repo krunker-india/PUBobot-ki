@@ -482,18 +482,18 @@ def noadds(channel_id, index=None):
         if index == None:
                 c.execute("SELECT user_name, active, at, duratation, reason, author_name, unban_author_name FROM bans WHERE channel_id = ? AND active = 1", (channel_id, ))
         else:
-                c.execute("SELECT user_name, active, at, duratation, reason, author_name, unban_author_name FROM bans WHERE channel_id = ? ORDER BY at DESC LIMIT ?", (channel_id, index+10))
+                c.execute("SELECT user_name, active, at, duratation, reason, author_name, unban_author_name FROM bans WHERE channel_id = ? AND active = 1 ORDER BY at DESC LIMIT ?", (channel_id, index+10))
         bans = c.fetchall()
         bans_str = []
         for ban in bans[0:10]:
-                if ban[1] == 1:
+                if ban[1] == 1 and int(ban[3]-(time()-ban[2]))>0:
                         timeleft = timedelta( seconds=int(ban[3]-(time()-ban[2])) )
                         #user_name, timeleft, author: reason
                         bans_str.append("{0}, {1} left, by {2}: {3}".format(ban[0], timeleft, ban[5], ban[4]))
-                else:
-                        ago = timedelta( seconds=int(time()-ban[2]) )
+                #else:
+                        #ago = timedelta( seconds=int(time()-ban[2]) )
                         #user_name, ago, author (reason), unban_author
-                        bans_str.append("{0}, {1} ago, by {2} ({3}), unbanned by {4}".format(ban[0], ago, ban[5], ban[4], ban[6]))
+                        #bans_str.append("{0}, {1} ago, by {2} ({3}), unbanned by {4}".format(ban[0], ago, ban[5], ban[4], ban[6]))
         return bans_str
 
 def check_memberid(channel_id, user_id): #check on bans and phrases
