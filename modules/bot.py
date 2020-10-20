@@ -744,7 +744,7 @@ class Channel():
                         elif lower[0]=="maps":
                                 self.show_maps(member, lower[1:msglen], False)
                         
-                        elif lower[0]=="map":
+                        elif lower[0]=="map_dontusethis":
                                 self.show_maps(member, lower[1:msglen], True)
 
                         elif lower[0]=="ip":
